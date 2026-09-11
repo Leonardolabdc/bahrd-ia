@@ -1,0 +1,71 @@
+# Segredos — nunca versionar (regra desde o primeiro commit, doc 03 §13)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+wallet/
+wallet*.zip
+
+# Documentação interna — a pasta `docs/` inteira fica fora do repositório e
+# **nunca vai para o GitHub**. Ela reúne material de reunião, resposta da TI da
+# Bahrd, número de teste, transcrição real da Vetor (nome de motorista, placa,
+# endereço, protocolo), export da plataforma com IMEI e coordenada exata, e
+# rascunho com token da Meta colado dentro. Nada disso pode ser publicado.
+# Vive só no disco local. O que precisar ser público vira README ou docstring.
+docs/*
+
+# Dados de volume local
+.docker-data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+web/dist/
+web/.vite/
+web/tsconfig.tsbuildinfo
+npm-debug.log*
+
+# Logs
+*.log
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- docs/ ---
+#
+# A pasta inteira fica de fora, e as excecoes abaixo entram uma a uma.
+#
+# Sobem apenas os documentos REFERENCIADOS no README: sem eles os links do
+# README dariam 404 no GitHub, e uma tabela de links quebrados parece pior do
+# que nao ter tabela. Sao a documentacao do sistema da propria Bahrd, indo para
+# o repositorio privado dela.
+#
+# FICAM DE FORA, e e o motivo de a regra ser lista e nao "docs/*.md":
+#   arquivo/    documentos superados, guardados porque contam POR QUE decisoes
+#               foram tomadas — apagar some com a resposta
+#   interno/    prints de conversas dos gestores
+#   exemplos/   Relatorio de Eventos.xls, com dado real de cliente
+#
+# Documento novo so aparece no Git se for acrescentado aqui. E de proposito: o
+# padrao e nao publicar, e publicar e decisao consciente.
+!docs/02-plano-execucao-backend.md
+!docs/04-ambiente-docker.md
+!docs/05-deploy-oci.md
+!docs/06-custo-mensal.md
+!docs/07-seguranca.md
+!docs/fluxo-genaiura.png

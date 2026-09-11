@@ -1,0 +1,71 @@
+# Verificações que rodam ANTES do commit, na máquina de quem escreveu.
+#
+# O CI já roda lint e testes, e continua rodando. A diferença é o momento: um
+# segredo commitado por engano não se desfaz com `git revert` — ele fica no
+# histórico, e tirar de lá é reescrever todos os hashes do repositório. O CI
+# avisaria depois de o dano existir; isto avisa antes.
+#
+# Instalar (uma vez por clone):
+#
+#     pip install pre-commit
+#     pre-commit install
+#
+# Rodar em tudo, sem esperar um commit:
+#
+#     pre-commit run --all-files
+#
+# ⚠️ NÃO há formatador aqui, de propósito. O código deste repositório nunca
+# passou pelo `ruff format`, e ligar um agora reescreveria milhares de linhas
+# num commit que ninguém revisou — a mesma razão pela qual o CI deixa
+# `ruff format --check` de fora. Formatar tudo é uma decisão do time.
+
+repos:
+  # ── Segredo, que é o motivo de este arquivo existir ────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks · procura chave, token e senha
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: detect-private-key
+        name: nenhuma chave privada no commit
+
+      # 500 KB. O repositório inteiro tem 845 KB — qualquer arquivo perto
+      # disso é dump de banco, gravação de áudio ou dependência commitada por
+      # engano, e nenhum dos três deveria estar aqui.
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+        # O manifesto e os modelos de mensagem: JSON quebrado aqui só apareceria
+        # na hora de publicar na Meta, que é tarde demais.
+        files: ^infra/templates-whatsapp/.*\.json$
+
+  # ── As regras deste projeto, que nenhum hook de prateleira conhece ─────────
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check --force-exclude
+        language: system
+        types: [python]
+        require_serial: true
+
+      # ⭐ Roda a cada commit e não só no CI porque é o único guarda de coisa
+      # IRREVERSÍVEL: celular de gente real, credencial no `.env.example`, e o
+      # `.gitignore` perdendo `docs/` ou `.env`. Os outros testes protegem
+      # contra bug, que se conserta; estes protegem contra vazamento, que não.
+      - id: nada-de-dado-real
+        name: nenhum dado pessoal ou credencial subindo
+        entry: pytest -q tests/test_nada_de_dado_real_no_repositorio.py
+        language: system
+        pass_filenames: false
+        # Sem `files:` de propósito: o risco não vem só do arquivo editado. Um
+        # `.gitignore` alterado em outro commit da mesma sequência precisa ser
+        # visto aqui do mesmo jeito.
+        always_run: true

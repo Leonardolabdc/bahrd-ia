@@ -1,0 +1,40 @@
+# Contexto de build enxuto — o que não entra na imagem
+
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# Documentação e artefatos que não são código de aplicação
+docs/
+exemplos/
+prototipo/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / front-end (o build do web tem seu próprio contexto)
+node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
+
+# Volumes e dados locais
+.docker-data/
+*.log
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

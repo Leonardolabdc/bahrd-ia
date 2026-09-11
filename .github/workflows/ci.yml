@@ -1,0 +1,99 @@
+# Verificação a cada push e pull request.
+#
+# Roda direto no runner, sem Docker: a suíte não toca banco, rede nem API paga
+# — todo teste que precisaria de uma delas usa dublê. Subir os contêineres aqui
+# custaria minutos por execução sem cobrir uma linha a mais.
+#
+# `dev.ps1 lint` e `dev.ps1 test` fazem o mesmo na máquina do desenvolvedor,
+# pelo Docker, porque lá o objetivo é reproduzir o ambiente de execução.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  # Push novo no mesmo branch cancela a execução anterior — ninguém espera CI
+  # de um commit que já foi substituído.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Segredo, e ele vem primeiro ────────────────────────────────────────────
+  #
+  # O `.pre-commit-config.yaml` roda o mesmo gitleaks na maquina de quem
+  # escreve, e e la que ele evita o dano. Aqui e a rede de baixo: hook so
+  # protege quem rodou `pre-commit install`, e nem todo clone roda.
+  #
+  # `fetch-depth: 0` porque a varredura e do HISTORICO, nao do checkout. Um
+  # segredo removido no ultimo commit continua nos anteriores, e e exatamente
+  # esse o caso que ninguem percebe sozinho.
+  segredos:
+    name: Segredos · gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ⚠️ A imagem oficial, e não a action do marketplace.
+      #
+      # A `gitleaks/gitleaks-action@v2` pede licença paga quando o repositório
+      # pertence a uma organização, e este passou a pertencer. Rodar o binário
+      # direto faz a mesma varredura, com o mesmo motor, sem licença e com uma
+      # dependência a menos em action de terceiro.
+      #
+      # Versão fixa de propósito: `latest` faz o CI mudar de comportamento sem
+      # ninguém ter mexido em nada.
+      - name: Varredura do histórico
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
+            detect --source /repo --config /repo/.gitleaks.toml \
+            --no-banner --redact --verbose
+
+  backend:
+    name: Python · ruff + pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar
+        run: pip install -e ".[dev]"
+
+      # Mesmo escopo do `dev.ps1 lint`. `ruff format --check` fica de fora de
+      # propósito: o código nunca passou pelo formatador, então ligar isso aqui
+      # deixaria o CI vermelho no primeiro push por questão de estilo, não de
+      # defeito. Formatar tudo é uma decisão do time, num commit só.
+      - name: Lint
+        run: ruff check src migrations tests
+
+      - name: Testes
+        run: pytest -q
+
+  frontend:
+    name: TypeScript · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Instalar
+        working-directory: web
+        run: npm ci
+
+      # `tsc -b` sozinho não pega erro de bundling; o build cobre os dois.
+      - name: Verificar tipos e compilar
+        working-directory: web
+        run: npm run build

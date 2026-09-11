@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28">
+  <!-- A mesma marca de `componentes/Marca.tsx`. Aqui as cores são literais:
+       um favicon é um documento à parte e não enxerga as variáveis do painel.
+       O `prefers-color-scheme` cobre a aba escura, onde tinta navy sumiria. -->
+  <style>
+    .traco { stroke: #0E1725; }
+    .ponto { fill: #1B57D6; }
+    @media (prefers-color-scheme: dark) {
+      .traco { stroke: #E9EEF5; }
+      .ponto { fill: #74A4FF; }
+    }
+  </style>
+  <path class="traco" d="M8 7a13 13 0 0 1 13 13" fill="none" stroke-width="2.4" stroke-linecap="round" opacity="0.42"/>
+  <path class="traco" d="M8 13.5a6.5 6.5 0 0 1 6.5 6.5" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+  <circle class="ponto" cx="8" cy="20" r="2.9"/>
+</svg>

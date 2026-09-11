@@ -1,0 +1,85 @@
+[project]
+name = "central-ia"
+version = "0.1.0"
+description = "POC IA — URA com IA generativa para a central de monitoramento da Bahrd"
+requires-python = ">=3.12"
+readme = "README.md"
+
+dependencies = [
+  # API
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  # zoneinfo precisa da base IANA; a imagem slim não garante o tzdata do SO.
+  "tzdata>=2024.2",
+  "python-multipart>=0.0.12",
+
+  # Barramento / workers
+  "arq>=0.26",
+  "redis>=5.2",
+
+  # Persistência
+  "oracledb>=2.5",
+  "sqlalchemy[asyncio]>=2.0",
+  "aiomysql>=0.2",
+  "pymysql>=1.1",          # driver síncrono usado pelo Alembic
+  "cryptography>=43.0",    # exigido pelo caching_sha2_password (padrão no MySQL 8.4)
+  "alembic>=1.14",
+
+  # Object storage (MinIO local → OCI Object Storage; mesma API S3)
+  "boto3>=1.35",
+
+  # IA
+  "anthropic>=0.116",
+  "httpx>=0.27",
+
+  # Observabilidade
+  "structlog>=24.4",
+  "opentelemetry-sdk>=1.28",
+  "opentelemetry-exporter-otlp>=1.28",
+  "opentelemetry-instrumentation-fastapi>=0.49b0",
+  # Traça as chamadas de saída — OpenRouter, Twilio, Deepgram, ElevenLabs. É
+  # metade do valor da telemetria: mostra qual integração está lenta ou
+  # falhando, sem uma linha de span escrita à mão.
+  "opentelemetry-instrumentation-httpx>=0.49b0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.8",
+  "mypy>=1.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/central_ia"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+# ⚠️ A raiz do projeto precisa entrar no `sys.path`, e não entra sozinha.
+#
+# `migrations/` não é pacote instalado: ele mora na raiz e o
+# `test_migracoes_oracle.py` importa dele. Dentro da imagem isso funcionava por
+# acidente feliz, o Dockerfile define `PYTHONPATH=/app/src:/app`. No runner do
+# CI, que roda sem Docker, não existe esse PYTHONPATH — e a coleta parava com
+# `ModuleNotFoundError: No module named "migrations"` antes de rodar um teste.
+#
+# Declarar aqui faz os dois ambientes se comportarem igual, que é o ponto de o
+# CI existir.
+pythonpath = ["."]
+# A suíte roda dentro da imagem, cujo /app é do usuário `app` sem escrita.
+addopts = "-p no:cacheprovider"

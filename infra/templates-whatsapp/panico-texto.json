@@ -1,0 +1,64 @@
+{
+  "_leia": [
+    "Modelo id 2074446019937677. REESCRITO POR INTEIRO em 10/09/2026.",
+    "",
+    "O PANICO PRECISA DE MODELO PROPRIO, e o motivo esta no PB-PANICO.md:",
+    "",
+    "    'Voce nunca diz que houve um panico. Nao fala em equipamento de",
+    "     emergencia, nao fala em alerta, nao fala em panico, nao pergunta se",
+    "     esta tudo bem porque recebemos um sinal. (...) Nada de precisa",
+    "     confirmar uma coisa. E uma checagem de rotina. Nada mais.'",
+    "",
+    "Se o alerta foi real, quem estiver junto do motorista passa a saber que a",
+    "central percebeu — e e exatamente isso que nao pode acontecer.",
+    "",
+    "Desde 02/09/2026 o panico usava o evento_alerta, que nomeia o evento em",
+    "{{1}}. E o rotulo do PANICO no catalogo e, literalmente, 'Panico': a",
+    "palavra proibida ia impressa para o celular do cliente. O texto novo dessa",
+    "familia ('Identificamos uma ocorrencia... precisamos confirmar uma",
+    "informacao') seria a segunda violacao na mesma mensagem.",
+    "",
+    "POR ISSO ESTE MODELO NAO TEM: nome do evento, horario, local, nem cartao",
+    "de mapa. Sobra a placa e uma pergunta de rotina. O mapa saiu junto porque",
+    "um cartao com a posicao atual tambem diz 'estamos te vendo agora'.",
+    "",
+    "SAIU O BOTAO 'Ligar 0800' (PHONE_NUMBER). Nao foi estetica: botao de",
+    "telefone nao devolve webhook, entao a IA nunca saberia que o cliente tocou",
+    "e a janela de 24 h nao abriria. Com QUICK_REPLY o atendimento continua.",
+    "",
+    "PENDENCIA REGISTRADA, e nao e de texto: 'Esta tudo bem!' e o que alguem sob",
+    "coacao tocaria com o assaltante olhando. Quem segura esse risco hoje e a",
+    "triagem — acima do LIMIAR_ESCALONAMENTO a IA nao conduz nem encerra —, nao",
+    "o template. E mitigacao, nao solucao, e a decisao de quais botoes o panico",
+    "leva continua sendo dos gestores da Central."
+  ],
+  "name": "evento_panico",
+  "language": "pt_BR",
+  "category": "UTILITY",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Olá, tudo bem?\nAqui é da Central de Monitoramento da Bahrd.\n\nEstamos acompanhando a viagem do veículo *{{1}}* e passamos para confirmar: está tudo certo por aí?",
+      "example": {
+        "body_text": [
+          [
+            "AAA1111"
+          ]
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Preciso de ajuda!"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Está tudo bem!"
+        }
+      ]
+    }
+  ]
+}

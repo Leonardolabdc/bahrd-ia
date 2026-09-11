@@ -1,0 +1,9 @@
+/* @import precisa vir antes de qualquer outra regra — exigência do CSS. */
+@import "./estilos/painel.css";
+
+/* O sistema de design do painel vem do protótipo validado, em tokens de CSS
+   (importado acima). O Tailwind fica disponível para componentes novos
+   (shadcn/ui, decisão D6) e não redefine esses tokens. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

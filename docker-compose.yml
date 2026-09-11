@@ -1,0 +1,282 @@
+# ============================================================================
+# POC IA — Central de Monitoramento Bahrd
+#
+# AMBIENTE DE DESENVOLVIMENTO. Não é deploy (doc 02 §3.4).
+# Produção é OKE/Compute na OCI, a partir das mesmas imagens publicadas no
+# OCIR — nunca "subir o compose numa VM e chamar de deploy".
+#
+#   docker compose up -d                        sobe a pilha
+#   docker compose run --rm migrate             cria usuário + aplica migrações
+#   docker compose logs -f api worker           acompanha
+#   docker compose down -v                      derruba e apaga os volumes
+#
+# Portas ficam presas em 127.0.0.1: banco de desenvolvimento não vai para a LAN.
+# ============================================================================
+
+name: bahrd-ia
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: docker/backend.Dockerfile
+    target: runtime
+  image: bahrd-ia/backend:dev
+  env_file: [.env]
+  # Código montado só em desenvolvimento — a imagem é autossuficiente.
+  volumes:
+    - ./src:/app/src:ro
+    - ./prompts:/app/prompts:ro
+    - ./migrations:/app/migrations:ro
+    - ./tests:/app/tests:ro
+    - ./alembic.ini:/app/alembic.ini:ro
+    # A aplicação lê o corpo dos modelos para saber o que o cliente já recebeu.
+    - ./infra/templates-whatsapp:/app/infra/templates-whatsapp:ro
+  networks: [central]
+  restart: unless-stopped
+
+services:
+  # ───────────────────────── Dados ─────────────────────────
+
+  oracle:
+    # ⛔ **Fixada por digest, e não por tag.** Ficou em `:latest` até 09/09/2026,
+    # e nesse dia a conferência mostrou por que isso não serve de especificação:
+    # a `:latest` já não era mais a 23ai que o comentário abaixo pedia — tinha
+    # virado **Oracle AI Database 26ai** (`version=23.26.0`) sem ninguém
+    # perceber. Quem subisse o projeto num dia diferente podia pegar um banco de
+    # versão maior diferente do que foi testado.
+    #
+    # O digest abaixo é exatamente a imagem em que a suíte roda hoje. Para
+    # atualizar de propósito: puxar a nova, rodar as migrações e os testes, e
+    # trocar o digest — nunca voltar para `:latest`.
+    #
+    # VECTOR e BLOCKCHAIN TABLE continuam sendo o requisito; a 26ai as tem.
+    # ⚠️ Imagem x86-64. Em Mac com chip M, rodar sob emulação (lenta) ou
+    #    apontar ORACLE_DSN para uma instância remota (doc 03 §2).
+    image: container-registry.oracle.com/database/free@sha256:696eee2ee8985af25ef0dc4cbcac14cdaadfd4545150a87d82d9724ce43c7a77
+    environment:
+      ORACLE_PWD: ${ORACLE_SYS_PASSWORD}
+      ORACLE_CHARACTERSET: AL32UTF8
+    ports:
+      - "127.0.0.1:1521:1521"
+    volumes:
+      - oracle-dados:/opt/oracle/oradata
+    healthcheck:
+      # O primeiro boot cria o banco e leva vários minutos — daí o start_period.
+      # O script é `checkDBStatus.sh`; `healthcheck.sh` é da imagem da
+      # comunidade (gvenzl), não desta.
+      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 300s
+    networks: [central]
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --max-connections=200
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql-dados:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks: [central]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # AOF ligado: o barramento de eventos não pode perder ocorrência num
+    # restart do container (doc 02 §3.2).
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-dados:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [central]
+    restart: unless-stopped
+
+  minio:
+    # Paridade real, não aproximação: a OCI Object Storage tem API compatível
+    # com S3, então o mesmo cliente boto3 serve os dois (doc 02 §3.4).
+    # RELEASE.2025-09-07T16-13-09Z, fixada por digest pelo mesmo motivo do
+    # Oracle: `:latest` não é especificação, e a TI precisa poder subir em
+    # outubro o mesmo que foi testado em setembro.
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"   # console web
+    volumes:
+      - minio-dados:/data
+    networks: [central]
+    restart: unless-stopped
+
+  minio-bucket:
+    # Cria o bucket de áudio uma vez e sai. Equivale ao bucket privado que a
+    # TI provisiona na OCI (doc 03 §7).
+    # mc 9.6, fixada por digest.
+    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+    depends_on: [minio]
+    env_file: [.env]
+    entrypoint:
+      - sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"; do
+          echo "aguardando minio..."; sleep 2;
+        done
+        mc mb --ignore-existing "local/$$S3_BUCKET"
+        mc anonymous set none "local/$$S3_BUCKET"
+        echo "bucket $$S3_BUCKET pronto."
+    networks: [central]
+    restart: "no"
+
+  # ─────────────────────── Observabilidade ───────────────────────
+
+  otel:
+    # Coletor OTLP + UI do Jaeger. Na Fase 2 muda só o exportador (OCI APM):
+    # a instrumentação OpenTelemetry da aplicação continua idêntica.
+    # Jaeger v2 já é construído sobre o OpenTelemetry Collector: recebe OTLP
+    # em 4317/4318 sem configuração extra.
+    image: jaegertracing/jaeger:2.11.0
+    ports:
+      - "127.0.0.1:16686:16686"  # UI
+      - "127.0.0.1:4317:4317"    # OTLP gRPC
+      - "127.0.0.1:4318:4318"    # OTLP HTTP
+    networks: [central]
+    restart: unless-stopped
+
+  # ───────────────────────── Aplicação ─────────────────────────
+
+  api:
+    <<: *backend
+    command:
+      - uvicorn
+      - central_ia.api.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --reload                       # só em dev; a imagem não sabe disso
+      - --reload-dir=/app/src
+      # Os prompts também. Sem esta linha, editar um playbook não tem efeito
+      # nenhum: `prompts.py` guarda os arquivos em `lru_cache`, então o
+      # processo continua servindo o texto que leu ao subir. O sintoma é a IA
+      # repetindo uma frase que não existe mais em lugar nenhum do repositório.
+      - --reload-dir=/app/prompts
+      - --timeout-graceful-shutdown=30
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      oracle:
+        # Deliberadamente `started`, não `healthy`: o Oracle leva minutos e a
+        # API não precisa dele para subir. Quem reporta a indisponibilidade é
+        # /saude/pronto, não o processo morrendo.
+        condition: service_started
+
+  worker:
+    <<: *backend
+    command: ["arq", "central_ia.workers.main.WorkerSettings"]
+    # O HEALTHCHECK da imagem sonda a porta 8000, que só o `api` escuta.
+    # Aqui a sonda é a do próprio arq: lê no Redis o registro de saúde que o
+    # worker grava a cada 30s.
+    healthcheck:
+      test: ["CMD", "arq", "--check", "central_ia.workers.main.WorkerSettings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      oracle:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: dev
+    image: bahrd-ia/web:dev
+    env_file: [.env]
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./web:/app
+      - web-node-modules:/app/node_modules   # não deixa o host sobrescrever
+    networks: [central]
+    restart: unless-stopped
+
+  # ──────────────────────── Ferramentas ────────────────────────
+  # Perfil `ferramentas`: não sobe com `docker compose up`.
+
+  migrate:
+    <<: *backend
+    profiles: ["ferramentas"]
+    restart: "no"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "→ criando usuário CENTRAL_IA (só em dev)"
+        python -m migrations.oracle.bootstrap_local
+        echo "→ migrações do Oracle"
+        python -m migrations.oracle.runner
+        echo "→ migrações do MySQL"
+        alembic upgrade head
+        echo "migrações concluídas."
+    depends_on:
+      oracle:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  shell:
+    # `docker compose run --rm shell` para inspecionar dentro da imagem real.
+    <<: *backend
+    profiles: ["ferramentas"]
+    restart: "no"
+    entrypoint: ["/bin/bash"]
+
+  # voice-agent entra no Sprint 3, atrás do perfil `voz`, e só roda na VM com
+  # IP público — SIP/WebRTC não tem paridade em Docker atrás de NAT
+  # (doc 02 §3.4, armadilha 3). Em local, MODO_VOZ=voz_simulada injeta um WAV
+  # e grava a resposta do TTS em arquivo, sem SIP.
+
+volumes:
+  oracle-dados:
+  mysql-dados:
+  redis-dados:
+  minio-dados:
+  web-node-modules:
+
+networks:
+  central:
+    driver: bridge

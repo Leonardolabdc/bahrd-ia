@@ -1,0 +1,1 @@
+"""Routers do FastAPI."""

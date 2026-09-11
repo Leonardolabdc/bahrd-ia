@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# Roda antes de cada commit. Bloqueia o que não se desfaz depois.
+#
+# ⭐ POR QUE ESTE ARQUIVO EXISTE, tendo um `.pre-commit-config.yaml` ao lado.
+#
+# Aquele é o padrão da indústria e continua valendo — mas depende de `pip
+# install pre-commit`, e nem toda máquina do time tem Python instalado. A do
+# Leonardo não tem: o `python` dela é o atalho da Microsoft Store, que não
+# executa nada.
+#
+# Uma proteção que só funciona em algumas máquinas protege em algumas máquinas.
+# Este arquivo usa **só Git e shell**, que existem em qualquer clone, e cobre o
+# essencial: segredo e dado pessoal. Quem tiver Python ganha o resto pelo
+# pre-commit; quem não tiver, continua protegido do que importa.
+#
+# Instalar (uma vez por clone):
+#
+#     git config core.hooksPath .githooks
+#
+# Pular num commit específico, quando você sabe o que está fazendo:
+#
+#     git commit --no-verify
+
+set -e
+
+vermelho() { printf '\033[31m%s\033[0m\n' "$1"; }
+barrado=0
+
+recusar() {
+  vermelho "  BLOQUEADO: $1"
+  barrado=1
+}
+
+# Só o que está no índice: o que não vai neste commit não é problema deste hook.
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+# ── 1. Arquivos que nunca entram ──────────────────────────────────────────────
+#
+# O `.gitignore` já cobre. Isto pega o `git add -f` distraído, que é justamente
+# o caso em que o .gitignore não ajuda.
+for arquivo in $staged; do
+  case "$arquivo" in
+    .env|.env.local|.env.*.local|*.pem|*.key|wallet/*)
+      recusar "$arquivo não pode ser versionado" ;;
+    # De `docs/`, sobem os numerados referenciados no README. Estas três
+    # subpastas não: documento superado, print de conversa de gestor, e
+    # planilha com dado real de cliente.
+    docs/arquivo/*|docs/interno/*|docs/exemplos/*)
+      recusar "$arquivo é material interno e não sobe" ;;
+  esac
+done
+
+# ── 2. Credencial no conteúdo ─────────────────────────────────────────────────
+#
+# Os prefixos que os fornecedores deste projeto usam. Não é varredura completa
+# — o gitleaks no CI faz isso. É a rede que pega o copiar-e-colar de `.env`.
+padroes='sk-or-v1-[A-Za-z0-9]\{32,\}\|sk-ant-[A-Za-z0-9-]\{32,\}\|EAA[A-Za-z0-9]\{60,\}\|sk-lf-[0-9a-f-]\{30,\}\|pk-lf-[0-9a-f-]\{30,\}\|SG\.[A-Za-z0-9_-]\{20,\}\|AKIA[0-9A-Z]\{16\}\|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+
+achado=$(git diff --cached -U0 | grep -n '^+' | grep "$padroes" || true)
+if [ -n "$achado" ]; then
+  recusar "credencial no conteúdo (chave de API ou privada)"
+fi
+
+# `AC` + 32 hex é Twilio, mas também é qualquer hash — exige o nome da variável
+# por perto para não recusar commit legítimo.
+if git diff --cached -U0 | grep -n '^+' | grep -qi 'TWILIO_[A-Z_]*=[A-Za-z0-9]\{20,\}'; then
+  recusar "credencial do Twilio preenchida"
+fi
+
+# ── 3. Telefone de gente de verdade ───────────────────────────────────────────
+#
+# Mesma regra do `tests/test_nada_de_dado_real_no_repositorio.py`: número
+# inventado é feito de repetição, número de gente não é. Cinco ou mais dígitos
+# distintos na parte do assinante e ele provavelmente é de alguém.
+numeros=$(git diff --cached -U0 -- '*.py' | grep '^+' | grep -o '\b55[0-9]\{2\}9\?[0-9]\{8\}\b' | sort -u || true)
+for numero in $numeros; do
+  distintos=$(printf '%s' "$numero" | cut -c5- | fold -w1 | sort -u | wc -l)
+  if [ "$distintos" -ge 5 ]; then
+    recusar "$numero tem cara de ser de uma pessoa de verdade — use dígitos repetidos"
+  fi
+done
+
+# ── 4. Arquivo grande ─────────────────────────────────────────────────────────
+#
+# O repositório inteiro tem menos de 1 MB. Qualquer arquivo perto de 500 KB é
+# dump de banco, gravação de áudio ou dependência commitada por engano.
+for arquivo in $staged; do
+  [ -f "$arquivo" ] || continue
+  kb=$(($(wc -c < "$arquivo") / 1024))
+  if [ "$kb" -gt 500 ]; then
+    recusar "$arquivo tem ${kb} KB — grande demais para este repositório"
+  fi
+done
+
+if [ "$barrado" -eq 1 ]; then
+  echo ""
+  vermelho "Commit recusado. Nada disto se desfaz com 'git revert':"
+  vermelho "segredo e dado pessoal ficam no histórico para sempre."
+  echo ""
+  echo "Se for falso positivo:  git commit --no-verify"
+  exit 1
+fi
+
+exit 0

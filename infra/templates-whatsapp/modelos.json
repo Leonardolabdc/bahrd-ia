@@ -1,0 +1,157 @@
+{
+  "_leia": [
+    "Manifesto dos modelos de mensagem aprovados na Meta.",
+    "",
+    "Existe porque o mapa nome->arquivo precisava viver em dois lugares: o",
+    "enviar.ps1, que publica os modelos, e a aplicação, que precisa saber o",
+    "texto que o cliente recebeu para não repetir tudo de novo na primeira",
+    "resposta da IA. Duas listas divergiriam na primeira edição de modelo.",
+    "",
+    "O 'id' é o id do modelo na Meta, usado para EDITAR. Não é segredo: sem o",
+    "token de acesso ele não abre nada.",
+    "",
+    "Ao acrescentar um modelo: crie o .json, registre aqui, rode o enviar.ps1.",
+    "",
+    "'criar': true marca o modelo que ainda NÃO existe na Meta — por isso não",
+    "tem 'id'. O enviar.ps1 pula esses no uso normal e só os cria com o",
+    "parâmetro -Criar. Sem isso, uma correção de rotina num modelo antigo",
+    "publicaria de carona um modelo que ninguém mandou publicar.",
+    "",
+    "⛔ ESTA LISTA É A COTA DE EDIÇÃO. A Meta só deixa editar cada modelo uma",
+    "vez a cada 24 h, e o enviar.ps1 edita TODOS os que estão aqui. Modelo que",
+    "o código não usa mais não pode ficar na lista: ele queima a cota do dia",
+    "sem motivo, e é isso que aconteceu em 26/08/2026.",
+    "",
+    "Eram oito até 10/09/2026. Saíram cinco de uma vez — evento_bateria_removida",
+    "e evento_movimento_sem_ignicao (com e sem mapa), órfãos desde 02/09 quando",
+    "o evento_alerta passou a receber o tipo do evento como parâmetro, e o",
+    "evento_panico_mapa, que saiu quando o pânico deixou de levar cartão de",
+    "mapa. Os cinco continuam APROVADOS na Meta, apenas não são mais mantidos",
+    "aqui — apagar lá é decisão à parte, e não é necessária.",
+    "",
+    "Em 10/09/2026 entraram as tres variantes _nome, que abrem chamando a pessoa",
+    "pelo nome. As tres SEM nome continuam aqui e viraram a RESERVA: contato_nome",
+    "e opcional no payload e a Meta recusa parametro vazio, entao sem nome a rota",
+    "cai para o modelo que abre so com a saudacao.",
+    "",
+    "Foram CRIADAS, e nao editadas em cima das antigas, porque acrescentar",
+    "variavel muda a contagem de parametros — e envio com contagem errada a Meta",
+    "recusa. Editar no lugar abriria uma janela entre a aprovacao e a troca no",
+    "codigo em que nenhuma notificacao sairia. Criar tambem escapa da trava de",
+    "24 h, que so vale para edicao.",
+    "",
+    "Ainda em 10/09/2026 o panico ganhou cartao de mapa, por pedido do Leonardo.",
+    "O evento_panico_mapa ja existia na Meta com cabecalho de localizacao e UM",
+    "parametro — a mesma contagem do texto novo —, entao foi editado no lugar,",
+    "sem janela de quebra. O evento_panico_mapa_nome e novo.",
+    "",
+    "Com isso os dois eventos passam a ter a mesma cadeia de quatro:",
+    "    mapa+nome -> mapa -> texto+nome -> texto",
+    "",
+    "AINDA EM 10/09/2026, a geracao _saudacao. O primeiro parametro passou a ser a",
+    "abertura inteira — 'Bom dia, Geraldo' ou so 'Bom dia' —, com a saudacao",
+    "escolhida pela hora do evento.",
+    "",
+    "Ela APOSENTA as quatro variantes _nome, criadas poucas horas antes: com a",
+    "saudacao sempre presente, o nome deixou de precisar de um modelo so para ele.",
+    "As _nome seguem aprovadas na Meta e fora do manifesto — como as outras cinco",
+    "que sairam de manha, apagar la e decisao a parte e nao e necessaria.",
+    "",
+    "Os quatro sem saudacao (evento_alerta, _mapa, evento_panico, _mapa) FICAM,",
+    "como reserva: sao os aprovados e provados, e e para eles que a cadeia cai se",
+    "a Meta demorar ou reprovar a geracao nova.",
+    "",
+    "Ainda em 10/09/2026, os dois de alerta viraram _pergunta: o corpo terminava",
+    "apontando para 'as opcoes abaixo' e o RODAPE renderiza justamente entre o",
+    "corpo e os botoes, em posicao fixa. A frase apontava e o rodape aparecia no",
+    "lugar. Agora termina em pergunta, que nao aponta para lugar nenhum.",
+    "",
+    "Foram CRIADOS e nao editados porque os _saudacao tinham sido editados horas",
+    "antes para ganhar o rodape, e a trava de 24 h da Meta recusou a segunda",
+    "edicao no mesmo dia.",
+    "",
+    "O panico nao mudou: o corpo dele ja terminava em pergunta."
+  ],
+  "modelos": [
+    {
+      "nome": "evento_alerta",
+      "arquivo": "alerta-texto.json",
+      "id": "1078877878160867",
+      "parametros": [
+        "evento",
+        "placa",
+        "horario",
+        "local"
+      ]
+    },
+    {
+      "nome": "evento_alerta_mapa",
+      "arquivo": "alerta-mapa.json",
+      "id": "932301352640088",
+      "parametros": [
+        "evento",
+        "placa",
+        "horario",
+        "local"
+      ]
+    },
+    {
+      "nome": "evento_panico",
+      "arquivo": "panico-texto.json",
+      "id": "2074446019937677",
+      "parametros": [
+        "placa"
+      ]
+    },
+    {
+      "nome": "evento_panico_mapa",
+      "arquivo": "panico-mapa.json",
+      "id": "1383681637236874",
+      "parametros": [
+        "placa"
+      ]
+    },
+    {
+      "nome": "evento_panico_saudacao",
+      "arquivo": "panico-saudacao.json",
+      "id": "1042017718676038",
+      "parametros": [
+        "abertura",
+        "placa"
+      ]
+    },
+    {
+      "nome": "evento_panico_saudacao_mapa",
+      "arquivo": "panico-saudacao-mapa.json",
+      "id": "1440539874647997",
+      "parametros": [
+        "abertura",
+        "placa"
+      ]
+    },
+    {
+      "nome": "evento_alerta_pergunta",
+      "arquivo": "alerta-pergunta.json",
+      "id": "1614189760340529",
+      "parametros": [
+        "abertura",
+        "evento",
+        "placa",
+        "horario",
+        "local"
+      ]
+    },
+    {
+      "nome": "evento_alerta_pergunta_mapa",
+      "arquivo": "alerta-pergunta-mapa.json",
+      "id": "1824475048554354",
+      "parametros": [
+        "abertura",
+        "evento",
+        "placa",
+        "horario",
+        "local"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# Varredura de segredo no histórico inteiro. Roda no CI e no hook local.
+#
+# A regra base é a que vem com o gitleaks. Este arquivo existe só para declarar
+# as exceções, e cada uma precisa de um motivo escrito — exceção sem
+# justificativa é como a primeira senha de produção entra num repositório.
+
+title = "bahrd-ia"
+
+[extend]
+useDefault = true
+
+[[rules]]
+# Mantém a regra genérica de chave de API, que é a que pega o caso comum:
+# alguém colando um valor de alta entropia num arquivo versionado.
+id = "generic-api-key"
+description = "Chave ou senha de alta entropia atribuída a uma variável"
+regex = '''(?i)(?:key|api|token|secret|client|passwd|password|auth|access)[a-z0-9_\- ]{0,25}(?:=|>|:=|\|\|:|<=|=>|:)[[:space:]]*['\"]?([0-9a-z\-_=]{8,64})['\"]?'''
+entropy = 3.5
+keywords = ["key", "api", "token", "secret", "password", "passwd", "auth"]
+
+[rules.allowlist]
+# ⚠️ **A senha do Oracle local, e só ela.**
+#
+# O `docker-compose.yml` sobe um Oracle Free na máquina de quem desenvolve, e
+# ele exige senha que atenda à política de complexidade da Oracle. Este valor
+# está no `.env.example` porque é o que faz `make setup && make up` funcionar
+# num clone novo, sem ninguém precisar inventar uma senha que o banco aceite.
+#
+# Ele nunca sai da máquina: o contêiner não é exposto para fora do Docker, e em
+# produção o `ORACLE_PASSWORD` vem do ambiente, nunca deste arquivo.
+#
+# A exceção é pelo **valor**, de propósito, e não pelo caminho do arquivo. Se
+# alguém colar uma senha de verdade no `.env.example` amanhã, o CI continua
+# reprovando — que é exatamente o trabalho desta varredura.
+regexes = ['''CentralIA_Dev1''']
