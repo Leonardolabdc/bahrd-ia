@@ -7,12 +7,12 @@
 wallet/
 wallet*.zip
 
-# Documentação interna — a pasta `docs/` inteira fica fora do repositório e
-# **nunca vai para o GitHub**. Ela reúne material de reunião, resposta da TI da
-# Bahrd, número de teste, transcrição real da Vetor (nome de motorista, placa,
-# endereço, protocolo), export da plataforma com IMEI e coordenada exata, e
-# rascunho com token da Meta colado dentro. Nada disso pode ser publicado.
-# Vive só no disco local. O que precisar ser público vira README ou docstring.
+# A pasta `docs/` é NEGADA POR PADRÃO, e cada documento entra na lista de
+# exceções mais abaixo, um a um. Esta linha é a negação; a lista é o consentimento.
+#
+# O padrão invertido — permitir tudo e excluir o que não pode — falha do lado
+# errado: o documento que ninguém lembrou de excluir vai junto. Aqui o esquecimento
+# tem o efeito oposto, e o arquivo simplesmente não aparece no `git status`.
 docs/*
 
 # Dados de volume local
@@ -46,26 +46,23 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# --- docs/ ---
+# --- a lista de exceções ---
 #
-# A pasta inteira fica de fora, e as excecoes abaixo entram uma a uma.
+# Documento novo só aparece no Git se for acrescentado aqui. É de propósito: o
+# padrão é não publicar, e publicar é decisão consciente.
 #
-# Sobem apenas os documentos REFERENCIADOS no README: sem eles os links do
-# README dariam 404 no GitHub, e uma tabela de links quebrados parece pior do
-# que nao ter tabela. Sao a documentacao do sistema da propria Bahrd, indo para
-# o repositorio privado dela.
+# Rascunho, anotação de reunião e qualquer coisa com dado de terceiro ficam no
+# disco local e nunca ganham uma linha aqui.
 #
-# FICAM DE FORA, e e o motivo de a regra ser lista e nao "docs/*.md":
-#   arquivo/    documentos superados, guardados porque contam POR QUE decisoes
-#               foram tomadas — apagar some com a resposta
-#   interno/    prints de conversas dos gestores
-#   exemplos/   Relatorio de Eventos.xls, com dado real de cliente
-#
-# Documento novo so aparece no Git se for acrescentado aqui. E de proposito: o
-# padrao e nao publicar, e publicar e decisao consciente.
+# Para uma PASTA, a exceção precisa vir antes dos arquivos dentro dela: o Git
+# não desce numa pasta ignorada, e a regra de dentro nunca seria avaliada.
+!docs/adr/
+!docs/architecture/
 !docs/02-plano-execucao-backend.md
 !docs/04-ambiente-docker.md
 !docs/05-deploy-oci.md
 !docs/06-custo-mensal.md
 !docs/07-seguranca.md
 !docs/fluxo-genaiura.png
+!docs/auditoria-prototipo.md
+!docs/decisao-stack.md
