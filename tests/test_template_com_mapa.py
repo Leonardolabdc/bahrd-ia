@@ -20,7 +20,7 @@ from central_ia.integrations.mensageria.meta import MetaIndisponivel
 from central_ia.integrations.rastreamento.bahrd import EventoRastreamento
 from central_ia.orchestration.sessao_whatsapp import Sessao, Sessoes
 
-DADOS = {"placa": "ABC-1234", "interlocutor": "Antônio da Silva"}
+DADOS = {"placa": "ABC-1234", "interlocutor": "Bruno da Silva"}
 
 
 @pytest.fixture(autouse=True)

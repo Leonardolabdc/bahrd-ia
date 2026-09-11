@@ -20,7 +20,7 @@ from central_ia.api.rotas import whatsapp as rota
 from central_ia.domain import eventos as catalogo
 from central_ia.orchestration.sessao_whatsapp import Sessao, Sessoes
 
-DADOS = {"placa": "ABC-1234", "interlocutor": "Geraldo da Silva"}
+DADOS = {"placa": "ABC-1234", "interlocutor": "Ana da Silva"}
 
 
 # ─────────────────────────── o que é pedido ───────────────────────────
@@ -187,7 +187,7 @@ async def test_a_despedida_avisa_a_transferencia_e_usa_o_nome(monkeypatch, sessa
     await rota._entregar_a_um_humano(_Cfg(), sessao, "atendente")
 
     (frase,) = ditas
-    assert "Geraldo" in frase, "só o primeiro nome, e ele precisa estar lá"
+    assert "Ana" in frase, "só o primeiro nome, e ele precisa estar lá"
     assert "da Silva" not in frase
     assert "operador" in frase.lower()
     # E o cliente vê a frase no painel também, senão o operador acha que a IA

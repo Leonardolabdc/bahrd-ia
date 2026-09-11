@@ -1035,7 +1035,7 @@ Isso não é só estética. Um operador de central 24 h em plantão de madrugada
 ```
 TELA 1 · o que precisa de você
 ┌───────────────────────────────────────────────────────────────┐
-│  ◆ Central IA          ● IA ativa        Desligar IA  Leonardo│
+│  ◆ Central IA          ● IA ativa        Desligar IA  a operação│
 ├───────────────────────────────────────────────────────────────┤
 │  Precisa de você  2      A IA está cuidando  7                │
 ├───────────────────────────────────────────────────────────────┤
@@ -1100,7 +1100,7 @@ Em vez de seis elementos de UI por linha (chip de canal, contador de turno, selo
 
 ```
 ▌ Remoção de bateria                    ALTA                          0:38
-▌ GHI7J89 · Antônio Ramos                                          de 1:30
+▌ GHI7J89 · Bruno Ramos                                          de 1:30
 ▌ ● Perguntando se ele desligou a chave geral
 ```
 

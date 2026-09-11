@@ -1,6 +1,6 @@
 """A Central troca o cérebro que atende o cliente, e a troca vale da próxima conversa.
 
-Pedido do Leonardo em 03/09/2026: *"o seletor de selecionar o modelo precisa
+Pedido da operação: *"o seletor de selecionar o modelo precisa
 trocar o modelo somente na próxima conversa, para caso as respostas aos clientes
 estejam ruins alguém da central pode trocar o modelo que responde no whats do
 cliente para assim melhorar a resposta ao cliente"*.
@@ -130,7 +130,7 @@ def test_a_troca_nao_existe_com_a_tela_desligada(monkeypatch) -> None:
 
 
 def test_a_reprovacao_do_flash_lite_continua_registrada(cliente: TestClient) -> None:
-    """⚠️ **A tela deixou de dizer isto em 03/09/2026, a pedido do Leonardo.**
+    """⚠️ **A tela deixou de dizer isto em 03/09/2026, a pedido da operação.**
 
     Saíram, em três pedidos seguidos: o selo "não aprovado para produção", o
     resumo e os dois defeitos medidos (tratou possível roubo como rotina; 9% das

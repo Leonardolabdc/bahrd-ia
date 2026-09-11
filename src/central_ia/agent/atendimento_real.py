@@ -67,7 +67,7 @@ MARCA_AGUARDAR = "[[AGUARDAR]]"
 _ESCALAR = re.compile(re.escape(MARCA_ESCALONAMENTO), re.IGNORECASE)
 #: `[[ENCERRAR:desfecho]]` ou `[[ENCERRAR:desfecho:4h]]`.
 #:
-#: ⭐ **O sufixo de horas existe por uma regra do gestor da Central**, de
+#: ⭐ **O sufixo de horas existe por uma regra da Central**, de
 #: 02/09/2026: num transporte, se o cliente disser quanto tempo leva, os
 #: alarmes ficam suprimidos por esse tempo; se ele não souber, por duas horas.
 #: Quem sabe a duração é quem está com o veículo, e antes disso não havia como
@@ -124,7 +124,7 @@ PENSE ANTES DE RESPONDER, e pense sobre a PESSOA, não sobre o roteiro.
 
 **O que você pensa NÃO entra na mensagem.** Pensar é aqui dentro; o que sai é
 só a fala pronta. Em 28/08/2026 a IA escreveu «Boa tarde... já cumprimentei.
-Antônio, você costuma desligar a chave geral...» e mandou a própria dúvida
+Bruno, você costuma desligar a chave geral...» e mandou a própria dúvida
 sobre cumprimentar para o celular do cliente.
 
 Se estiver em dúvida entre dois jeitos de dizer, escolha um e escreva. Nunca

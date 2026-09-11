@@ -17,7 +17,7 @@ from central_ia.domain import eventos
 from central_ia.orchestration.sessao_whatsapp import Sessoes
 
 TELEFONE = "whatsapp:+5541999999999"
-DADOS = {"placa": "GHI7J89", "interlocutor": "Antônio Ramos"}
+DADOS = {"placa": "GHI7J89", "interlocutor": "Bruno Ramos"}
 
 
 def _cfg(escalonamento: bool) -> Settings:
@@ -88,12 +88,12 @@ def test_a_frase_final_nunca_promete_transferencia_sem_operador() -> None:
     """
     from central_ia.agent.atendimento_real import despedida
 
-    sem = despedida("Antônio Ramos", com_operador=False)
+    sem = despedida("Bruno Ramos", com_operador=False)
     assert "colega" not in sem.lower()
     assert "instante" not in sem.lower()
-    assert "Antônio" in sem, "chamar pelo nome é o mínimo numa despedida"
+    assert "Bruno" in sem, "chamar pelo nome é o mínimo numa despedida"
 
-    com = despedida("Antônio Ramos", com_operador=True)
+    com = despedida("Bruno Ramos", com_operador=True)
     assert "colega" in com.lower()
 
 

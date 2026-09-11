@@ -170,7 +170,7 @@ class Settings(BaseSettings):
     llm_provider: ProvedorLLM = "anthropic"
 
     openrouter_api_key: SegredoOpcional = None
-    #: ⚠️ **Passou a ser o Flash Lite em 03/09/2026, a pedido do Leonardo**, que
+    #: ⚠️ **Passou a ser o Flash Lite em 03/09/2026, a pedido da operação**, que
     #: quis o mais barato como padrão da tela de teste.
     #:
     #: ⛔ E ele está **reprovado para produção**: em 55 conversas medidas tratou
@@ -336,7 +336,7 @@ class Settings(BaseSettings):
     # Não é a triagem errando; é ela decidindo no escuro.
     #
     # Em 02/09/2026 a triagem falhou em 8 de 9 disparos de teste, e a decisão do
-    # Leonardo foi desligá-la para conseguir exercitar o playbook. A alternativa
+    # A operação foi desligá-la para conseguir exercitar o playbook. A alternativa
     # sem chave nenhuma é usar `"rotulo": "XYZ4E56"`, que traz o contexto
     # completo de um acionamento acidental.
     #

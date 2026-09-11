@@ -3,7 +3,7 @@
 **Conversa real, 25/08/2026.** O template chegou dizendo evento, placa e local.
 O motorista respondeu "Olá vou ver aqui". A IA respondeu:
 
-    Bom dia, Antônio! Aqui é a assistente virtual da Bahrd. O sistema acusou
+    Bom dia, Bruno! Aqui é a assistente virtual da Bahrd. O sistema acusou
     agora que a bateria do caminhão ABC1234 foi desligada. Beleza, fico no
     aguardo.
 
@@ -164,7 +164,7 @@ def test_registrar_template_escreve_nos_dois_lugares() -> None:
         "+5541999999999",
         catalogo.por_codigo("REMOCAO_BATERIA"),
         "TEXTO",
-        {"placa": PLACA, "interlocutor": "Antônio"},
+        {"placa": PLACA, "interlocutor": "Bruno"},
     )
     antes = len(sessao.historico)
 

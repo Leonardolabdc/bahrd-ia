@@ -31,7 +31,7 @@ a placa que vai é a do evento que abriu a conversa.
 
 ## Por que "enquanto no local" e não uma data
 
-Decisão do gestor da Central, 26/08/2026, confirmada pelo Leonardo em 27/08.
+Decisão da Central, confirmada pela operação.
 
 O desenho original perguntava a data de saída da oficina. O gestor mostrou por
 que não funciona: *"o cliente informa que fica em manutenção até as 17h, chega

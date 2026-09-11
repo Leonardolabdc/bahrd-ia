@@ -37,10 +37,10 @@ def test_dirigindo_ainda_recebe_boa_viagem(codigo: str) -> None:
 
 def test_evento_desconhecido_cai_no_neutro() -> None:
     """O padrão serve para quem dirige, para quem parou e para quem observa."""
-    frase = despedida_de_encerramento("EVENTO_QUE_NAO_EXISTE", "Antônio")
+    frase = despedida_de_encerramento("EVENTO_QUE_NAO_EXISTE", "Bruno")
 
     assert "viagem" not in frase.lower()
-    assert "Antônio" in frase
+    assert "Bruno" in frase
 
 
 def test_usa_so_o_primeiro_nome() -> None:
@@ -61,5 +61,5 @@ def test_sem_nome_nao_deixa_virgula_solta() -> None:
 
 
 def test_nome_de_ficha_com_grupo_pega_so_a_pessoa() -> None:
-    """A amostra traz `"Antônio, GRUPO X"` — o grupo não é o interlocutor."""
-    assert "GRUPO" not in despedida_de_encerramento("REMOCAO_BATERIA", "Antônio, GRUPO X")
+    """A amostra traz `"Bruno, GRUPO X"` — o grupo não é o interlocutor."""
+    assert "GRUPO" not in despedida_de_encerramento("REMOCAO_BATERIA", "Bruno, GRUPO X")

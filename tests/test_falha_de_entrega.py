@@ -29,7 +29,7 @@ from central_ia.integrations.mensageria.meta import StatusDeEntrega
 from central_ia.orchestration.sessao_whatsapp import SESSOES
 
 TELEFONE = "+5541999999999"
-DADOS = {"placa": "ABC-1234", "interlocutor": "Antônio da Silva"}
+DADOS = {"placa": "ABC-1234", "interlocutor": "Bruno da Silva"}
 
 
 def _cfg(**extra: object) -> Settings:

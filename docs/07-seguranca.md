@@ -62,10 +62,10 @@ nome e placa por marcadores antes de montar o prompt, e restaurar na entrega:
 
 ```
 nós → modelo:      "Oi, {{MOTORISTA}}, o caminhão {{VEICULO}}..."
-modelo → cliente:  "Oi, Antônio, o caminhão GHI7J89..."
+modelo → cliente:  "Oi, Bruno, o caminhão GHI7J89..."
 ```
 
-Cobre o que **nós** injetamos. O que a pessoa escreve — "aqui é o Antônio" —
+Cobre o que **nós** injetamos. O que a pessoa escreve — "aqui é o Bruno" —
 precisa de detecção de PII na entrada; o OCI Language faz isso, mas a
 documentação só confirma inglês (ver `06-custo-mensal.md`).
 
@@ -172,7 +172,7 @@ saída é substituição de texto: determinística, sem RAM, sem latência, sem
 dependência.
 
 O LLM Guard só seria necessário para o que **o cliente digita** — *"aqui é o
-Antônio da Silva"*. E aí vem a ressalva que decide: **esses modelos são treinados
+Bruno da Silva"*. E aí vem a ressalva que decide: **esses modelos são treinados
 em inglês**, e a qualidade em português brasileiro é desconhecida. É o mesmo
 problema que o [06 · Custo](06-custo-mensal.md) já registra sobre o OCI Language.
 

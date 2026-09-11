@@ -109,12 +109,12 @@ def test_o_logradouro_e_lido_sob_qualquer_nome_conhecido(chave: str) -> None:
             "rotulo": "ABC-1234",
             "tipo_evento": "Remoção de bateria",
             "data_hora_evento": "2026-08-27 18:30:00",
-            chave: "Rua Carlos Coelho Junior, 630 - Curitiba/PR",
+            chave: "Rua das Palmeiras, 100 - Curitiba/PR",
         }
     )
 
-    assert evento.endereco == "Rua Carlos Coelho Junior, 630 - Curitiba/PR"
-    assert local_do_evento(evento) == "Rua Carlos Coelho Junior, 630 - Curitiba/PR"
+    assert evento.endereco == "Rua das Palmeiras, 100 - Curitiba/PR"
+    assert local_do_evento(evento) == "Rua das Palmeiras, 100 - Curitiba/PR"
 
 
 def test_logradouro_com_quebra_de_linha_e_higienizado() -> None:

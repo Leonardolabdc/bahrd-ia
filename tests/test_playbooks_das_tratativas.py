@@ -8,7 +8,7 @@ não sabe qual guincho aquele cliente tem credenciado.
 ⛔ **A verificação inteira saiu em 03/09/2026**, e com ela o campo do cadastro, o
 dado no contexto do modelo e a vigilância que observava a IA citando o nome antes
 da hora. O motivo é de operação, não de código: *"não validamos qual guincho é na
-realidade das tratativas aqui da empresa"* — Leonardo. O cadastro nunca foi
+realidade das tratativas aqui da empresa"* — a operação. O cadastro nunca foi
 conferido contra o que acontece, então a prova apontava para uma referência que
 ninguém mantém, e cobrava por isso o preço de manter o nome do guincho dentro do
 contexto do modelo a cada turno.
@@ -25,14 +25,14 @@ from central_ia.domain import eventos
 
 
 def test_playbook_pergunta_o_tempo_e_nao_a_empresa() -> None:
-    """⚠️ **A pergunta mudou em 02/09/2026, por regra do gestor da Central.**
+    """⚠️ **A pergunta mudou em 02/09/2026, por regra da Central.**
 
     O playbook mandava perguntar qual empresa estava rebocando e conferir o nome
     contra o guincho credenciado do cliente. Era uma verificação anti-roubo:
     quem está levando um veículo não sabe qual guincho aquele cliente tem.
 
     ⛔ **Essa verificação saiu**, e com ela a proteção. O que a Central pede
-    agora é a **duração**, para suprimir os alarmes pelo tempo certo. Leonardo,
+    agora é a **duração**, para suprimir os alarmes pelo tempo certo. A operação,
     repassando o gestor: *"não é para a IA perguntar qual empresa está fazendo o
     reboque, temos que colocar para ela perguntar por quanto tempo podemos
     desativar os alertas"*.
@@ -94,7 +94,7 @@ def test_panico_nunca_menciona_o_botao_antes_da_senha() -> None:
 
     Num teste real a IA escreveu *"o sistema registrou que o veículo AAA1111
     disparou o botão de pânico"* na abertura, e depois *"aparece aqui que o
-    botão foi acionado"*. Leonardo: *"tire a palavra botão, botãozinho e coisas
+    botão foi acionado"*. A operação: *"tire a palavra botão, botãozinho e coisas
     similares para a IA não ter essa referência"*.
 
     Agora a palavra não existe em momento nenhum, e o que entra no lugar é o
@@ -131,7 +131,7 @@ def test_panico_nao_ensina_a_dizer_botao_pelo_exemplo() -> None:
 
 
 def test_encerrados_lista_so_o_que_a_ia_fechou_sozinha() -> None:
-    """⛔ **Mudança de 03/09/2026, apontada pelo Leonardo.**
+    """⛔ **Mudança de 03/09/2026, apontada pela operação.**
 
     A lista trazia junto casos que uma pessoa resolveu: *"a IA fez o contato,
     mas a resposta ficou no meio do caminho... Roberto ligou para a oficina,

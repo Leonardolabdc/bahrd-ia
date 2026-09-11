@@ -79,7 +79,7 @@ class TestNaoQuebraOFluxoNormal:
             "Beleza. Os avisos desse veículo ficarão desconsiderados enquanto "
             "durar o transporte. Boa viagem!",
             "Entendi. Já registrei como chave geral desligada no pátio, então o "
-            "alerta encerra aqui. Boa noite, Antônio!",
+            "alerta encerra aqui. Boa noite, Bruno!",
             "Certo, Regina. Registrei como reboque autorizado e vou "
             "desconsiderar os alertas pelas próximas 3 horas. Obrigada!",
         ):

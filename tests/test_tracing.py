@@ -209,7 +209,7 @@ def test_sem_numero_nenhum_nao_inventa_uso() -> None:
 QUEM = tracing.Identificacao(
     ocorrencia="OC-2026-0001",
     telefone="+5541999999999",
-    nome="Antônio da Silva",
+    nome="Bruno da Silva",
     placa="ABC-1234",
 )
 
@@ -260,10 +260,10 @@ def test_sessao_agrupa_os_turnos_da_mesma_ocorrencia(monkeypatch: pytest.MonkeyP
 def test_com_a_porta_aberta_o_trace_leva_o_primeiro_nome(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`atendimento.REMOCAO_BATERIA.Antônio` — legível na lista, sem clicar.
+    """`atendimento.REMOCAO_BATERIA.Bruno` — legível na lista, sem clicar.
 
     Vinte atendimentos do mesmo tipo com o mesmo rótulo não ajudam a achar
-    nenhum. E é assim que a central se refere ao caso: "o do Antônio", não
+    nenhum. E é assim que a central se refere ao caso: "o do Bruno", não
     "a ocorrência OC-2026-08-25-3F2A-WA".
     """
     monkeypatch.setattr(tracing, "_conteudo", True)
@@ -272,13 +272,13 @@ def test_com_a_porta_aberta_o_trace_leva_o_primeiro_nome(
     with tracing.span_do_turno("REMOCAO_BATERIA", "TEXTO", QUEM):
         pass
 
-    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Antônio"
+    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Bruno"
     # Só o primeiro nome: sobrenome identifica melhor, e por isso não vai.
     assert "Silva" not in span.atributos["langfuse.trace.name"]
 
     # E os campos de busca, que é o que o Langfuse deixa filtrar.
     assert span.atributos["langfuse.user.id"] == "+5541999999999"
-    assert span.atributos["langfuse.trace.metadata.nome"] == "Antônio da Silva"
+    assert span.atributos["langfuse.trace.metadata.nome"] == "Bruno da Silva"
     assert span.atributos["langfuse.trace.metadata.placa"] == "ABC-1234"
 
 
@@ -295,7 +295,7 @@ def test_com_a_porta_fechada_nao_sai_nome_nem_telefone(
     assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA"
 
     texto = span.tudo_em_texto()
-    for pegada in ("Antônio", "Silva", "999999999", "ABC-1234"):
+    for pegada in ("Bruno", "Silva", "999999999", "ABC-1234"):
         assert pegada not in texto, f"'{pegada}' vazou com a porta fechada"
 
     # A ocorrência continua saindo: é identificador interno, não pessoa.
@@ -583,14 +583,14 @@ def test_notificacao_e_conversa_caem_na_mesma_sessao(monkeypatch: pytest.MonkeyP
 
     tracing.marcar_notificacao("REMOCAO_BATERIA", QUEM)
 
-    assert span.atributos["langfuse.trace.name"] == "notificacao.REMOCAO_BATERIA.Antônio"
+    assert span.atributos["langfuse.trace.name"] == "notificacao.REMOCAO_BATERIA.Bruno"
     assert span.atributos["langfuse.session.id"] == QUEM.ocorrencia
     assert span.atributos["evento.tipo"] == "REMOCAO_BATERIA"
 
     # A conversa usa a MESMA sessão — é o que agrupa os dois no Langfuse.
     with tracing.span_do_turno("REMOCAO_BATERIA", "TEXTO", QUEM):
         pass
-    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Antônio"
+    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Bruno"
     assert span.atributos["langfuse.session.id"] == QUEM.ocorrencia
 
 
@@ -605,7 +605,7 @@ def test_notificacao_obedece_a_mesma_trava_de_conteudo(monkeypatch: pytest.Monke
     tracing.marcar_notificacao("REMOCAO_BATERIA", QUEM)
 
     assert span.atributos["langfuse.trace.name"] == "notificacao.REMOCAO_BATERIA"
-    for pegada in ("Antônio", "Silva", "999999999", "ABC-1234"):
+    for pegada in ("Bruno", "Silva", "999999999", "ABC-1234"):
         assert pegada not in span.tudo_em_texto(), f"'{pegada}' vazou na notificação"
     # A ocorrência continua: identificador interno, não pessoa.
     assert span.atributos["langfuse.session.id"] == QUEM.ocorrencia
@@ -626,11 +626,11 @@ def test_o_rotulo_diz_o_numero_do_turno(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(tracing, "_conteudo", True)
     span = _tracer_falso(monkeypatch)
 
-    quem = tracing.Identificacao(ocorrencia="OC-1", nome="Antônio da Silva", turno=2)
+    quem = tracing.Identificacao(ocorrencia="OC-1", nome="Bruno da Silva", turno=2)
     with tracing.span_do_turno("REMOCAO_BATERIA", "TEXTO", quem):
         pass
 
-    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Antônio.turno-2"
+    assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.Bruno.turno-2"
     assert span.atributos["atendimento.turno_numero"] == 2
     # Metadado também: dá para filtrar "todos os turnos 3" e ver onde as
     # conversas costumam se arrastar.
@@ -646,12 +646,12 @@ def test_o_numero_do_turno_sai_ate_em_producao(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(tracing, "_conteudo", False)
     span = _tracer_falso(monkeypatch)
 
-    quem = tracing.Identificacao(ocorrencia="OC-1", nome="Antônio da Silva", turno=3)
+    quem = tracing.Identificacao(ocorrencia="OC-1", nome="Bruno da Silva", turno=3)
     with tracing.span_do_turno("REMOCAO_BATERIA", "TEXTO", quem):
         pass
 
     assert span.atributos["langfuse.trace.name"] == "atendimento.REMOCAO_BATERIA.turno-3"
-    assert "Antônio" not in span.tudo_em_texto()
+    assert "Bruno" not in span.tudo_em_texto()
     assert span.atributos["atendimento.turno_numero"] == 3
 
 
@@ -664,10 +664,10 @@ def test_notificacao_nao_ganha_numero_de_turno(monkeypatch: pytest.MonkeyPatch) 
     )
 
     tracing.marcar_notificacao(
-        "REMOCAO_BATERIA", tracing.Identificacao(ocorrencia="OC-1", nome="Antônio")
+        "REMOCAO_BATERIA", tracing.Identificacao(ocorrencia="OC-1", nome="Bruno")
     )
 
-    assert span.atributos["langfuse.trace.name"] == "notificacao.REMOCAO_BATERIA.Antônio"
+    assert span.atributos["langfuse.trace.name"] == "notificacao.REMOCAO_BATERIA.Bruno"
     assert "turno" not in span.atributos["langfuse.trace.name"]
 
 

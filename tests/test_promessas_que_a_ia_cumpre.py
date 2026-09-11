@@ -109,7 +109,7 @@ def test_a_recusa_da_supressao_tem_desfecho_proprio() -> None:
     """Roteiro A3, na segunda rodada: suprimiu o que o cliente pediu para manter.
 
         Cliente: não, prefiro continuar recebendo os avisos
-        IA:      Combinado, Antônio. Registrado como manutenção, tá tudo certo.
+        IA:      Combinado, Bruno. Registrado como manutenção, tá tudo certo.
         >> tratativa: inativar_enquanto_no_local
 
     O primeiro conserto do dia tirou a quebra técnica deste turno e revelou o
@@ -171,7 +171,7 @@ def test_os_tres_pares_de_autorizacao_seguem_a_mesma_regra() -> None:
 
 
 def test_o_raciocinio_da_ia_nao_vai_para_o_cliente() -> None:
-    """Roteiro A4: *"Boa tarde... já cumprimentei. Antônio, você costuma..."*
+    """Roteiro A4: *"Boa tarde... já cumprimentei. Bruno, você costuma..."*
 
     A dúvida dela sobre cumprimentar foi para o celular do cliente. A instrução
     já dizia "escreva APENAS a sua próxima mensagem", e isso cobria narrar ações
@@ -206,7 +206,7 @@ def test_a_persona_manda_usar_a_palavra_do_cliente_sem_traduzir() -> None:
 def test_a_persona_proibe_cumprimento_como_despedida() -> None:
     """Dois acabamentos que apareceram em quatro roteiros da rodada.
 
-    Encerrar com «já deixei registrado. Boa tarde, Antônio!» é cumprimentar na
+    Encerrar com «já deixei registrado. Boa tarde, Bruno!» é cumprimentar na
     saída. E cumprimentar no terceiro turno, depois de a pessoa já ter tocado
     dois botões, soa como alguém que acabou de chegar e não leu o que veio
     antes.
@@ -221,8 +221,8 @@ def test_a_persona_proibe_cumprimento_como_despedida() -> None:
     # Ela dizia "cumprimente uma vez só, na sua primeira mensagem escrita". No
     # caminho dos botões a primeira mensagem escrita pelo modelo é a TERCEIRA
     # da conversa, depois da notificação e da pergunta com botões, e ele
-    # obedeceu ao pé da letra: «Boa tarde, Antônio!» para quem já tinha lido
-    # "Que bom, Antônio! Só preciso saber o motivo" e tocado um botão.
+    # obedeceu ao pé da letra: «Boa tarde, Bruno!» para quem já tinha lido
+    # "Que bom, Bruno! Só preciso saber o motivo" e tocado um botão.
     #
     # A correção seguinte errou para o outro lado: proibiu cumprimentar depois
     # da notificação também. Isso é diferente, e é bom como está — quem responde
@@ -253,7 +253,7 @@ def test_a_persona_proibe_cumprimento_como_despedida() -> None:
     sessao = Sessoes().abrir(
         "+5541999998888", catalogo_eventos.por_codigo("REMOCAO_BATERIA"), "TEXTO", {}
     )
-    sessao.registrar_frase_com_botoes("Que bom, Antônio!", ["Em manutenção"])
+    sessao.registrar_frase_com_botoes("Que bom, Bruno!", ["Em manutenção"])
     marca = sessao.historico[-1].conteudo
     assert "Esta fala é SUA" in marca
     assert "não cumprimente de novo" in marca
@@ -326,7 +326,7 @@ def test_a_saudacao_nunca_fecha_a_mensagem() -> None:
     """A regra que o prompt pede três vezes e o modelo cumpre metade das vezes.
 
     Está na persona, está na instrução de turno, e mesmo assim saiu *"Perfeito,
-    já deixei configurado assim. Boa tarde, Antônio!"* no fecho de um
+    já deixei configurado assim. Boa tarde, Bruno!"* no fecho de um
     atendimento. "Bom dia" é cumprimento de chegada; no fim soa como quem
     estava indo embora e lembrou de falar.
 
@@ -337,19 +337,19 @@ def test_a_saudacao_nunca_fecha_a_mensagem() -> None:
     from central_ia.agent.escrita import sem_saudacao_no_fim
 
     assert (
-        sem_saudacao_no_fim("Perfeito, já deixei configurado assim. Boa tarde, Antônio!")
+        sem_saudacao_no_fim("Perfeito, já deixei configurado assim. Boa tarde, Bruno!")
         == "Perfeito, já deixei configurado assim."
     )
     assert (
-        sem_saudacao_no_fim("Combinado, Antônio, já deixei cadastrado. Boa noite!")
-        == "Combinado, Antônio, já deixei cadastrado."
+        sem_saudacao_no_fim("Combinado, Bruno, já deixei cadastrado. Boa noite!")
+        == "Combinado, Bruno, já deixei cadastrado."
     )
 
     # ⚠️ Cumprimento sozinho é resposta a um cumprimento dela, e sai inteiro.
     assert sem_saudacao_no_fim("Boa tarde!") == "Boa tarde!"
 
     # ⚠️ Na abertura ele é o certo, e não pode ser tocado.
-    abertura = "Boa tarde, Antônio! Você desligou a chave geral do veículo?"
+    abertura = "Boa tarde, Bruno! Você desligou a chave geral do veículo?"
     assert sem_saudacao_no_fim(abertura) == abertura
 
     # E mensagem sem saudação nenhuma volta idêntica, pontuação inclusive: a
@@ -370,7 +370,7 @@ def test_outro_motivo_tambem_suprime_no_local() -> None:
 
         Cliente: Tive que tirar a bateria porque o suporte dela enferrujou e
                  agora precisamos soldar outro
-        IA:      Entendi, Antônio, valeu por avisar! Vou registrar aqui que a
+        IA:      Entendi, Bruno, valeu por avisar! Vou registrar aqui que a
                  bateria foi retirada porque o suporte enferrujou e vocês
                  precisam soldar outro. Já tá certo aqui.
 
@@ -404,7 +404,7 @@ def test_outro_motivo_tambem_suprime_no_local() -> None:
 
 
 def test_a_ia_pergunta_antes_de_suprimir_em_todos_os_caminhos() -> None:
-    """Regra combinada com o Leonardo em 28/08/2026, lendo um atendimento real.
+    """Regra combinada com a operação, lendo um atendimento real.
 
         Cliente: Não varia bastante
         IA:      Entendi. Vou deixar os avisos desse veículo desconsiderados
@@ -451,9 +451,9 @@ def test_a_ia_pergunta_antes_de_suprimir_em_todos_os_caminhos() -> None:
 def test_o_cumprimento_repetido_e_cortado_no_codigo() -> None:
     """A regra estava em três lugares do prompt e saía mesmo assim.
 
-        IA:      Que bom, Antônio! Só preciso saber o motivo...
+        IA:      Que bom, Bruno! Só preciso saber o motivo...
         Cliente: (tocou) Desliguei a chave
-        IA:      Boa noite, Antônio! Isso costuma acontecer sempre nesse mesmo
+        IA:      Boa noite, Bruno! Isso costuma acontecer sempre nesse mesmo
                  lugar e horário?
 
     Ela já tinha chamado o cliente pelo nome duas mensagens antes. Instrução de
@@ -468,36 +468,36 @@ def test_o_cumprimento_repetido_e_cortado_no_codigo() -> None:
     from central_ia.orchestration.sessao_whatsapp import Sessoes
 
     assert (
-        sem_saudacao_no_inicio("Boa noite, Antônio! Isso costuma acontecer sempre?")
+        sem_saudacao_no_inicio("Boa noite, Bruno! Isso costuma acontecer sempre?")
         == "Isso costuma acontecer sempre?"
     )
     assert sem_saudacao_no_inicio("Entendi, foi você então.") == "Entendi, foi você então."
 
     tipo = catalogo_eventos.por_codigo("REMOCAO_BATERIA")
-    sessao = Sessoes().abrir("+5541999998888", tipo, "TEXTO", {"interlocutor": "Antônio"})
+    sessao = Sessoes().abrir("+5541999998888", tipo, "TEXTO", {"interlocutor": "Bruno"})
 
     # Só a notificação: ela ainda não falou, e o cumprimento é o certo.
     sessao.registrar_template("[notificação]", "A Bahrd Monitoramento informa...")
     assert not rota._ja_falou_com_ele(sessao)
-    assert rota._sem_cumprimento_repetido(sessao, "Boa noite, Antônio! Foi você?").startswith(
+    assert rota._sem_cumprimento_repetido(sessao, "Boa noite, Bruno! Foi você?").startswith(
         "Boa noite"
     )
 
     # Depois da pergunta com botões, não é mais.
-    sessao.registrar_frase_com_botoes("Que bom, Antônio!", ["Em manutenção"])
+    sessao.registrar_frase_com_botoes("Que bom, Bruno!", ["Em manutenção"])
     sessao.registrar_cliente("Desliguei a chave")
     assert rota._ja_falou_com_ele(sessao)
-    assert rota._sem_cumprimento_repetido(sessao, "Boa noite, Antônio! Foi você?") == "Foi você?"
+    assert rota._sem_cumprimento_repetido(sessao, "Boa noite, Bruno! Foi você?") == "Foi você?"
 
     # ⚠️ A exceção que não se abre mão: se ele cumprimenta, ela devolve.
-    sessao.registrar_cliente("boa noite, aqui é o Antônio")
+    sessao.registrar_cliente("boa noite, aqui é o Bruno")
     assert rota._sem_cumprimento_repetido(sessao, "Boa noite! Foi você?") == "Boa noite! Foi você?"
 
 
 def test_a_ia_diz_o_nome_inteiro_da_empresa() -> None:
-    """Leitura do Leonardo em 28/08/2026, num atendimento real.
+    """Leitura da operação, num atendimento real.
 
-        IA: Bom dia, Antônio! Aqui é a assistente virtual da Bahrd. A bateria do
+        IA: Bom dia, Bruno! Aqui é a assistente virtual da Bahrd. A bateria do
             veículo AKK9832 foi desligada.
 
     A notificação que a pessoa acabou de ler diz **"A Bahrd Monitoramento

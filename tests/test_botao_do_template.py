@@ -1,7 +1,7 @@
 """O toque em botão do modelo, e o caminho fixo do "Preciso de ajuda!".
 
 **Falha real, 27/08/2026.** O template novo chegou com os dois botões, o
-Leonardo tocou em "Preciso de ajuda!" e **não aconteceu nada**. O log mostrava
+A operação tocou em "Preciso de ajuda!" e **não aconteceu nada**. O log mostrava
 o `POST /whatsapp/meta` com 200, e mais nada: `_uma()` devolvia `None` para
 `type: "button"` e o toque era descartado em silêncio.
 
@@ -28,7 +28,7 @@ from central_ia.integrations.mensageria.meta import extrair
 from central_ia.orchestration.sessao_whatsapp import Sessao, Sessoes
 
 TELEFONE = "+5541999999999"
-DADOS = {"placa": "ABC-1234", "interlocutor": "Antônio da Silva"}
+DADOS = {"placa": "ABC-1234", "interlocutor": "Bruno da Silva"}
 
 
 def _payload(mensagem: dict) -> dict:
@@ -140,7 +140,7 @@ async def test_o_toque_vai_direto_para_a_ia(monkeypatch, sessao) -> None:
     mandava responder "vou lhe transferir para um colega especialista" antes do
     turno da IA. Funcionou tecnicamente e falhou no que importa: o modelo leu
     aquilo escrito em nome dele, concluiu que o caso não era mais seu, e
-    respondeu *"Ok, Geraldo, vou registrar aqui no sistema. Qualquer dúvida é
+    respondeu *"Ok, Ana, vou registrar aqui no sistema. Qualquer dúvida é
     só entrar em contato!"* — encerrou em vez de tratar, justamente no caso do
     cliente pedindo ajuda.
 
@@ -250,7 +250,7 @@ async def test_a_nota_proibe_cumprimentar_e_renomear_o_evento(monkeypatch, sessa
     *"diga qual foi o evento em poucas palavras"*. O cliente tocou «Preciso de
     ajuda!» num pânico e a IA respondeu, obedecendo:
 
-        "Bom dia, Geraldo. Sobre o alerta de pânico do veículo ABC1D23…"
+        "Bom dia, Ana. Sobre o alerta de pânico do veículo ABC1D23…"
 
     Bom dia duas vezes, com um toque de botão no meio — e a palavra que o
     `PB-PANICO` proíbe, impressa no celular de quem pode estar sob coação.
@@ -348,8 +348,8 @@ async def test_tocar_no_botao_conta_como_resposta(monkeypatch, sessao) -> None:
 async def test_nao_saem_duas_despedidas_quando_a_ia_escala(monkeypatch, sessao) -> None:
     """⚠️ O cliente recebeu dois tchaus seguidos, 28/08/2026.
 
-        "Ok, Antônio, vou registrar aqui no sistema."
-        "Claro, Antônio! Já estou passando o seu atendimento..."
+        "Ok, Bruno, vou registrar aqui no sistema."
+        "Claro, Bruno! Já estou passando o seu atendimento..."
 
     Quando a IA escala pela marca de controle, ela **já escreveu a despedida** e
     ela já saiu no celular. Mandar a nossa em cima é uma segunda mensagem de
@@ -386,7 +386,7 @@ async def test_a_nota_prescreve_a_frase_de_quem_aceitou_o_operador(
     """⚠️ A IA disse a frase errada, 28/08/2026.
 
     O cliente aceitou o operador, o painel encaminhou certo, e ele recebeu
-    *"Ok, Antônio, vou registrar aqui no sistema. Qualquer dúvida é só entrar
+    *"Ok, Bruno, vou registrar aqui no sistema. Qualquer dúvida é só entrar
     em contato!"*.
 
     Essa é a despedida de quando **não há operador**, e ela vem do contexto
@@ -403,12 +403,12 @@ async def test_a_nota_prescreve_a_frase_de_quem_aceitou_o_operador(
 
     nota = sessao.historico[-1].conteudo
     assert "vou passar para um operador te atender agora" in nota
-    assert "Antônio" in nota, "o nome real precisa estar na frase, não um marcador"
+    assert "Bruno" in nota, "o nome real precisa estar na frase, não um marcador"
     assert "não a despedida" in nota
 
 
 def test_a_despedida_do_operador_nao_agradece_paciencia() -> None:
-    """Leitura do Leonardo no celular, 28/08/2026.
+    """Leitura da operação no celular, 28/08/2026.
 
     A frase terminava em *"Obrigado pela paciência, viu? Qualquer coisa, a Bahrd
     está à disposição."* e saiu por três motivos, do menor para o maior:
@@ -436,7 +436,7 @@ def test_a_despedida_de_escalonamento_nao_finge_caso_resolvido() -> None:
     """Seis roteiros de 28/08 terminaram na mesma frase errada.
 
         Cliente: não desliguei nada não
-        IA:      Ok, Antônio, vou registrar aqui no sistema. Qualquer dúvida
+        IA:      Ok, Bruno, vou registrar aqui no sistema. Qualquer dúvida
                  é só entrar em contato!
 
     Negar a causa de uma remoção de bateria é, na Central, sinal de roubo. A

@@ -46,7 +46,7 @@ def _valor(nome: str, parametros: list[str], campo: str) -> str:
     aqui vira teste que quebra a cada campo novo — e, pior, teste que passa
     verde comparando o campo errado quando dois deles têm o mesmo valor.
 
-    O manifesto declara a ordem, e é ele que o `enviar.ps1` publica: perguntar
+    O manifesto declara a ordem, e é ele que a aplicação lê: perguntar
     a ele é perguntar ao contrato.
     """
     ordem = modelos._manifesto()[nome]["parametros"]

@@ -4,7 +4,7 @@ Segunda entrada, não substituto: `link.py` lê o export em XLS (histórico), es
 lê o que a plataforma manda no webhook. **O modelo canônico é o mesmo** — muda o
 tradutor, não o significado.
 
-Formato acordado com o gestor da Central em 19/08/2026, documentado em
+Formato acordado com a Central, documentado em
 `a documentação interna do projeto`:
 
 ```json

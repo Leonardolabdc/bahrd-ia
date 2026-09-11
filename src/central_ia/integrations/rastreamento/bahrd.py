@@ -39,7 +39,7 @@ UTC = ZoneInfo("UTC")
 
 _FORMATO_DATA = "%d/%m/%Y %H:%M:%S"
 
-# "MOVEL GL 320 ( 860201061136415)" — o espaço depois do parêntese é do sistema.
+# "MOVEL GL 320 ( 860200000000001)" — o espaço depois do parêntese é do sistema.
 _PLACA = re.compile(r"^\s*(?P<descricao>.*?)\s*\(\s*(?P<imei>\d+)\s*\)\s*$")
 
 # "4.0 kmh", "444 Km", "0 kmh" — unidade grudada e caixa inconsistente.
@@ -151,7 +151,7 @@ def parse_dados(texto: str | None) -> dict[str, str]:
 
 
 def parse_placa(texto: str | None) -> tuple[str, str]:
-    """Separa `MOVEL GL 320 ( 860201061136415)` em descrição e IMEI."""
+    """Separa `MOVEL GL 320 ( 860200000000001)` em descrição e IMEI."""
     if not texto:
         return "", ""
     if achado := _PLACA.match(texto):

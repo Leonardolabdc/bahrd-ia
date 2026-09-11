@@ -39,13 +39,13 @@ def _payload(mensagem: dict) -> dict:
         "object": "whatsapp_business_account",
         "entry": [
             {
-                "id": "1158301610038538",
+                "id": "100000000000001",
                 "changes": [
                     {
                         "field": "messages",
                         "value": {
                             "messaging_product": "whatsapp",
-                            "metadata": {"phone_number_id": "1179313428609172"},
+                            "metadata": {"phone_number_id": "100000000000002"},
                             "messages": [mensagem],
                         },
                     }

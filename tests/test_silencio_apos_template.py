@@ -31,7 +31,7 @@ from central_ia.domain import eventos as catalogo
 from central_ia.orchestration.sessao_whatsapp import Sessoes
 
 TELEFONE = "+5541999998888"
-DADOS = {"placa": "XYZ4E56", "interlocutor": "Antônio da Silva"}
+DADOS = {"placa": "XYZ4E56", "interlocutor": "Bruno da Silva"}
 UM_DIA = 24 * 60 * 60
 
 
@@ -193,7 +193,7 @@ async def test_evento_comum_insiste_quando_espera_a_autorizacao(
 
 @pytest.mark.asyncio
 async def test_nas_outras_perguntas_encerra_como_sempre(nada_sai: list[str]) -> None:
-    """Decisão do Leonardo: só a pergunta da autorização merece insistência."""
+    """Decisão da operação: só a pergunta da autorização merece insistência."""
     sessao = _sessao("MOVIMENTO_SEM_IGNICAO")
     sessao.registrar_ia("Sabe me dizer até quando fica por lá?", 0.0)
 

@@ -181,7 +181,7 @@ class TipoEvento:
     #: **No pânico não é.** O caso sai da fila "precisa de você" e vai para os
     #: encerrados, onde ninguém volta a olhar. Um acionamento que a triagem
     #: julgou provavelmente real desaparecia da tela sem nenhuma pessoa ter
-    #: visto. Leonardo, 02/09/2026: *"fechou sozinho, não pode acontecer isso"*.
+    #: visto. A operação: *"fechou sozinho, não pode acontecer isso"*.
     #:
     #: `ESCALONAMENTO_HUMANO_ATIVO` existe porque não há operador para receber.
     #: Mas **o painel é como uma pessoa recebe** — deixar aberto ali não depende
@@ -310,7 +310,7 @@ REMOCAO_BATERIA = TipoEvento(
         # combinou. É o desfecho que carrega a autorização.
         "base_com_regra_autorizada",
         # O ramo "Outro motivo" do fluxo dos gestores (doc 19), autorizado pelo
-        # Leonardo em 27/08/2026.
+        # A operação.
         #
         # ⚠️ **Desfecho genérico é ralo por natureza**: tudo que não encaixa
         # nas causas acima passa a poder fechar por aqui, e a estatística de
@@ -326,7 +326,7 @@ REMOCAO_BATERIA = TipoEvento(
         # medida do que está faltando no catálogo.
         "outro_motivo_confirmado_pelo_cliente",
         # E o par de recusa do ramo genérico. Fecham a regra combinada em
-        # 28/08/2026 com o Leonardo: **a IA sempre pergunta antes de suprimir**,
+        # 28/08/2026 com a operação: **a IA sempre pergunta antes de suprimir**,
         # em todos os caminhos, e a resposta dele vira o nome do desfecho.
         #
         # Sem estes dois a pergunta seria teatro: um "não" não teria como ser
@@ -717,7 +717,7 @@ def pendencias_com_a_link() -> tuple[tuple[str, str], ...]:
 #: Quanto tempo os alarmes de transporte ficam suprimidos quando a pessoa
 #: **não** soube dizer a duração.
 #:
-#: ⭐ **Duas horas, e o número é do gestor da Central**, repassado em
+#: ⭐ **Duas horas, e o número é da Central**, repassado em
 #: 02/09/2026: *"para movimento com ignição desligada é inativado por 2 horas
 #: quando não há a confirmação do cliente do tempo em que vai levar o
 #: transporte. Caso o cliente dê um tempo, é inativado pelo tempo informado.
@@ -751,7 +751,7 @@ DESATIVACAO_POR_DESFECHO: dict[str, timedelta | None] = {
 #: supressão subiu para 2 horas, porque a IA pediria aviso na metade de um
 #: prazo que ela mesma acabou de combinar.
 #:
-#: ⭐ **Vale a palavra do gestor da Central**, 02/09/2026: o padrão é 2 horas.
+#: ⭐ **Vale a palavra da Central**, 02/09/2026: o padrão é 2 horas.
 #: Amarrado ao `DESATIVACAO_PADRAO_DE_TRANSPORTE` para os dois não voltarem a
 #: divergir no próximo ajuste, que foi exatamente como esta divergência nasceu.
 AVISO_DE_TRANSPORTE_LONGO = DESATIVACAO_PADRAO_DE_TRANSPORTE

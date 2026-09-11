@@ -105,7 +105,7 @@ def sem_html(texto: str) -> str:
 #:
 #: ⚠️ **Regra que o prompt pede três vezes e o modelo cumpre metade das vezes.**
 #: Está na persona, está na instrução de turno, e ainda assim em 28/08/2026 saiu
-#: *"Perfeito, já deixei configurado assim. Boa tarde, Antônio!"* no fim de um
+#: *"Perfeito, já deixei configurado assim. Boa tarde, Bruno!"* no fim de um
 #: atendimento. "Bom dia" é cumprimento de chegada; no fecho soa como quem
 #: estava indo embora e lembrou de falar.
 #:
@@ -164,6 +164,6 @@ def sem_saudacao_no_inicio(texto: str) -> str:
     if not sem or sem == texto.lstrip():
         return texto
 
-    # "Boa noite, Antônio! você costuma..." → a frase que sobra precisa começar
+    # "Boa noite, Bruno! você costuma..." → a frase que sobra precisa começar
     # com maiúscula, senão o corte fica visível.
     return sem[0].upper() + sem[1:]

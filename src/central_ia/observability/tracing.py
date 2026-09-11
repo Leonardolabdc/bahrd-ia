@@ -418,12 +418,12 @@ def span_da_triagem(tipo_evento: str, quem: Identificacao | None = None) -> Iter
 
 
 def _nome_do_trace(prefixo: str, tipo_evento: str, quem: Identificacao) -> str:
-    """O rótulo que aparece na lista do Langfuse. `atendimento.BATERIA.Antônio`.
+    """O rótulo que aparece na lista do Langfuse. `atendimento.BATERIA.Bruno`.
 
     Com dezenas de atendimentos do mesmo tipo na tela, `atendimento.BATERIA`
     repetido vinte vezes não ajuda a achar nenhum. O primeiro nome resolve isso
     sem clicar em nada — e é assim que quem trabalha na central se refere ao
-    caso: "o do Antônio", não "a ocorrência OC-2026-08-25-3F2A-WA".
+    caso: "o do Bruno", não "a ocorrência OC-2026-08-25-3F2A-WA".
 
     Só o **primeiro** nome, e só com a porta de conteúdo aberta: nome completo
     identifica melhor e por isso mesmo não vai. Sem a porta, o rótulo volta a

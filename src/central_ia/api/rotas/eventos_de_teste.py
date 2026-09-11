@@ -4,7 +4,7 @@
 
 Existe porque quem valida o atendimento é a Central, e até aqui validar exigia
 montar JSON à mão, saber o formato de data aceito, acertar o rótulo do evento
-caractere por caractere e perguntar ao Leonardo o que deu errado quando nada
+caractere por caractere e perguntar à operação o que deu errado quando nada
 acontecia. A tela tira as quatro coisas do caminho: o rótulo vem do catálogo, o
 horário é sempre agora, o payload é montado aqui, e a resposta explica a recusa
 em português.
@@ -29,7 +29,7 @@ As quatro travas, e a ordem importa:
    só na tela.
 
    ⚠️ **Havia uma lista fechada de destinos aqui, e ela saiu em 03/09/2026, por
-   decisão do Leonardo:** a Central precisa testar com o celular de quem estiver
+   decisão da operação:** a Central precisa testar com o celular de quem estiver
    na sala, e uma lista no `.env` obrigaria a chamar o dev para cada número
    novo, que é justamente o que esta tela existe para evitar.
 
@@ -411,7 +411,7 @@ async def disparar(pedido: PedidoDeTeste) -> ReciboDeTeste:
     # O horário é sempre **agora**, e não há como informar outro.
     #
     # ⚠️ **O campo de data e hora saiu da tela em 03/09/2026**, a pedido do
-    # Leonardo. Ele existia para reproduzir um evento com horário específico, e
+    # A operação. Ele existia para reproduzir um evento com horário específico, e
     # em troca dava três formas de errar: formato fora do que o parser aceita
     # (`%Y-%m-%d %H:%M:%S`, sem fuso e sem milissegundo), fuso trocado, e data
     # no passado num evento que a tela apresenta como acontecendo agora. Quem
@@ -509,7 +509,7 @@ async def disparar(pedido: PedidoDeTeste) -> ReciboDeTeste:
 #: Os três modelos que a Central pode escolher, e o que dizer de cada um.
 #:
 #: A ordem é do mais barato para o mais caro, e é a ordem em que a tela mostra.
-#: O intermediário entrou em 03/09/2026, a pedido do Leonardo, para haver um
+#: O intermediário entrou em 03/09/2026, a pedido da operação, para haver um
 #: passo entre "barato e reprovado" e "caro e confiável".
 #:
 #: ⛔ **Enum fechado, nunca texto livre.** `ClienteOpenRouter` joga o valor
@@ -523,7 +523,7 @@ async def disparar(pedido: PedidoDeTeste) -> ReciboDeTeste:
 #: de 3x, não 26x. Mostrar os 26x aqui seria vender uma economia que não existe.
 #:
 #: ⛔ **Os defeitos medidos do Flash Lite saíram da tela em 03/09/2026**, a
-#: pedido do Leonardo, junto com o selo de "não aprovado para produção". Diziam
+#: pedido da operação, junto com o selo de "não aprovado para produção". Diziam
 #: que ele tratou um possível roubo como rotina e que 9% das conversas morreram
 #: mudas, uma delas depois de o cliente pedir para falar com uma pessoa
 #: (docs/arquivo/26).

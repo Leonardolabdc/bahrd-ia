@@ -125,7 +125,7 @@ IA_ESTA_FAZENDO = [
         tipo_evento=REMOCAO_BATERIA.rotulo,
         canal="LIGACAO",
         placa="GHI7J89",
-        interlocutor="Antônio Ramos, motorista",
+        interlocutor="Bruno Ramos, motorista",
         latitude=-21.1080033,
         longitude=-47.7834657,
         endereco="Rodovia Anhanguera · pátio de pernoite, Ribeirão Preto - SP",
@@ -144,7 +144,7 @@ IA_ESTA_FAZENDO = [
         falas=[
             Turno(
                 quem="ia",
-                fala="Oi, Antônio! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema "
+                fala="Oi, Bruno! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema "
                 "acusou agora "
                 "que a bateria do caminhão foi desligada. Você desligou a chave geral, ou "
                 "ele tá em manutenção?",
@@ -156,7 +156,7 @@ IA_ESTA_FAZENDO = [
             Turno(
                 quem="ia",
                 fala="Entendi. Já registrei como chave geral desligada no pátio, então o "
-                "alerta encerra aqui. Boa noite, Antônio!",
+                "alerta encerra aqui. Boa noite, Bruno!",
             ),
         ],
     ),
@@ -730,7 +730,7 @@ _REMOCAO_BATERIA = Ocorrencia(
 # aba Encerrados só vale alguma coisa se der para abrir o caso e ver o que foi
 # feito. Contenção que ninguém consegue auditar caso a caso é alegação.
 #
-#: ⛔ **Vazio desde 03/09/2026, a pedido do Leonardo.**
+#: ⛔ **Vazio desde 03/09/2026, a pedido da operação.**
 #:
 #: Eram "Reabrir a ocorrência", "Ligar para o interlocutor" e "Marcar para
 #: revisão". O painel renderiza `acoes` como `<button>` **sem `onClick`**, então
@@ -753,7 +753,7 @@ _ENC_BATERIA_OK = Ocorrencia(
     grau="alta",
     canal="LIGACAO",
     placa="GHI7J89",
-    interlocutor="Antônio Ramos, motorista",
+    interlocutor="Bruno Ramos, motorista",
     telefone="+55 11 99999-0006",
     aberta_ha="encerrada às 19:12",
     briefing=(
@@ -768,7 +768,7 @@ _ENC_BATERIA_OK = Ocorrencia(
         Turno(
             quem="ia",
             horario="19:11",
-            fala="Oi, seu Antônio! Aqui é a assistente virtual da Bahrd Monitoramento. O "
+            fala="Oi, seu Bruno! Aqui é a assistente virtual da Bahrd Monitoramento. O "
             "sistema apontou "
             "que a bateria do rastreador do GHI7J89 foi desconectada agora há pouco. "
             "Tá tudo bem por aí?",
@@ -795,7 +795,7 @@ _ENC_BATERIA_OK = Ocorrencia(
         Turno(
             quem="ia",
             horario="19:12",
-            fala="Perfeito, seu Antônio. Registrei aqui como chave geral desligada pelo "
+            fala="Perfeito, seu Bruno. Registrei aqui como chave geral desligada pelo "
             "senhor. Bom descanso — qualquer coisa é só ligar pra gente.",
         ),
     ],
@@ -804,7 +804,7 @@ _ENC_BATERIA_OK = Ocorrencia(
     ficha={
         "Evento": REMOCAO_BATERIA.rotulo,
         "Placa": "GHI7J89",
-        "Cliente": "Antônio Ramos",
+        "Cliente": "Bruno Ramos",
         "Número": "+55 11 99999-0006",
         "Logradouro": "Rodovia Anhanguera, Ribeirão Preto · parado há 6 min no posto",
         "Coordenada": "-21.10800330, -47.78346570",
@@ -1371,27 +1371,27 @@ def _reincidente(
 def reincidencia() -> list[EquipamentoReincidente]:
     return [
         _reincidente(
-            "XYZ4E56", "860201061136415", "Transportadora Sul Cargas",
+            "XYZ4E56", "860200000000001", "Transportes Aurora",
             PANICO.rotulo, 4, 4, "12/08/2026",
         ),
         _reincidente(
-            "MNO8P12", "860201061140233", "Log Norte Transportes",
+            "MNO8P12", "860200000000004", "Vale Verde Logística",
             "Erro na bateria backup", 11, 9, "12/08/2026",
         ),
         _reincidente(
-            "JKL3M45", "860201061138871", "Rodoexpress Cargas",
+            "JKL3M45", "860200000000002", "Serra Azul Cargas",
             REMOCAO_BATERIA.rotulo, 5, 3, "11/08/2026",
         ),
         _reincidente(
-            "VWX5Y78", "860201061142907", "Log Norte Transportes",
+            "VWX5Y78", "860200000000006", "Vale Verde Logística",
             ENTRADA_2_ACIONADA.rotulo, 3, 2, "10/08/2026",
         ),
         _reincidente(
-            "DEF2G34", "860201061139002", "Rodoexpress Cargas",
+            "DEF2G34", "860200000000003", "Serra Azul Cargas",
             VELOCIDADE_EXCEDIDA.rotulo, 8, 0, "12/08/2026",
         ),
         _reincidente(
-            "STU9V23", "860201061141556", "Transportadora Sul Cargas",
+            "STU9V23", "860200000000005", "Transportes Aurora",
             REMOCAO_BATERIA.rotulo, 3, 1, "09/08/2026",
         ),
     ]
@@ -1419,7 +1419,7 @@ def metricas() -> Metricas:
             # existe telefonia nesta fase — era um número medindo algo que não
             # roda. Custo é o oposto: sai da resposta do próprio provedor, é
             # conferível ocorrência por ocorrência, e é o número que decide se
-            # a operação faz sentido.
+            # A operação faz sentido.
             Vital(
                 rotulo="Custo por atendimento",
                 valor=f"{_custo_medio():.3f}".replace(".", ","),

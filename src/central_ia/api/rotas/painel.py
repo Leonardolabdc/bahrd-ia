@@ -250,7 +250,7 @@ def _coordenada(s: Sessao) -> str:
 def _ficha_da_sessao(s: Sessao, estado: str) -> dict[str, str]:
     """Só o que é fato: o que veio no evento e o que o nosso sistema mediu.
 
-    ⚠️ **Enxugada em 03/09/2026, a pedido do Leonardo:** *"deixe somente
+    ⚠️ **Enxugada em 03/09/2026, a pedido da operação:** *"deixe somente
     informações que estão chegando no nosso json e tire todo o resto"*.
 
     ⛔ O problema não era o excesso, era a **origem**. A ficha misturava o que a
@@ -327,7 +327,7 @@ def _ocorrencia_da_sessao(s: Sessao) -> Ocorrencia:
     """O registro completo de uma conversa que aconteceu num celular de verdade."""
     if s.desfecho:
         estado = f"Encerrada pela IA · {s.desfecho}"
-        # ⛔ **Vazio desde 03/09/2026, a pedido do Leonardo.** Eram "Reabrir a
+        # ⛔ **Vazio desde 03/09/2026, a pedido da operação.** Eram "Reabrir a
         # ocorrência", "Ligar para o interlocutor" e "Marcar para revisão".
         #
         # Nenhum dos três existia: o painel renderiza `acoes` como `<button>`
@@ -516,7 +516,7 @@ async def obter_encerrados() -> Encerrados:
 
     # ⚠️ **A lista mostra só o que a IA fechou sozinha, desde 03/09/2026.**
     #
-    # Antes vinham juntos os casos que uma pessoa encerrou, e Leonardo apontou o
+    # Antes vinham juntos os casos que uma pessoa encerrou, e a operação apontou o
     # problema: *"deixe nos encerrados somente aqueles eventos que a IA entendeu
     # tudo e conseguiu tratar sozinha"*. Um caso que escalou e foi resolvido no
     # telefone não é contenção da IA, e esta aba existe para medir contenção.

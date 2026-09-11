@@ -1,28 +1,6 @@
 {
   "_leia": [
-    "Modelo id 1383681637236874. REESCRITO em 10/09/2026, junto com a familia.",
-    "",
-    "O corpo e IDENTICO ao do panico-texto.json. A unica diferenca e o cabecalho",
-    "de localizacao — o cartao de mapa que abre no Waze ao toque.",
-    "",
-    "VOLTOU A EXISTIR POR PEDIDO DO LEONARDO. Eu tinha tirado o mapa do panico",
-    "argumentando que um cartao com a posicao atual tambem diz 'estamos te vendo",
-    "agora'. O argumento contrario e melhor: a regra do PB-PANICO proibe nomear",
-    "o evento, o alerta, a emergencia e o sinal — localizacao nao esta na lista.",
-    "E a central sempre sabe onde o caminhao esta; isso e o servico contratado,",
-    "nao uma revelacao. Alem disso o destinatario pode ser o gestor da frota, que",
-    "nao esta no veiculo e para quem a posicao e justamente o que decide.",
-    "",
-    "NAO TEM LINHA 'Local:' NO CORPO, de proposito. O rodape do cartao ja mostra",
-    "placa e endereco (name e address do bloco de localizacao). Repetir no texto",
-    "acrescentaria duas linhas de aparencia de relatorio a uma mensagem que",
-    "precisa parecer checagem de rotina.",
-    "",
-    "ADDRESS E OBRIGATORIO no bloco de localizacao, e desde 10/09/2026 ele sai da",
-    "mesma funcao que preenche o corpo dos alertas (local_do_evento) — cartao e",
-    "texto nao tem como divergir sobre onde o veiculo esta.",
-    "",
-    "Ver panico-texto.json para a regra do playbook, que vale igual aqui."
+    "Modelo de mensagem no formato que a Meta aceita em /message_templates. As regras de composição estão no README desta pasta."
   ],
   "name": "evento_panico_mapa",
   "language": "pt_BR",
@@ -46,8 +24,14 @@
     {
       "type": "BUTTONS",
       "buttons": [
-        { "type": "QUICK_REPLY", "text": "Preciso de ajuda!" },
-        { "type": "QUICK_REPLY", "text": "Está tudo bem!" }
+        {
+          "type": "QUICK_REPLY",
+          "text": "Preciso de ajuda!"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Está tudo bem!"
+        }
       ]
     }
   ]

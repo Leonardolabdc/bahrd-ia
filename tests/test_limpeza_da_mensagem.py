@@ -32,7 +32,7 @@ def test_formatacao_nao_chega_no_cliente(bruto: str, esperado: str) -> None:
 
 
 def test_texto_limpo_passa_intacto() -> None:
-    frase = "Oi, Antônio! Tudo bem, e você? O sistema acusou que a bateria foi desligada."
+    frase = "Oi, Bruno! Tudo bem, e você? O sistema acusou que a bateria foi desligada."
     assert limpar(frase) == frase
 
 

@@ -58,7 +58,7 @@ class LLMQueEstoura:
                 f"(esforço={esforco})."
             )
         return RespostaLLM(
-            texto="Sem problema, Antônio. Vou manter os avisos ligados então.",
+            texto="Sem problema, Bruno. Vou manter os avisos ligados então.",
             modelo=self.modelo,
             motivo_parada="end_turn",
             uso=Uso(tokens_entrada=10, tokens_saida=20, custo_usd=0.001),

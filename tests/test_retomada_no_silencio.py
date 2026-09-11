@@ -1,6 +1,6 @@
 """Silêncio na pergunta que decide não pode virar encerramento calado.
 
-**Pedido do Leonardo em 01/09/2026**, depois de um teste com duas conversas no
+**Pedido da operação**, depois de um teste com duas conversas no
 mesmo número. Uma fechou; a outra parou exatamente em *"posso deixar os avisos
 desconsiderados enquanto ele estiver parado no local?"* — a pergunta que gera a
 tratativa — e o sistema esperou **24 h** para encerrar sem desfecho.
@@ -117,7 +117,7 @@ def test_quem_retoma_tem_espera_configurada() -> None:
 
 # ─────────────────── com frota, insiste uma vez só ───────────────────
 #
-# **Pedido do Leonardo em 01/09/2026.** Um número com três caminhões em evento
+# **Pedido da operação.** Um número com três caminhões em evento
 # teria três conversas cutucando a mesma pessoa, duas vezes cada: seis
 # mensagens não pedidas e seis turnos de modelo pagos. O custo cresce com o
 # número de veículos, e a chance de resposta não.

@@ -1,6 +1,6 @@
 """O que o Langfuse precisa saber sobre um disparo da tela de teste.
 
-Pedido do Leonardo em 03/09/2026: *"precisa rastrear todas as mensagens que os
+Pedido da operação: *"precisa rastrear todas as mensagens que os
 usuários utilizando pela tela de Enviar Eventos de Teste, incluindo qual modelo
 foi selecionado de IA para responder o cliente, para assim avaliarmos depois e
 corrigirmos os bugs"*.

@@ -157,19 +157,17 @@ a um ano precisa entender a decisão sem abrir o código.
 
 ## Modelos de mensagem do WhatsApp
 
-Vivem em `infra/templates-whatsapp/`. **Nunca publique sem pedido explícito.**
+Vivem em `infra/templates-whatsapp/`, e a aplicação os lê em tempo de execução
+para saber o texto que o cliente já recebeu — mexer neles muda o que a IA
+considera "já dito" na primeira resposta.
 
-```powershell
-.\infra\templates-whatsapp\enviar.ps1          # edita os que já existem
-.\infra\templates-whatsapp\enviar.ps1 -Criar   # cria os novos
-```
+O canal padrão do projeto é o sandbox do Twilio, que não exige modelo aprovado.
+Os arquivos seguem no formato da Meta para que trocar de canal continue sendo
+configuração, e não reescrita.
 
-A Meta só deixa editar um modelo ativo **uma vez a cada 24 h**. Uma edição
-desperdiçada queima a cota do dia.
-
-Duas regras dela que custaram uma tentativa cada, e estão documentadas dentro
-dos próprios `.json`: botão não aceita emoji, e variável não pode ser a última
-coisa do corpo.
+As regras de composição — botão não aceita emoji, variável não pode abrir nem
+fechar o corpo, o rodapé renderiza entre o corpo e os botões — estão na tabela
+do [README da pasta](infra/templates-whatsapp/README.md).
 
 ## Onde o código mora
 

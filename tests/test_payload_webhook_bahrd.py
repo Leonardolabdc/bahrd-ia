@@ -231,5 +231,5 @@ def test_nome_de_verdade_atravessa_intacto() -> None:
     Higiene de fronteira, não validação de formato: apelido, sobrenome composto
     e anotação entre parênteses são o normal de um cadastro de frota.
     """
-    for real in ("João da Silva", "Antônio (motorista)", "Ma. José do Carmo-Souza"):
+    for real in ("João da Silva", "Bruno (motorista)", "Ma. José do Carmo-Souza"):
         assert parse_evento_webhook(_com("contato_nome", real)).motorista == real

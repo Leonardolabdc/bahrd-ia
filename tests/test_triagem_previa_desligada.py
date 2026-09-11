@@ -13,7 +13,7 @@ ausente — e faz certo — então todo pânico de teste ia para a fila humana. 
 a isso, em 02/09/2026 a triagem falhou em 8 dos 9 disparos do dia, sempre no
 mesmo lugar: o raciocínio comia o orçamento e o JSON voltava cortado.
 
-Decisão do Leonardo em 02/09/2026: simplificar agora, e refazer a filtragem de
+Decisão da operação: simplificar agora, e refazer a filtragem de
 casos possivelmente reais quando a API da Bahrd entrar, com dado de verdade.
 
 ⚠️ O container recebe o `.env` como variável de ambiente, então `_env_file=None`

@@ -1,6 +1,6 @@
 """O travessão não pode chegar ao cliente.
 
-Pedido do Leonardo em 24/08: ninguém digita "—" no WhatsApp. Ele é marca de
+Pedido da operação: ninguém digita "—" no WhatsApp. Ele é marca de
 texto redigido, e texto redigido denuncia a máquina.
 
 Os prompts foram limpos e ganharam a regra explícita, mas instrução de prompt é
@@ -53,7 +53,7 @@ def test_hifen_comum_fica_intacto() -> None:
 
 
 def test_texto_sem_travessao_nao_e_tocado() -> None:
-    texto = "Beleza, Antônio! Já registrei aqui.\nBoa viagem."
+    texto = "Beleza, Bruno! Já registrei aqui.\nBoa viagem."
 
     assert sem_travessao(texto) == texto
 

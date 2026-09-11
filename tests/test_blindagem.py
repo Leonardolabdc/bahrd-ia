@@ -101,7 +101,7 @@ def test_html_do_modelo_nao_chega_no_painel(veneno: str) -> None:
 
 def test_texto_honesto_atravessa_intacto() -> None:
     """Blindagem que estraga mensagem boa é blindagem que alguém desliga."""
-    frase = "Bom dia, Antônio! Confirma a placa ABC1D23, por favor?"
+    frase = "Bom dia, Bruno! Confirma a placa ABC1D23, por favor?"
 
     assert sem_html(frase) == frase
 
@@ -265,9 +265,9 @@ def test_resposta_longa_demais_nao_sai() -> None:
 @pytest.mark.parametrize(
     "boa",
     [
-        "Bom dia, Antônio! Você desligou a chave geral, ou o caminhão tá em manutenção?",
+        "Bom dia, Bruno! Você desligou a chave geral, ou o caminhão tá em manutenção?",
         "Entendi. Só pra confirmar aqui, me passa sua palavra-chave.",
-        "Confirmado, Antônio. Já registrei como veículo em manutenção, o alerta encerra aqui.",
+        "Confirmado, Bruno. Já registrei como veículo em manutenção, o alerta encerra aqui.",
         "Beleza, fico no aguardo.",
         "Obrigada! Qualquer coisa é só chamar a central pelo 0800-080-8888.",
     ],
@@ -308,7 +308,7 @@ def test_a_fala_sugerida_pelo_playbook_nao_e_vazamento() -> None:
     do sistema"* — tecnicamente certo e operacionalmente errado.
 
     A causa: **os playbooks trazem frases prontas para a IA usar.** *"Oi,
-    Antônio, é a assistente virtual da Bahrd…"* tem 154 caracteres e está lá
+    Bruno, é a assistente virtual da Bahrd…"* tem 154 caracteres e está lá
     justamente para ser dita. Usar uma dessas é obedecer, e a checagem lia como
     vazamento.
 
@@ -327,13 +327,13 @@ def test_a_fala_sugerida_pelo_playbook_nao_e_vazamento() -> None:
     blocos = prompts.blocos_de_sistema(tipo, "TEXTO")
 
     for fala in [
-        "Oi, Antônio! Aqui é a assistente virtual da Bahrd. O sistema registrou "
+        "Oi, Bruno! Aqui é a assistente virtual da Bahrd. O sistema registrou "
         "uma remoção de bateria.",
-        "Tudo bem, Antônio, e você? Então, você desligou a chave geral, ou ele "
+        "Tudo bem, Bruno, e você? Então, você desligou a chave geral, ou ele "
         "tá em manutenção?",
         "Entendi, então esse endereço é a base de vocês. Quer que a gente deixe "
         "de avisar por aí?",
-        "Beleza, Antônio, fico no aguardo.",
+        "Beleza, Bruno, fico no aguardo.",
     ]:
         assert blindagem.problema_na_saida(fala, blocos) is None, (
             f"fala legítima barrada: {fala!r}"
@@ -569,7 +569,7 @@ def test_nenhum_prompt_chama_o_veiculo_de_caminhao() -> None:
 
 
 def test_nenhuma_fala_da_ia_diz_oficina() -> None:
-    """Observação do Leonardo em 28/08/2026, lendo o próprio atendimento.
+    """Observação da operação, lendo o próprio atendimento.
 
     A IA perguntou *"você tem previsão de até quando ele fica na oficina?"* para
     um cliente que nunca falou em oficina: ele tinha tocado no botão «Em
@@ -637,7 +637,7 @@ def test_o_playbook_nao_escala_quando_o_cliente_corrige() -> None:
 
 
 def test_a_instrucao_manda_a_ia_raciocinar_sobre_a_pessoa() -> None:
-    """Atendimento real, 28/08/2026, e o diagnóstico do Leonardo: "parece sem
+    """Atendimento real, 28/08/2026, e o diagnóstico da operação: "parece sem
     inteligência".
 
     O cliente respondeu **"Foi eu"** e a IA devolveu *"Foi você que desligou a
@@ -708,7 +708,7 @@ def test_as_frases_que_o_playbook_manda_dizer_nao_sao_barradas() -> None:
     blocos = prompts.blocos_de_sistema(tipo, "TEXTO")
 
     prescritas = [
-        "Certo, Antônio. Vou deixar os avisos desse veículo desconsiderados enquanto "
+        "Certo, Bruno. Vou deixar os avisos desse veículo desconsiderados enquanto "
         "ele estiver parado nesse local, e quando ele sair de lá os avisos voltam "
         "automaticamente.",
         "Sem problema! Quando ele voltar a se movimentar, os avisos voltam "

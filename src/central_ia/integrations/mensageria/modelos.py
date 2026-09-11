@@ -4,7 +4,7 @@
 do motorista dizendo evento, placa e local. Ele respondeu "Olá vou ver aqui". A
 IA respondeu:
 
-    Bom dia, Antônio! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema acusou
+    Bom dia, Bruno! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema acusou
     agora que a bateria do caminhão ABC1234 foi desligada. Beleza, fico no
     aguardo.
 
@@ -19,7 +19,7 @@ parâmetros que foram enviados, para virar um turno de assistente no histórico.
 A partir daí a IA cumprimenta pelo nome e entra na tratativa, como faria alguém
 que sabe o que já foi dito.
 
-**Uma fonte só.** O corpo vem do `.json` que o `enviar.ps1` publica na Meta, e o
+**Uma fonte só.** O corpo vem do `.json` que a aplicação lê, e o
 mapa nome→arquivo vem do `modelos.json` que o próprio script lê. Nada aqui
 duplica texto de modelo: uma segunda cópia divergiria na primeira edição, e o
 sintoma seria a IA "lembrando" de uma mensagem que o cliente não recebeu.
@@ -68,14 +68,14 @@ _PARAMETRO = re.compile(r"\{\{(\d+)\}\}")
 #: o modelo daquele dia, que abria com «🚨Notificação de Evento🚨» e assinava
 #: "Central de Monitoramento".
 #:
-#: A premissa caiu quando o modelo passou a abrir com *"Olá, bom dia, Geraldo!
+#: A premissa caiu quando o modelo passou a abrir com *"Olá, bom dia, Ana!
 #: Tudo bem? Aqui é da Central de Monitoramento da Bahrd."* — primeira pessoa,
 #: pelo nome, com saudação pela hora. **Cumprimentar de novo no turno seguinte
 #: deixa de ser inofensivo e passa a denunciar que a primeira mensagem era
 #: automática**, que é o oposto do que a saudação foi buscar.
 #:
 #: Visto numa conversa real de 10/09/2026: o cliente tocou «Preciso de ajuda!»
-#: e a IA respondeu *"Bom dia, Geraldo. Sobre o alerta…"*. Bom dia duas vezes,
+#: e a IA respondeu *"Bom dia, Ana. Sobre o alerta…"*. Bom dia duas vezes,
 #: com um toque de botão no meio.
 #:
 #: ⚠️ **O `persona_core` já mandava não cumprimentar** — *"Cumprimente só quando

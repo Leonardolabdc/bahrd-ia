@@ -309,7 +309,7 @@ def test_a_mesma_placa_com_dois_eventos_e_separada_pelo_tipo() -> None:
     conversas, duas decisões e dois desfechos — e sem o tipo do evento o
     cliente leria dois `[AJL2532]` idênticos e escolheria no escuro.
 
-    Decisão do Leonardo em 01/09/2026, revendo o primeiro desenho, que só
+    Decisão da operação, revendo o primeiro desenho, que só
     trazia a placa.
     """
     from central_ia.api.rotas.whatsapp import com_a_referencia
@@ -341,7 +341,7 @@ def test_o_rotulo_usa_o_mesmo_texto_do_template() -> None:
 # ─────────── a placa escrita, que é como a pessoa se corrige ───────────
 #
 # ⚠️ **Defeito real, 01/09/2026, e custou um atendimento.** Com duas conversas
-# vivas, texto digitado caía sempre na mais recente. O Leonardo respondia sobre
+# vivas, texto digitado caía sempre na mais recente. A operação respondia sobre
 # o AKJ4548, tudo ia para o AIO7569, e a IA **encerrou o caso do caminhão
 # errado**. Ele escreveu "eu falei da placa akj4548" e isso também foi para o
 # AIO7569, porque ninguém lia a placa.
@@ -406,7 +406,7 @@ def test_placa_de_conversa_encerrada_nao_reabre() -> None:
 
 # ───────── fechou uma, puxa a próxima ─────────
 #
-# ⭐ **Pedido do Leonardo em 01/09/2026, e a melhor solução do dia.** Ele tinha
+# ⭐ **Pedido da operação, e a melhor solução do dia.** Ele tinha
 # dois eventos abertos, concluiu um, e o outro ficava esperando um relógio
 # vencer. A conversa certa é a que um atendente humano faria: "e sobre o
 # AJH4554?" — e continuar de onde parou.

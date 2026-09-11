@@ -309,7 +309,7 @@ class StatusDeEntrega:
     webhook. Descartar esse aviso, que era o que fazíamos, deixa a pergunta
     "por que não chegou?" sem resposta possível.
 
-    Custou uma tarde em 24/08: o Antônio recebeu, o Geraldo não, e os dois
+    Custou uma tarde em 24/08: o Bruno recebeu, o Ana não, e os dois
     envios tinham logado sucesso.
     """
 

@@ -183,7 +183,7 @@ _LINK = re.compile(
 _TRECHO_DELATOR = 60
 
 #: Linha de citação markdown. É como os playbooks marcam **o que a IA deve
-#: dizer**: `> "Oi, Antônio, é a assistente virtual da Bahrd…"`.
+#: dizer**: `> "Oi, Bruno, é a assistente virtual da Bahrd…"`.
 #:
 #: A convenção é do próprio projeto, e é o que torna esta separação possível
 #: sem anotar nada de novo nos prompts — o marcador já existia, faltava lê-lo.

@@ -1032,7 +1032,7 @@ kbd {
    Reaproveita `.mapa-fundo`, `.mapa-cab`, `.mapa-titulo`, `.mapa-sub` e
    `.mapa-fechar` do mini-mapa, que é o único overlay do projeto: dois modais
    com aparências diferentes na mesma ferramenta é ruído, não variedade. */
-/* ⚠️ Alargada de 560px para 760px em 03/09/2026, a pedido do Leonardo: com a
+/* ⚠️ Alargada de 560px para 760px em 03/09/2026, a pedido da operação: com a
    caixa estreita os campos empilhavam e a tela passava da altura da janela,
    obrigando a rolar para achar o botão de enviar. Largura maior aqui compra
    altura, que é o que faltava. */

@@ -6,7 +6,7 @@
 #
 # Aquele é o padrão da indústria e continua valendo — mas depende de `pip
 # install pre-commit`, e nem toda máquina do time tem Python instalado. A do
-# Leonardo não tem: o `python` dela é o atalho da Microsoft Store, que não
+# A operação não tem: o `python` dela é o atalho da Microsoft Store, que não
 # executa nada.
 #
 # Uma proteção que só funciona em algumas máquinas protege em algumas máquinas.

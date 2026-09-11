@@ -121,8 +121,8 @@ TEMPLATE_ALERTA_MAPA = MODELOS_DE_ALERTA.mapa_reserva
 
 #: O primeiro nome, quando o payload traz `contato_nome`. `""` quando não traz.
 #:
-#: ⚠️ **Só o primeiro.** O cadastro traz `"Antônio da Silva, Transportes X"`, e
-#: o campo inteiro daria *"Olá, bom dia, Antônio da Silva, Transportes X!"*.
+#: ⚠️ **Só o primeiro.** O cadastro traz `"Bruno da Silva, Transportes X"`, e
+#: o campo inteiro daria *"Olá, bom dia, Bruno da Silva, Transportes X!"*.
 #: Mesmo corte de `whatsapp._primeiro_nome`.
 def primeiro_nome_do_contato(evento) -> str:
     bruto = (getattr(evento, "motorista", None) or "").strip()
@@ -140,7 +140,7 @@ def primeiro_nome_do_contato(evento) -> str:
 #: meio-dia e a noite às 18h. Antes das 5h ainda é "boa noite" — quem dirige de
 #: madrugada não recebe "bom dia" às 3h.
 #:
-#: Minúscula porque cai depois de vírgula: *"Olá, bom dia, Geraldo!"*.
+#: Minúscula porque cai depois de vírgula: *"Olá, bom dia, Ana!"*.
 def saudacao_do_evento(evento) -> str:
     hora = evento.momento.astimezone(FUSO_BAHRD).hour
     if 5 <= hora < 12:
@@ -155,7 +155,7 @@ def saudacao_do_evento(evento) -> str:
 #: ⛔ **Um parâmetro só, e não dois.** Saudação e nome viajam juntos porque o
 #: nome é opcional e a Meta recusa parâmetro vazio: com duas variáveis seriam
 #: precisos dois modelos, um para cada caso, e a conta dobraria a cada campo
-#: opcional novo. Com um, o mesmo modelo serve *"bom dia, Geraldo"* e
+#: opcional novo. Com um, o mesmo modelo serve *"bom dia, Ana"* e
 #: *"bom dia"*, e a frase fecha certo nos dois.
 #:
 #: Foi isto que aposentou as variantes `_nome`, criadas poucas horas antes na
@@ -796,7 +796,7 @@ async def _atender(cfg: Settings, evento, origem: str = "link") -> Sessao | None
 
     # ── A triagem decide quem conduz. Ela não decide se o cliente é avisado ──
     #
-    # ⚠️ **"Tem que chegar no número do cliente."** Leonardo, 02/09/2026, depois
+    # ⚠️ **"Tem que chegar no número do cliente."** A operação, depois
     # de três pânicos de teste em que nada saiu.
     #
     # Até aqui a triagem barrava o contato inteiro: acima do limiar, nenhuma

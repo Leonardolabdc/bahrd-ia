@@ -126,7 +126,7 @@ def test_numero_torto_nao_passa(cliente: TestClient, sem_disparar, torto: str) -
 def test_qualquer_grafia_de_celular_brasileiro_passa(
     cliente: TestClient, sem_disparar, grafia: str
 ) -> None:
-    """⛔ A lista fechada de destinos saiu em 03/09/2026, por decisão do Leonardo.
+    """⛔ A lista fechada de destinos saiu em 03/09/2026, por decisão da operação.
 
     A Central precisa testar com o celular de quem estiver na sala, e a lista
     obrigava a chamar o dev para cadastrar cada número novo. O que se perdeu:

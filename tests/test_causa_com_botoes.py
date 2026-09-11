@@ -21,7 +21,7 @@ from central_ia.integrations.mensageria.meta import extrair
 from central_ia.orchestration import tratativas
 from central_ia.orchestration.sessao_whatsapp import Sessao, Sessoes
 
-DADOS = {"placa": "AKK9832", "interlocutor": "Geraldo da Silva"}
+DADOS = {"placa": "AKK9832", "interlocutor": "Ana da Silva"}
 
 
 @pytest.fixture(autouse=True)
@@ -124,7 +124,7 @@ async def test_tudo_bem_pergunta_a_causa_com_tres_botoes(monkeypatch, sessao) ->
     await rota._perguntar_a_causa(object(), sessao, rota.BOTAO_TUDO_BEM)
 
     (texto, botoes) = enviados[0]
-    assert "Geraldo" in texto
+    assert "Ana" in texto
     assert [i for i, _ in botoes] == [
         rota.BOTAO_MANUTENCAO,
         rota.BOTAO_CHAVE_GERAL,
@@ -224,7 +224,7 @@ async def test_cada_causa_instrui_o_modelo(monkeypatch, sessao, ident, tem_de_di
 async def test_manutencao_pergunta_a_data_sem_deixar_ela_limitar(monkeypatch, sessao) -> None:
     """Dois gestores, duas decisões opostas, e a síntese das duas.
 
-    **Gestor da Central, 26/08:** não perguntar a data. *"O cliente informa que
+    **Central:** não perguntar a data. *"O cliente informa que
     fica em manutenção até as 17h, chega 18h40, gera outra remoção, e ele
     recebe nova notificação e tem de confirmar de novo."* Data prometida por
     cliente é estimativa, e oficina atrasa.
@@ -257,7 +257,7 @@ async def test_manutencao_pergunta_a_data_sem_deixar_ela_limitar(monkeypatch, se
     assert "até quando o veículo fica em manutenção" in playbook, "o gestor quer a data"
     # ⚠️ A frase fala do VEÍCULO e do LUGAR, e nunca "enquanto ele estiver aí":
     # "aí" é onde a PESSOA está, e ela pode estar em casa enquanto o veículo
-    # passa a semana em manutenção. Observação do Leonardo em 28/08/2026, lendo
+    # passa a semana em manutenção. Observação da operação, lendo
     # a IA dizer "aí" para um cliente que não estava lá.
     plano = playbook.replace("\n", " ")
     assert "enquanto ele estiver parado no local da manutenção" in plano
@@ -292,7 +292,7 @@ async def test_a_frase_do_fim_da_protecao_e_prescrita(monkeypatch, sessao) -> No
 
 
 def test_a_ia_repete_a_data_que_o_cliente_deu() -> None:
-    """Leitura do Leonardo em 28/08/2026, no atendimento que rodou certo.
+    """Leitura da operação, no atendimento que rodou certo.
 
     O cliente disse *"acho q até quarta que vem"* e a IA respondeu só
     *"Entendi."* antes de pedir a autorização. Não está errado, e não serve: o
@@ -314,7 +314,7 @@ def test_a_ia_repete_a_data_que_o_cliente_deu() -> None:
 
 
 def test_o_que_devolve_os_avisos_e_o_veiculo_se_mover() -> None:
-    """Leitura do Leonardo em 28/08/2026, num atendimento que rodou certo.
+    """Leitura da operação, num atendimento que rodou certo.
 
     A IA disse *"quando ele sair da manutenção, os avisos voltam
     automaticamente"*, e a frase é bonita e está errada. A tratativa que sai
@@ -378,7 +378,7 @@ def test_manutencao_pede_supressao_presa_ao_local(sessao) -> None:
 def test_o_operador_ve_que_ficou_combinado_e_nao_executado(sessao) -> None:
     """A aba "A executar" foi removida em 27/08, e isto é o que sobrou dela.
 
-    O Leonardo perguntou se ela era mesmo necessária, já que a API da Bahrd vai
+    A operação perguntou se ela era mesmo necessária, já que a API da Bahrd vai
     tratar tudo quando existir. Ele tinha razão: uma aba que fica vazia para
     sempre depois da integração é tela morta, e nesta fase ninguém está de
     plantão para executar nada à mão.
@@ -591,7 +591,7 @@ def test_o_playbook_avisa_o_cliente_do_que_a_central_vai_fazer() -> None:
 
     plano = " ".join(playbook.split())
 
-    # ⚠️ Era um AVISO e virou PERGUNTA em 28/08/2026, a pedido do Leonardo: a
+    # ⚠️ Era um AVISO e virou PERGUNTA em 28/08/2026, a pedido da operação: a
     # supressão desliga o alarme de um veículo que não é nosso, e essa decisão
     # é do dono dele. Ver `test_a_ia_pergunta_antes_de_suprimir_em_todos_os_caminhos`.
     assert "PEÇA autorização para a supressão temporária" in plano
@@ -600,7 +600,7 @@ def test_o_playbook_avisa_o_cliente_do_que_a_central_vai_fazer() -> None:
 
 
 def test_o_playbook_nao_conclui_o_metodo_a_partir_da_autoria() -> None:
-    """Observação do Leonardo, 28/08/2026, sobre um erro que eu introduzi.
+    """Observação da operação, sobre um erro que eu introduzi.
 
     A IA disse *"Entendi, foi você que desligou a chave geral"* depois de um
     "Fui eu". Ele confirmou **quem**, não **o quê** — e a regra que eu tinha

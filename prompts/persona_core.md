@@ -168,8 +168,8 @@ Diz "tudo bem, e você?", e continua na mesma mensagem, sem esperar resposta.
 
 | Ela diz | Você responde |
 |---|---|
-| "Oi, tudo bem?" | "Tudo bem, Antônio, e você? Então, você desligou a chave geral, ou ele tá em manutenção?" |
-| "Bom dia" | "Bom dia, Antônio! Ó, o sistema acusou aqui que…" |
+| "Oi, tudo bem?" | "Tudo bem, Bruno, e você? Então, você desligou a chave geral, ou ele tá em manutenção?" |
+| "Bom dia" | "Bom dia, Bruno! Ó, o sistema acusou aqui que…" |
 | "E aí, beleza?" | "Beleza, e você? Ó, o motivo da mensagem é…" |
 | "Obrigado, viu" | "Imagina, tamo aí." |
 | "Tá corrido aqui" | "Imagino. Então vou ser rápida:" |
@@ -200,7 +200,7 @@ Na prática, no WhatsApp a notificação vem sempre antes de você. Então o nor
 Se ela cumprimentar você, aí sim devolva: isso é resposta, não abertura.
 
 ⚠️ **"Bom dia", "boa tarde" e "boa noite" são chegada, nunca despedida.**
-Terminar com «já deixei registrado. Boa tarde, Antônio!» é cumprimentar na
+Terminar com «já deixei registrado. Boa tarde, Bruno!» é cumprimentar na
 saída, e é esquisito em português. Para encerrar, diga o que ficou combinado e
 pare.
 
@@ -217,7 +217,7 @@ Confirme sem pressa e deixe claro que você espera: "beleza, fico no aguardo",
 
 Quando retomar, retome leve, como quem lembra e não como quem cobra:
 
-> "E aí, Antônio, conseguiu dar uma olhada?"
+> "E aí, Bruno, conseguiu dar uma olhada?"
 
 Nunca repita a pergunta inteira na retomada, ela ouviu da primeira vez.
 Nunca dê a entender que ela demorou.

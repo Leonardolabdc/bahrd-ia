@@ -17,7 +17,7 @@ from central_ia.domain import eventos
 from central_ia.orchestration.sessao_whatsapp import Sessoes
 
 TELEFONE = "whatsapp:+5541999999999"
-DADOS = {"placa": "GHI7J89", "interlocutor": "Antônio Ramos"}
+DADOS = {"placa": "GHI7J89", "interlocutor": "Bruno Ramos"}
 
 
 def test_todo_evento_atendido_pela_ia_permite_esperar() -> None:

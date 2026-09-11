@@ -6,7 +6,7 @@
    caminho de falha não fez contato nenhum. Corrigido em `triagem_panico`.
 2. Corrigido isso, a triagem passou a rodar e classificou acima do limiar —
    e aí **nada saiu mesmo assim**, porque o `_triar` barrava o contato inteiro.
-   O caso foi encerrado por não haver operador. Leonardo: *"tem que chegar no
+   O caso foi encerrado por não haver operador. A operação: *"tem que chegar no
    número do cliente"* e *"fechou sozinho, não pode acontecer isso"*.
 
 O que decidiu o segundo ponto foi o próprio template aprovado. O
@@ -33,7 +33,7 @@ def _cfg() -> Settings:
 
 def _sessao(codigo: str) -> Sessao:
     return Sessoes().abrir(
-        "+5541999998888", eventos.por_codigo(codigo), "TEXTO", {"interlocutor": "Antônio"}
+        "+5541999998888", eventos.por_codigo(codigo), "TEXTO", {"interlocutor": "Bruno"}
     )
 
 
@@ -143,7 +143,7 @@ def test_o_texto_do_panico_nao_entrega_o_que_foi_detectado() -> None:
     ⚠️ **Apontar para o modelo certo não basta.** O `evento_panico` já existiu
     dizendo "Acionamento do botão de pânico" — apontar para ele naquela versão
     teria sido pior que usar o genérico. O que protege é o texto, e é ele que
-    este teste lê, do mesmo `.json` que o `enviar.ps1` publica na Meta.
+    este teste lê, do mesmo `.json` que a aplicação lê.
     """
     from central_ia.api.rotas.eventos import TEMPLATE_PROPRIO
     from central_ia.integrations.mensageria import modelos

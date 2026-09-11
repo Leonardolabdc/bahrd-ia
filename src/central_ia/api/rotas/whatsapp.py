@@ -163,7 +163,7 @@ BOTAO_TUDO_BEM = "Está tudo bem!"
 #: especialista" antes do turno da IA. Funcionou tecnicamente e falhou no que
 #: importa: o modelo leu aquilo escrito em nome dele, concluiu — com toda a
 #: razão — que o caso tinha saído das suas mãos, e o turno seguinte foi
-#: *"Ok, Geraldo, vou registrar aqui no sistema. Qualquer dúvida é só entrar
+#: *"Ok, Ana, vou registrar aqui no sistema. Qualquer dúvida é só entrar
 #: em contato!"*. Encerrou em vez de tratar, no caso do cliente pedindo ajuda.
 #:
 #: Nenhuma nota conserta um histórico que diz o contrário dela. A correção foi
@@ -173,12 +173,12 @@ BOTAO_TUDO_BEM = "Está tudo bem!"
 #: Esta nota mandava *"cumprimente com «{saudacao}» e o primeiro nome dele"* e
 #: *"diga qual foi o evento em poucas palavras"*. Numa conversa real daquele
 #: dia, o cliente tocou «Preciso de ajuda!» num pânico e a IA respondeu
-#: *"Bom dia, Geraldo. Sobre o alerta de pânico do veículo ABC1D23…"*.
+#: *"Bom dia, Ana. Sobre o alerta de pânico do veículo ABC1D23…"*.
 #:
 #: Não foi o modelo desobedecendo — foi ele obedecendo. As duas instruções
 #: nasceram quando o template era o antigo, que abria com «🚨Notificação de
 #: Evento🚨» e não dizia nome nem saudação. O template de hoje abre com
-#: *"Olá, bom dia, Geraldo! Tudo bem?"* e já nomeia o evento, então:
+#: *"Olá, bom dia, Ana! Tudo bem?"* e já nomeia o evento, então:
 #:
 #: * **cumprimentar de novo denuncia** que a primeira mensagem era automática,
 #:   que é o oposto do que a saudação no template foi buscar;
@@ -191,7 +191,7 @@ BOTAO_TUDO_BEM = "Está tudo bem!"
 #: *"Estamos acompanhando o veículo ABC1D23: quer me contar o que houve…"* — e
 #: o template do pânico abre com *"Estamos acompanhando a viagem do veículo
 #: ABC1D23"*. As duas mensagens, uma embaixo da outra, começavam com as mesmas
-#: quatro palavras. Leonardo, olhando a conversa real: *"fica ruim repetir"*.
+#: quatro palavras. A operação, olhando a conversa real: *"fica ruim repetir"*.
 #:
 #: A frase que ficou não repete nada do template e não precisa da placa: quem
 #: lê acabou de ver a placa na mensagem de cima, e a conversa já está presa a
@@ -477,7 +477,7 @@ def _encaminhar(cfg: Settings, sessao: Sessao, motivo: str, explicacao: str) -> 
 
     # ── Nem todo evento pode ser encerrado por falta de operador ────────────
     #
-    # ⚠️ **"Fechou sozinho, não pode acontecer isso."** Leonardo, 02/09/2026,
+    # ⚠️ **"Fechou sozinho, não pode acontecer isso."** A operação,
     # depois de um pânico que a triagem julgou provavelmente real sumir da tela.
     #
     # Para quase todo evento, encerrar aqui é razoável: o desfecho gravado é o
@@ -545,7 +545,7 @@ _SO_ALFANUMERICO = re.compile(r"[^A-Za-z0-9]+")
 
 # ───────────────── quando não dá para saber, pergunta ─────────────────
 #
-# ⚠️ **Decisão do Leonardo em 01/09/2026, revendo a minha.** Eu tinha escolhido
+# ⚠️ **Decisão da operação, revendo a minha.** Eu tinha escolhido
 # não perguntar e cair na conversa mais recente, para poupar um turno. O teste
 # mostrou o custo real dessa economia: ele escreveu *"Fui eu"* respondendo ao
 # AJJ4567, a frase caiu no AAA4569 por recência, e as duas conversas seguiram
@@ -609,7 +609,7 @@ def _nota_da_volta(placa: str) -> Mensagem:
 async def _puxar_o_proximo_veiculo(cfg: Settings, encerrada: Sessao) -> None:
     """Fechou um caminhão e sobrou outro no mesmo número? A IA puxa o próximo.
 
-    ⭐ **Pedido do Leonardo em 01/09/2026, e é a melhor solução do dia.** Ele
+    ⭐ **Pedido da operação, e é a melhor solução do dia.** Ele
     tinha dois eventos abertos, concluiu um, e o outro ficava lá esperando um
     relógio vencer. A conversa certa é a que qualquer atendente humano faria:
     *"e sobre o AJH4554?"* — e continuar de onde parou.
@@ -698,7 +698,7 @@ async def _puxar_o_proximo_veiculo(cfg: Settings, encerrada: Sessao) -> None:
 
 
 def _primeiro_nome(sessao: Sessao) -> str:
-    """Só o primeiro nome. O cadastro traz "Antônio da Silva, Transportes X"."""
+    """Só o primeiro nome. O cadastro traz "Bruno da Silva, Transportes X"."""
     return (sessao.dados.get("interlocutor") or "").split(",")[0].split(" ")[0]
 
 
@@ -811,7 +811,7 @@ def por_placa_citada(telefone: str, texto: str) -> Sessao | None:
     """A conversa cuja **placa a pessoa escreveu** na mensagem.
 
     ⚠️ **Defeito real, 01/09/2026, e custou um atendimento.** Com duas conversas
-    vivas, texto digitado caía sempre na mais recente. O Leonardo respondia
+    vivas, texto digitado caía sempre na mais recente. A operação respondia
     sobre o AKJ4548, tudo ia para o AIO7569, e a IA **encerrou o caso do
     caminhão errado** com a informação do outro. Ele chegou a escrever
     *"eu falei da placa akj4548"* e o sistema mandou isso para o AIO7569
@@ -852,12 +852,12 @@ def com_a_referencia(sessao: Sessao, texto: str) -> str:
     Visto num teste real em 01/09/2026: a abertura dizia a placa, porque o
     template a traz, e a pergunta seguinte não dizia nada.
 
-        [AJL2532 · Remoção de bateria] Que bom, Antônio! Qual é o caso?
+        [AJL2532 · Remoção de bateria] Que bom, Bruno! Qual é o caso?
 
     **O tipo do evento entra junto, e não é redundância.** A placa sozinha não
     desambigua o mesmo caminhão com dois eventos ao mesmo tempo — bateria e
     pânico no AJL2532 são duas conversas, duas decisões e dois desfechos
-    diferentes. Decisão do Leonardo em 01/09/2026.
+    diferentes. Decisão da operação.
 
     **Condicional de propósito.** Com um veículo só, repetir isso em toda frase
     é burocracia: a pessoa acabou de ler placa e evento no template logo acima,
@@ -1272,7 +1272,7 @@ async def _fluxo(
 
     # ── Não sei de qual veículo. Pergunta, em vez de chutar ─────────────────
     #
-    # ⚠️ **Decisão do Leonardo em 01/09/2026, revendo a minha.** Eu tinha
+    # ⚠️ **Decisão da operação, revendo a minha.** Eu tinha
     # escolhido chutar na conversa mais recente para poupar um turno. O teste
     # cobrou: *"Fui eu"* foi dito para o AJJ4567, caiu no AAA4569 por recência,
     # e as duas conversas seguiram erradas — uma respondendo o que não foi
@@ -1432,7 +1432,7 @@ async def _fluxo(
         # ── O caso já é de uma pessoa. A IA para de falar ───────────────────
         #
         # ⚠️ **"A tratativa jogou para um humano no painel mas ficou
-        # perguntando pro cliente."** Leonardo, 02/09/2026, e o defeito é da
+        # perguntando pro cliente."** A operação, e o defeito é da
         # correção da mesma tarde.
         #
         # Antes, `_encaminhar` encerrava a sessão, e sessão encerrada calava a
@@ -1551,7 +1551,7 @@ async def _abrir(cfg: Settings, de: str, codigo: str, em_audio: bool = False) ->
         # detectar a IA citando antes da hora.
         #
         # Caiu por baixo: **a Central não valida guincho na tratativa real.**
-        # Leonardo, 03/09/2026. O dado do cadastro nunca foi conferido contra o
+        # A operação. O dado do cadastro nunca foi conferido contra o
         # que acontece, então a "prova" provava contra uma referência que
         # ninguém mantém — e para isso ela pagava o preço de manter o nome do
         # guincho dentro do contexto do modelo a cada turno.
@@ -1595,7 +1595,7 @@ async def _triar(cfg: Settings, sessao: Sessao, contexto) -> bool:
     """Devolve `True` se a IA está liberada a falar. `False` = caso é do humano."""
     # ── Chave de teste: sem triagem, o pânico corre como remoção de bateria ──
     #
-    # ⛔ **Decisão do Leonardo em 02/09/2026, e ela desliga uma proteção.**
+    # ⛔ **Decisão da operação, e ela desliga uma proteção.**
     # Pedido literal: *"tire esse cálculo que está bagunçando o pânico, deixe
     # ele parecido com o evento de remoção de bateria, só que falando sempre de
     # acordo com o pânico"*.
@@ -1734,7 +1734,7 @@ async def _triar(cfg: Settings, sessao: Sessao, contexto) -> bool:
 #: de pé.
 #:
 #: **Sem "obrigado pela paciência, viu?".** Saiu em 28/08/2026, a pedido do
-#: Leonardo, lendo a frase no celular. Agradecer paciência sugere que a pessoa
+#: A operação, lendo a frase no celular. Agradecer paciência sugere que a pessoa
 #: esperou por algo, e ela não esperou: pediu um operador e está sendo passada
 #: na hora. O "viu?" é vício de fala, alonga sem dizer nada, e ainda vinha com
 #: "obrigado" no masculino numa persona feminina.
@@ -1826,8 +1826,8 @@ async def _entregar_a_um_humano(
     # já saiu. Mandar a nossa em cima produz duas mensagens de tchau seguidas,
     # que foi o que o cliente recebeu em 28/08/2026:
     #
-    #     "Ok, Antônio, vou registrar aqui no sistema."
-    #     "Claro, Antônio! Já estou passando o seu atendimento..."
+    #     "Ok, Bruno, vou registrar aqui no sistema."
+    #     "Claro, Bruno! Já estou passando o seu atendimento..."
     #
     # Aqui a frase existe para o caminho em que ninguém falou ainda: o pedido
     # explícito de atendente, detectado antes de o modelo ser chamado.
@@ -1882,7 +1882,7 @@ BOTAO_NAO_FUI_EU = "causa_nao_fui_eu"
 #: de um acionamento de emergência, e a do meio é sobre um equipamento que não
 #: tem nada a ver com o caso.
 #:
-#: Os rótulos vieram do Leonardo, repassando a Central: «Acionei sem querer» e
+#: Os rótulos vieram da operação, repassando a Central: «Acionei sem querer» e
 #: «Outro motivo». O terceiro é sugestão nossa, e ganha o lugar por ser o único
 #: que **muda o destino do caso**: quem diz que não foi ele está dizendo que
 #: alguém ou alguma coisa acionou o alerta, e isso é de uma pessoa, não da IA.
@@ -2001,7 +2001,7 @@ def _termina_em_pergunta(mensagem: str) -> bool:
 #: em silêncio.
 #:
 #: ⚠️ **É por isso que a IA pergunta em todos os caminhos.** Combinado com o
-#: Leonardo em 28/08/2026, depois de ela informar em vez de perguntar num
+#: A operação, depois de ela informar em vez de perguntar num
 #: atendimento de chave geral. A resposta do cliente vira o nome do desfecho, e
 #: é o nome que decide a ação — nunca a narrativa do modelo.
 TRATATIVA_POR_DESFECHO: dict[str, tratativas.Acao] = {
@@ -2585,7 +2585,7 @@ def vigiar_silencio_apos_template(cfg: Settings, sessao: Sessao) -> None:
 
 #: Quanto a IA espera antes de insistir **na pergunta da autorização**.
 #:
-#: ⚠️ **Só nessa pergunta, e é decisão do Leonardo em 01/09/2026.** Nas outras
+#: ⚠️ **Só nessa pergunta, e é decisão da operação.** Nas outras
 #: o prazo continua sendo o do catálogo, e o caso encerra sozinho passado o
 #: dia. Insistir em toda pergunta seria a central cutucando quem não quis
 #: responder; insistir nesta é buscar a única resposta que gera a tratativa.
@@ -2755,7 +2755,7 @@ async def _vigiar_silencio(cfg: Settings, sessao: Sessao, segundos: int, motivo:
 
     # ── Quem está conversando não está em silêncio ──────────────────────────
     #
-    # ⚠️ **"Do nada veio uma mensagem."** Leonardo, 01/09/2026. Ele estava
+    # ⚠️ **"Do nada veio uma mensagem."** A operação. Ele estava
     # respondendo sobre o AKK4585 e o AAA4569 cutucou no meio, porque aquela
     # conversa estava parada há 60 s.
     #
@@ -2788,7 +2788,7 @@ async def _vigiar_silencio(cfg: Settings, sessao: Sessao, segundos: int, motivo:
     # ⚠️ **`retoma_no_silencio` é falso no pânico, e tem de continuar sendo.**
     # Se o botão foi apertado de verdade, escrever agora avisa quem estiver do
     # lado do motorista que a central percebeu. Ver `PB-PANICO`.
-    # ⚠️ **Com frota, insiste UMA vez só.** Pedido do Leonardo em 01/09/2026.
+    # ⚠️ **Com frota, insiste UMA vez só.** Pedido da operação.
     #
     # Um número com três caminhões em evento teria três conversas cutucando a
     # mesma pessoa, duas vezes cada: seis mensagens não pedidas, seis turnos de
@@ -2847,7 +2847,7 @@ async def _vigiar_silencio(cfg: Settings, sessao: Sessao, segundos: int, motivo:
 
     # ── Desistir, mas não sumir ─────────────────────────────────────────────
     #
-    # ⚠️ **"Ela encerrou do nada também."** Leonardo, 01/09/2026, olhando uma
+    # ⚠️ **"Ela encerrou do nada também."** A operação, olhando uma
     # conversa que parou no ar. A IA tinha perguntado, insistido uma vez e
     # fechado calada — do lado dele, a conversa simplesmente morreu.
     #
@@ -2988,8 +2988,8 @@ def _sem_cumprimento_repetido(sessao: Sessao, mensagem: str) -> str:
     """Tira o "boa tarde" de abertura quando a conversa já começou.
 
     ⚠️ **Regra pedida três vezes no prompt e cumprida umas vezes sim, outras
-    não.** Em 28/08/2026, no caminho dos botões, saiu «Boa noite, Antônio!»
-    depois de a própria IA já ter escrito "Que bom, Antônio! Só preciso saber o
+    não.** Em 28/08/2026, no caminho dos botões, saiu «Boa noite, Bruno!»
+    depois de a própria IA já ter escrito "Que bom, Bruno! Só preciso saber o
     motivo" e de o cliente ter tocado um botão.
 
     Mesma escolha do travessão e da saudação no fim: instrução é pedido, isto é
@@ -3103,10 +3103,10 @@ async def _falar(cfg: Settings, sessao: Sessao) -> None:
     # ── Quem vai para uma pessoa não é o modelo quem anuncia ────────────────
     #
     # ⚠️ **"O roteamento no painel funcionou, mas a resposta foi errada para o
-    # cliente."** Leonardo, 02/09/2026, num pânico. O caso foi para a fila
+    # cliente."** A operação, num pânico. O caso foi para a fila
     # humana certinho, e o cliente leu:
     #
-    #     "Obrigada, Antônio! Esse atendimento já foi encerrado e registrado
+    #     "Obrigada, Bruno! Esse atendimento já foi encerrado e registrado
     #      aqui no sistema. Se precisar de mais alguma coisa, é só chamar a
     #      central."
     #

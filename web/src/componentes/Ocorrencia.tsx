@@ -13,7 +13,7 @@ import { MiniMapa } from "./MiniMapa";
  * muda o que ele vai fazer em seguida.
  *
  * ⚠️ A trilha de auditoria era o terceiro retrátil e saiu da tela em
- * 03/09/2026, a pedido do Leonardo. O dado continua no contrato da API.
+ * 03/09/2026, a pedido da operação. O dado continua no contrato da API.
  */
 export function Ocorrencia({ id, aoVoltar }: { id: string; aoVoltar: () => void }) {
   const [oc, setOc] = useState<TOcorrencia | null>(null);
@@ -154,7 +154,7 @@ export function Ocorrencia({ id, aoVoltar }: { id: string; aoVoltar: () => void 
         </details>
 
         {/* ⚠️ **A trilha de auditoria saiu da tela em 03/09/2026**, a pedido do
-            Leonardo. Era um `<details>` retrátil com "política vX · prompt vY"
+            A operação. Era um `<details>` retrátil com "política vX · prompt vY"
             no contador.
 
             ⛔ Saiu **só da tela**. O dado continua inteiro: `auditoria`,

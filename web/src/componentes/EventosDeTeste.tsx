@@ -155,9 +155,9 @@ function ComAbasDestacadas({ texto }: { texto: string }) {
 /**
  * A Central dispara evento de teste sozinha, sem Postman e sem chamar o dev.
  *
- * Pedida pelo gestor da Central em 03/09/2026. Até aqui, validar o atendimento
+ * Pedida pelo Central. Até aqui, validar o atendimento
  * exigia montar JSON à mão, saber o formato de data aceito, acertar o rótulo do
- * evento caractere por caractere e perguntar ao Leonardo o que deu errado
+ * evento caractere por caractere e perguntar à operação o que deu errado
  * quando nada acontecia. A tela tira as quatro coisas do caminho: o rótulo vem
  * do catálogo, o horário é sempre agora, o payload é montado no servidor, e a
  * resposta explica a recusa em português.
@@ -369,7 +369,7 @@ export function EventosDeTeste({ aoFechar }: { aoFechar: () => void }) {
                 </label>
 
                 {/* ⚠️ Havia um campo de data e hora aqui, tirado em 03/09/2026 a
-                    pedido do Leonardo. O horário do evento é sempre o do
+                    pedido da operação. O horário do evento é sempre o do
                     disparo, decidido no servidor. O campo dava três formas de
                     errar (formato fora do que o parser aceita, fuso trocado,
                     data no passado num evento apresentado como de agora) e
@@ -417,7 +417,7 @@ export function EventosDeTeste({ aoFechar }: { aoFechar: () => void }) {
                 </details>
               )}
 
-              {/* ⚠️ Reescrito em 03/09/2026, a pedido do Leonardo. A versão
+              {/* ⚠️ Reescrito em 03/09/2026, a pedido da operação. A versão
                   anterior interpolava o telefone cru e virava literalmente
                   "para ninguém" com o campo vazio — bug, não só texto confuso.
                   A troca por "o número escolhido acima" evita mostrar um número
@@ -569,7 +569,7 @@ function SeletorDeCerebro({
           >
             {/* ⚠️ Havia um selo "não aprovado para produção" aqui, e um texto
                 com os dois defeitos medidos do Flash Lite. Os dois saíram a
-                pedido do Leonardo em 03/09/2026. O que restou avisando é a
+                pedido da operação. O que restou avisando é a
                 orientação no topo do bloco; o fato continua no campo
                 `aprovado_para_producao` que a API devolve, para quem for
                 consultar a decisão por fora do painel. */}

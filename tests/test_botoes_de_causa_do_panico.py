@@ -5,7 +5,7 @@
 à pergunta de um acionamento de emergência, e a do meio é sobre um equipamento
 que não tem relação nenhuma com o caso.
 
-Os rótulos vieram do Leonardo, repassando a Central: «Acionei sem querer» e
+Os rótulos vieram da operação, repassando a Central: «Acionei sem querer» e
 «Outro motivo». O terceiro é escolha nossa, e entrou por ser o único que **muda
 o destino do caso**: quem diz que não foi ele está dizendo que alguém ou alguma
 coisa acionou o alerta, e isso é de uma pessoa.

@@ -55,7 +55,7 @@ from central_ia.orchestration import tratativas
 
 LAT, LON = -25.446613, -49.267815
 PLACA = "AKK9832"
-NOME = "Antônio Ferreira"
+NOME = "Bruno Ferreira"
 
 TUDO_BEM = wa.BOTAO_TUDO_BEM
 AJUDA = wa.BOTAO_AJUDA
@@ -173,7 +173,7 @@ ROTEIROS: list[dict] = [
     {"id": "F2", "titulo": "Placa errada", "evento": BATERIA, "passos": [
         t("essa placa não é minha")]},
     {"id": "F3", "titulo": "Nome errado", "evento": BATERIA, "passos": [
-        t("não sou o Antônio não, sou o irmão dele"), t("ele desligou a chave sim")]},
+        t("não sou o Bruno não, sou o irmão dele"), t("ele desligou a chave sim")]},
     {"id": "F4", "titulo": "A palavra dele", "evento": BATERIA, "passos": [
         t("o busão tá parado na garagem"), t("é rotina, dorme aqui todo dia")]},
 

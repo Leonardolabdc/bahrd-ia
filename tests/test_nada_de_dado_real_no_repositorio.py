@@ -1,6 +1,6 @@
 """O repositório vai para o GitHub da Bahrd. O que está aqui, sai daqui.
 
-Escrito em 27/08/2026, quando o Leonardo recebeu acesso ao GitHub da empresa e
+Escrito em 27/08/2026, quando a operação recebeu acesso ao GitHub da empresa e
 pedimos uma auditoria antes de subir. O resultado foi bom — nenhuma chave de
 API jamais foi commitada, o `.env` nunca entrou no histórico — com **uma**
 exceção: o celular pessoal dele estava em doze arquivos, em docstring e em

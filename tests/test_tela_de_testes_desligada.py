@@ -73,7 +73,7 @@ def test_a_tela_nao_tem_mais_lista_de_destinos() -> None:
     A trava era boa contra o dígito trocado e ruim para o propósito da tela: a
     Central precisa testar com o celular de quem estiver na sala, e a lista
     obrigava a chamar o dev para cada número novo, que é justamente o que a tela
-    existe para evitar. Decisão do Leonardo, registrada aqui para ninguém
+    existe para evitar. Decisão da operação, registrada aqui para ninguém
     reintroduzir a variável achando que ela sumiu por descuido.
 
     O que sobrou no lugar: validação de formato no servidor, o `PAINEL_TOKEN`,

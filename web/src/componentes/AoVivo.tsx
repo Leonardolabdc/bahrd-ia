@@ -114,7 +114,7 @@ export function AoVivo({ item, aoVoltar }: { item: ItemFila | null; aoVoltar: ()
         )}
       </div>
 
-      {/* ⛔ **A barra de ações saiu em 03/09/2026, a pedido do Leonardo.**
+      {/* ⛔ **A barra de ações saiu em 03/09/2026, a pedido da operação.**
           Tinha "Assumir agora" e "Deixar a IA continuar".
 
           "Assumir agora" não tinha `onClick`: aceitava o clique e não fazia

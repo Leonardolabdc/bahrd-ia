@@ -55,7 +55,7 @@ def test_caso_que_acabou_nao_desativa(desfecho: str) -> None:
 
 
 def test_transporte_sem_prazo_informado_cai_no_padrao_de_duas_horas() -> None:
-    """⭐ O número é do gestor da Central, repassado em 02/09/2026.
+    """⭐ O número é da Central, repassado em 02/09/2026.
 
     *"Para movimento com ignição desligada é inativado por 2 horas quando não há
     a confirmação do cliente do tempo em que vai levar o transporte. Caso o

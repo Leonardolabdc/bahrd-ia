@@ -1,40 +1,6 @@
 {
   "_leia": [
-    "Modelo id 932301352640088. Serve REMOCAO_BATERIA e MOVIMENTO_SEM_IGNICAO:",
-    "o tipo do evento entra como {{1}}, entao qualquer um do catalogo cabe aqui",
-    "sem modelo novo.",
-    "",
-    "REESCRITO EM 10/09/2026. Saiu todo emoji e o texto virou conversa: quem le",
-    "e um motorista, e a mensagem anterior parecia formulario de sistema. O",
-    "pedido foi do Leonardo, com o texto proposto por ele.",
-    "",
-    "REGRAS DA META APRENDIDAS AQUI, cada uma custou uma tentativa:",
-    "  . BOTAO NAO ACEITA EMOJI. Nem variavel, nem quebra de linha, nem",
-    "    formatacao. No botao o que e nosso sao as palavras, e so.",
-    "  . VARIAVEL NAO PODE SER A ULTIMA COISA DO CORPO. Por isso o texto termina",
-    "    convidando a escolher uma opcao, e nao no 'Local: {{4}}'.",
-    "  . ADDRESS E OBRIGATORIO no bloco de localizacao (descoberto em",
-    "    27/08/2026, no primeiro disparo real). Sem ele o modelo com mapa falha",
-    "    e o motorista nao recebe nem o aviso do alarme.",
-    "",
-    "ORDEM DAS VARIAVEIS E CRESCENTE NO TEXTO, de proposito. O rascunho punha a",
-    "placa antes do tipo do evento, o que exigiria {{2}} aparecendo antes de",
-    "{{1}}. Nao ha evidencia de que a Meta aceite isso, e cada modelo so pode",
-    "ser editado UMA VEZ a cada 24 h — uma recusa custaria um dia. O evento veio",
-    "para a frente na frase e a ordem ficou 1,2,3,4.",
-    "",
-    "Manter esta ordem tambem e o que dispensa mexer no codigo: eventos.py ja",
-    "envia [tipo, placa, horario, local] nessa sequencia.",
-    "",
-    "NEGRITO so na placa e no tipo do evento. Negrito funciona por contraste; em",
-    "tudo vira ruido. Sao os dois dados que o motorista precisa pegar de",
-    "relance: qual caminhao e o que aconteceu.",
-    "",
-    "SEM BOTAO DE URL, de proposito. Botao de URL nao devolve webhook — o",
-    "cliente toca e nos nao ficamos sabendo. QUICK_REPLY devolve, abre a janela",
-    "de 24 h e a IA assume a conversa (doc 19). E a IA nao pode mandar link",
-    "nenhum (blindagem.py): link saindo do WhatsApp verificado da Bahrd e",
-    "phishing com a credibilidade da empresa."
+    "Modelo de mensagem no formato que a Meta aceita em /message_templates. As regras de composição estão no README desta pasta."
   ],
   "name": "evento_alerta_mapa",
   "language": "pt_BR",
@@ -53,7 +19,7 @@
             "Remoção de bateria",
             "AAA1111",
             "17:05",
-            "R. Brasílio Itiberê, 2424 - Rebouças, Curitiba/PR"
+            "Rua das Palmeiras, 100 - Centro, Curitiba/PR"
           ]
         ]
       }

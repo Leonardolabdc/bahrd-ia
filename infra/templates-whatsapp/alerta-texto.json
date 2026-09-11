@@ -1,20 +1,6 @@
 {
   "_leia": [
-    "Modelo id 1078877878160867. Par do alerta-mapa, SEM o cartao de mapa.",
-    "",
-    "Existe para quando o evento chega sem coordenada, e e a rede de seguranca",
-    "de quando o modelo com mapa falha por motivo que nao da para prever daqui:",
-    "em analise, reprovado depois, pausado por qualidade.",
-    "",
-    "Perder o mapa e chato. Perder a notificacao e grave.",
-    "",
-    "CORPO IDENTICO ao do alerta-mapa, de proposito — inclusive a linha 'Local:'.",
-    "Aqui ela e a unica fonte do endereco; la ela repete o que o cartao mostra.",
-    "Desde 10/09/2026 as duas saem da mesma funcao (local_do_evento), entao o",
-    "mesmo evento chega com o mesmo endereco independente de qual dos dois",
-    "modelos a Meta aceitou naquele instante.",
-    "",
-    "Ver o alerta-mapa.json para o resto das decisoes — valem para os dois."
+    "Modelo de mensagem no formato que a Meta aceita em /message_templates. As regras de composição estão no README desta pasta."
   ],
   "name": "evento_alerta",
   "language": "pt_BR",
@@ -29,7 +15,7 @@
             "Remoção de bateria",
             "AAA1111",
             "17:05",
-            "R. Brasílio Itiberê, 2424 - Rebouças, Curitiba/PR"
+            "Rua das Palmeiras, 100 - Centro, Curitiba/PR"
           ]
         ]
       }

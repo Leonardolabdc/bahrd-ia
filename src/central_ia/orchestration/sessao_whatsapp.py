@@ -377,8 +377,8 @@ class Sessao:
         **Não conta turno de IA e não soma custo**: a pergunta é do roteiro.
 
         ⚠️ **E ela avisa que a conversa já tem voz da IA nela.** Sem esse aviso,
-        em 28/08/2026, o turno seguinte abriu com «Boa tarde, Antônio!» para
-        quem já tinha lido "Que bom, Antônio! Só preciso saber o motivo" e
+        em 28/08/2026, o turno seguinte abriu com «Boa tarde, Bruno!» para
+        quem já tinha lido "Que bom, Bruno! Só preciso saber o motivo" e
         tocado um botão. O modelo não estava desobedecendo: pelo que ele via,
         antes dele só existia a notificação automática, que é voz do sistema.
 
@@ -507,7 +507,7 @@ class Sessao:
             duracao = eventos.duracao_da_desativacao(desfecho)
 
             # ⭐ **O prazo que o cliente informou vence o padrão do catálogo.**
-            # Regra do gestor da Central, 02/09/2026: sem confirmação de tempo,
+            # Regra da Central: sem confirmação de tempo,
             # duas horas; com tempo informado, o tempo dele. Quem sabe quanto
             # dura o transporte é quem está com o veículo.
             #
@@ -551,7 +551,7 @@ class Sessoes:
         #: dinheiro: dentro da janela, mensagem é grátis; fora, só template
         #: entrega, e template é cobrado a cada disparo.
         #:
-        #: O gestor da Central mediu isso na prática (doc 12): *"se eu enviar 10
+        #: A Central mediu isso na prática (doc 12): *"se eu enviar 10
         #: notificações vai cobrar 10×; se ele responder na primeira, não é
         #: cobrado as outras 9 durante 24 h"*.
         self._ultima_entrada: dict[str, datetime] = {}
