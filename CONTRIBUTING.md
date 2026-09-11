@@ -171,18 +171,18 @@ do [README da pasta](infra/templates-whatsapp/README.md).
 
 ## Onde o código mora
 
-O repositório é **privado**, em
-`seu-usuario/bahrd-ia`.
+O repositório é **público**, em
+[`Leonardolabdc/bahrd-ia`](https://github.com/Leonardolabdc/bahrd-ia).
 
-A `main` é protegida e a organização **exige Pull Request**:
+Toda mudança nasce em branch e entra por Pull Request. A `main` reflete o que
+está em produção; a `dev`, o que está em validação.
 
 ```bash
 git checkout -b nome-da-mudanca
 git push -u origin nome-da-mudanca
 ```
 
-O GitHub responde com o link para abrir o PR, e o CI roda na branch.
-
-Quem tem papel que permite ignorar a regra consegue subir direto na `main`, e o
-GitHub **registra cada bypass no audit log da organização**. A carga inicial do
-projeto foi assim, por ser a criação do repositório. Fora esse caso, use o PR.
+O GitHub responde com o link para abrir o PR, e o CI roda na branch — lint,
+testes, varredura de segredo e build do front. **Merge só com o CI verde**, que
+é o mecanismo, não a convenção: sem ele, "não quebrar a main" seria só um
+acordo verbal.
