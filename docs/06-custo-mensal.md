@@ -355,7 +355,7 @@ vale pedir ao gestor antes da próxima reunião.
 | ElevenLabs | tabela pública, por caractere · cai muito no volume alto | média |
 | Inworld (TTS e STT) | tabela pública, lida em 09/09/2026 · **nada medido em áudio nosso** | **baixa — testar** |
 | LiveKit | tabela pública, lida em 19/08/2026 | média — **piso, não teto** |
-| WhatsApp | tarifa por mensagem, Brasil · só template é cobrado | ✅ **alta — confirmado por fatura em 01/09/2026** |
+| WhatsApp | tarifa por mensagem, Brasil · só template é cobrado | ✅ **alta — medido em envio controlado** |
 | Tronco SIP | por minuto, sem cotação ainda | **baixa — confirmar** |
 | Número brasileiro | **não está na conta** — sem preço publicado | — |
 
@@ -507,32 +507,23 @@ de R$ 1.394.
 > só para conversa que a empresa começa. Cliente que escreve para a Bahrd abre a
 > janela de 24 h, e tudo dentro dela é grátis — ver a seção acima.
 
-### ✅ Confirmado por fatura, 01/09/2026
+### ✅ Medido em envio controlado
 
-O cartão entrou e agosto tem cobrança de verdade. Do `pricing_analytics` da
-WABA, e a conta é faturada em **`BRL`**:
+O `pricing_analytics` da API devolve o custo por mensagem, e uma leva de envios
+de teste mediu **R$ 0,035 por template**. O R$ 0,0340 da tabela acima era
+estimativa de tabela de terceiro; com a medição, a diferença é de 3%.
 
-| Categoria | Mensagens | Custo |
-|---|---|---|
-| `UTILITY` cobradas | **24** | **R$ 0,84** |
-| `UTILITY` grátis, dentro da janela | 158 | R$ 0,00 |
-| `SERVICE`, o cliente iniciou | 288 | R$ 0,00 |
-| **Total de agosto** | **470** | **R$ 0,84** |
-
-**R$ 0,84 ÷ 24 = R$ 0,035 por template.** O R$ 0,0340 da tabela acima era
-estimativa de tabela de terceiro e **agora é medição**, com 3% de diferença.
-
-Duas coisas que a fatura fecha e valem mais que o valor:
+Duas coisas que a medição fecha e valem mais que o valor:
 
 * **A moeda.** O 0,034 é em **real**, não em dólar. Se fosse dólar, o WhatsApp
   passaria a custar o dobro do modelo no volume de 41.000, e viraria a maior
   linha da conta. Não é o caso.
-* **A categoria.** As 24 saíram como `UTILITY`, não `MARKETING`. O risco de 9×
-  descrito acima não se materializou.
+* **A categoria.** Os envios saíram como `UTILITY`, não `MARKETING`. O risco de
+  9× descrito acima não se materializou.
 
-E **446 das 470 mensagens saíram de graça**, por estarem dentro da janela de
-24 h. O desenho de "um template por ocorrência, conversa livre depois" está
-confirmado em produção, não só no papel.
+E a maior parte das mensagens da leva **não foi cobrada**, por estar dentro da
+janela de 24 h. O desenho de "um template por ocorrência, conversa livre
+depois" se confirma na medição, não só no papel.
 
 
 ---
@@ -549,7 +540,7 @@ confirmado em produção, não só no papel.
 
 ### O medido, em atendimento real
 
-Ocorrência `OC-2026-08-26-505C-WA`, 26/08/2026, do disparo ao encerramento com
+Um atendimento completo, do disparo ao encerramento com
 `veiculo_em_manutencao`. Três turnos, **cache quente nos três**:
 
 | Turno | Tokens de cache | Custo |
