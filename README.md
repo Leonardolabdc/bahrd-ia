@@ -5,6 +5,17 @@ problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
 sistema atende no lugar dela o que consegue confirmar sozinho — e chama a
 pessoa quando o caso exige julgamento, autoridade ou tem risco.
 
+> ### ⚠️ Projeto acadêmico · empresa e dados fictícios
+>
+> A **Bahrd Monitoramento** não existe. É uma empresa fictícia criada para a
+> disciplina *AI Factory: Build, Deploy and Showcase* (PUCPR), assim como a
+> **Vetor**, fornecedora da URA legada citada na documentação.
+>
+> **Todo dado neste repositório é sintético e inventado** — telefones, placas,
+> nomes, endereços, coordenadas, IMEIs e identificadores de conta. Nenhum
+> corresponde a pessoa, veículo, empresa ou conta real, e nada aqui provém de
+> cliente, operação ou sistema de terceiro.
+
 ![Fluxo do atendimento, do evento ao encerramento](docs/fluxo-genaiura.png)
 
 A cor diz o papel de cada peça. **A área azul é o que tem custo por uso**, e o
@@ -212,13 +223,27 @@ evento → template com mapa → botões → conversa → desfecho → painel
 ## Sobre este repositório
 
 Projeto acadêmico da disciplina **AI Factory: Build, Deploy and Showcase**
-(PUCPR). A **Bahrd Monitoramento** é uma empresa fictícia, assim como a Vetor,
-fornecedora da URA legada citada na documentação.
+(PUCPR).
 
-**Todo dado neste repositório é sintético** — telefones, placas, nomes,
-endereços e coordenadas. Nenhum corresponde a pessoa ou veículo real, e há um
-teste automatizado (`test_nada_de_dado_real_no_repositorio`) que falha se algum
-entrar.
+**A Bahrd Monitoramento é uma empresa fictícia**, assim como a Vetor,
+fornecedora da URA legada citada na documentação. Os volumes, playbooks e
+decisões de negócio descritos aqui compõem um cenário construído para o
+trabalho — não descrevem nenhuma operação real.
+
+**Todo dado neste repositório é fictício**, e isso vale para cada categoria:
+
+| | |
+|---|---|
+| Telefones | dígitos repetidos (`+55 41 99999-8888`) |
+| Placas | padrão de exemplo (`ABC1D23`, `XYZ4E56`) |
+| Nomes | genéricos, sem correspondência com pessoas |
+| Endereços e coordenadas | logradouros inventados |
+| IMEIs de rastreador | sequência sintética (`8602000000000xx`) |
+| Identificadores de conta | sequência sintética, não resolvem em lugar nenhum |
+
+Isso não depende de disciplina: o teste
+**`test_nada_de_dado_real_no_repositorio`** falha a suíte inteira se um dado
+que pareça real entrar, e o `gitleaks` varre o histórico em todo push.
 
 Licença em [LICENSE](LICENSE) · como contribuir em
 [CONTRIBUTING.md](CONTRIBUTING.md) · política de segurança em

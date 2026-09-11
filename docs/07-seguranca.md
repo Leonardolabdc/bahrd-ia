@@ -367,7 +367,7 @@ nada, porque dá sensação de proteção onde não há.
 | Contrato sem ferramentas | `ports/llm.py` |
 | Saída sem HTML | `agent/escrita.py` · `sem_html` |
 | Tamanho da entrada e detector de injeção | `agent/blindagem.py` |
-| Bahrd, tamanho e repetição na saída | `agent/blindagem.py` · `problema_na_saida` |
+| Link, tamanho e repetição na saída | `agent/blindagem.py` · `problema_na_saida` |
 | Lista branca de desfechos | `domain/eventos.py` · `api/rotas/whatsapp.py` |
 | Guardrails | `prompts/policy_guardrails.md` |
 | Vazamento do guincho | `agent/vigilancia.py` |
@@ -507,8 +507,7 @@ detecção de ataque: eles testam que **o modelo continua sem ferramentas**. No 
 em que isso mudar, metade desta tabela muda de cor junto.
 
 > **Quando a integração com a Bahrd chegar**, as regras que preservam este
-> desenho estão em 28 · Regras para o acesso à Bahrd,
-> escritas antes do acesso existir de propósito.
+> desenho precisam ser escritas **antes** de o acesso existir — não depois.
 
 ---
 

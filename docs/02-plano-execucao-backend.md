@@ -1,6 +1,5 @@
 # POC IA — Central de Monitoramento Bahrd · Plano de Execução do Back-end
 
-> **Complemento de** `a documentação interna do projeto`
 > **Versão:** 1.1 · **Data:** 11/08/2026 · **Status:** proposta para aprovação
 > **Stack obrigatória do cliente:** Python (back-end) · Oracle · MySQL · **tudo em Oracle Cloud (OCI)**
 
@@ -417,10 +416,9 @@ services:
 ```
 bahrd-ia/
 ├── docs/
-│   ├── a documentação interna do projeto
+│   ├── 01-fluxo.md                           # o fluxo do atendimento
 │   ├── 02-plano-execucao-backend.md
 │   ├── 03-checklist-acessos-e-credenciais.md # o que pedir para a TI
-│   ├── a documentação interna do projeto          # próxima entrega
 │   └── exemplos/                             # PDFs, planilhas e logo de referência
 │       └── fluxo-bahrd-ia.pdf
 ├── prompts/                                  # versionados, carregados em runtime
@@ -1035,7 +1033,7 @@ Isso não é só estética. Um operador de central 24 h em plantão de madrugada
 ```
 TELA 1 · o que precisa de você
 ┌───────────────────────────────────────────────────────────────┐
-│  ◆ Central IA          ● IA ativa        Desligar IA  a operação│
+│  ◆ Central IA          ● IA ativa     Desligar IA   Operador  │
 ├───────────────────────────────────────────────────────────────┤
 │  Precisa de você  2      A IA está cuidando  7                │
 ├───────────────────────────────────────────────────────────────┤
@@ -1371,9 +1369,9 @@ Restam estas definições, que **não bloqueiam o início** e serão resolvidas 
 
 ## 16. Próxima entrega — engenharia de prompts
 
-> **Pré-requisito de execução:** o levantamento de acessos, chaves de API e dependências está em `03-checklist-acessos-e-credenciais.md` — documento pronto para ser encaminhado à equipe de TI.
+> **Pré-requisito de execução:** o levantamento de acessos, chaves de API e dependências é pré-requisito de execução e corre em paralelo com a equipe de TI.
 
-Aprovado este plano, a entrega seguinte é `a documentação interna do projeto` + a pasta `prompts/`, com:
+Aprovado este plano, a entrega seguinte é a engenharia de prompts, na pasta `prompts/`, com:
 
 1. **`persona_core.md`** — identidade, voz, registro pt-BR falado, limites, anti-*tells*
 2. **`policy_guardrails.md`** — regras duras, gatilhos de escalonamento, o que nunca fazer
