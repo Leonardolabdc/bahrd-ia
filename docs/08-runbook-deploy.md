@@ -156,6 +156,21 @@ cadastre:
 > A chave privada vai no **secret do GitHub**, nunca no repositório. E não
 > reaproveite: gere um par por ambiente se quiser ser rigoroso.
 
+**Por último, ligue o deploy.** Em **Settings → Secrets and variables → Actions
+→ Variables**, na aba do **repositório** (não do Environment), crie:
+
+| Nome | Valor |
+|---|---|
+| `DEPLOY_HABILITADO` | `true` |
+
+Enquanto ela não existir, os dois jobs de deploy ficam **pulados** — o pipeline
+continua verde e nada é publicado. É proposital: pipeline vermelho por
+configuração ausente treina todo mundo a ignorar pipeline vermelho.
+
+> Tem que ser variável de **repositório**. O `if` de um job é avaliado antes de
+> o ambiente ser resolvido, então uma variável de Environment leria vazia
+> sempre, e o deploy ficaria eternamente pulado sem ninguém entender por quê.
+
 Depois disso, um push na `main` publica sozinho: constrói, sobe em dev, roda os
 smoke tests, e só então toca produção.
 

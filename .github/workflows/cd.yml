@@ -100,10 +100,15 @@ jobs:
     name: Deploy · desenvolvimento
     needs: build
     runs-on: ubuntu-latest
-    # Pulado — e não falho — enquanto o Environment não existir. Antes de
-    # `BASE_URL` estar cadastrada não há para onde publicar, e um job vermelho
-    # por configuração ausente treina todo mundo a ignorar pipeline vermelho.
-    if: vars.BASE_URL != ''
+    # Pulado — e não falho — enquanto o deploy não estiver configurado. Um job
+    # vermelho por configuração ausente treina todo mundo a ignorar pipeline
+    # vermelho.
+    #
+    # ⚠️ O guarda é uma variável de **repositório**, e não de Environment. O `if`
+    # de um job é avaliado ANTES de o ambiente ser resolvido, então `vars` aqui
+    # só enxerga org e repositório — uma variável de Environment leria vazia
+    # sempre, e o job ficaria eternamente pulado sem ninguém entender por quê.
+    if: vars.DEPLOY_HABILITADO == 'true'
     environment:
       name: dev
       url: ${{ vars.BASE_URL }}
@@ -133,9 +138,13 @@ jobs:
     name: Deploy · producao
     needs: [build, dev]
     # `always()` porque `dev` pulado faria `prod` ser pulado junto por herança.
-    # A condição real é: dev não pode ter FALHADO, e prod precisa estar
-    # configurado.
-    if: always() && needs.dev.result != 'failure' && needs.build.result == 'success' && vars.BASE_URL != ''
+    # A condição real é: dev não pode ter FALHADO, e o deploy precisa estar
+    # habilitado. Mesma observação do job acima sobre `vars` de repositório.
+    if: >-
+      always()
+      && needs.dev.result != 'failure'
+      && needs.build.result == 'success'
+      && vars.DEPLOY_HABILITADO == 'true'
     runs-on: ubuntu-latest
     environment:
       name: prod
