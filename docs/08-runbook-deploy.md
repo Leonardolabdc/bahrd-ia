@@ -34,32 +34,39 @@ nslookup SEU-DOMINIO-dev.duckdns.org
 
 ## 2 · Preparar cada máquina
 
-Rode **nas duas**, trocando o IP. O usuário é `opc` no Oracle Linux e `ubuntu`
-no Ubuntu — se um recusar, é o outro.
+As duas máquinas são **Ubuntu 24.04**, usuário `ubuntu`. Docker 29.8 e Compose
+v5.5.1 já vêm instalados e o usuário já está no grupo `docker` — nada disso
+precisa ser feito.
 
 ```bash
-ssh -i ~/.ssh/bahrd.key opc@64.181.191.98
+ssh -i ~/.ssh/bahrd.key ubuntu@64.181.191.98
 ```
 
 Já dentro da máquina:
 
 ```bash
-# Git e o repositório em /opt/bahrd
-sudo dnf install -y git || sudo apt-get install -y git
+sudo apt-get update -qq && sudo apt-get install -y -qq git
 sudo mkdir -p /opt/bahrd && sudo chown "$USER":"$USER" /opt/bahrd
 git clone https://github.com/Leonardolabdc/bahrd-ia.git /opt/bahrd
 cd /opt/bahrd
-
-# Portas 80 e 443. A regra precisa entrar ANTES do REJECT do Oracle Linux,
-# não no fim da cadeia — inserir depois dele não tem efeito nenhum.
-if sudo iptables -L INPUT --line-numbers -n | grep -q REJECT; then
-  pos=$(sudo iptables -L INPUT --line-numbers -n | awk '/REJECT/{print $1; exit}')
-  sudo iptables -I INPUT "$pos" -p tcp --dport 80  -j ACCEPT
-  sudo iptables -I INPUT "$pos" -p tcp --dport 443 -j ACCEPT
-  sudo netfilter-persistent save 2>/dev/null || sudo service iptables save
-fi
-sudo iptables -L INPUT -n --line-numbers | head -12   # confira a ordem
 ```
+
+**Portas 80 e 443.** A `bahrd-app` já está com elas abertas; a de
+desenvolvimento não. O comando abaixo é idempotente — não duplica a regra se ela
+já existir:
+
+```bash
+for porta in 80 443; do
+  sudo iptables -C INPUT -p tcp --dport $porta -m state --state NEW -j ACCEPT 2>/dev/null     || sudo iptables -I INPUT "$(sudo iptables -L INPUT --line-numbers -n | awk '/REJECT/{print $1; exit}')"          -p tcp --dport $porta -m state --state NEW -j ACCEPT
+done
+sudo netfilter-persistent save
+sudo iptables -L INPUT -n --line-numbers | head -12
+```
+
+> ⚠️ **A regra precisa entrar ANTES da linha `REJECT`**, e é por isso que o
+> comando descobre a posição dela em vez de usar um número fixo. `iptables -A`,
+> que acrescenta no fim, colocaria a regra depois do REJECT — onde ela não tem
+> efeito nenhum, e sem nenhum erro para avisar. Já aconteceu neste projeto.
 
 > As *Ingress Rules* da sub-rede pública, no console da OCI, precisam liberar
 > 80 e 443 também. São duas camadas de firewall, e esquecer a de cima dá o
@@ -71,7 +78,7 @@ Do seu Windows, envie o wallet para **cada** máquina:
 
 ```bash
 # Descompacte o .zip do console da OCI numa pasta local primeiro
-scp -i ~/.ssh/bahrd.key -r ./wallet opc@64.181.191.98:/opt/bahrd/wallet
+scp -i ~/.ssh/bahrd.key -r ./wallet ubuntu@64.181.191.98:/opt/bahrd/wallet
 ```
 
 Na máquina, crie o arquivo de ambiente:
@@ -149,7 +156,7 @@ cadastre:
 | Tipo | Nome | Valor |
 |---|---|---|
 | Secret | `SSH_HOST` | o IP daquela máquina |
-| Secret | `SSH_USER` | `opc` ou `ubuntu` |
+| Secret | `SSH_USER` | `ubuntu` |
 | Secret | `SSH_KEY` | o conteúdo de `~/.ssh/bahrd.key`, inteiro |
 | Variable | `BASE_URL` | `https://` + o domínio daquela máquina |
 
@@ -180,7 +187,7 @@ smoke tests, e só então toca produção.
 rollback de plataforma, e um procedimento nunca executado não é procedimento.
 
 ```bash
-ssh -i ~/.ssh/bahrd.key opc@64.181.191.98
+ssh -i ~/.ssh/bahrd.key ubuntu@64.181.191.98
 cd /opt/bahrd
 cat .deploy-anterior            # a etiqueta que o deploy guardou
 ./infra/deploy/rollback.sh      # volta, e roda os smoke tests sozinho
