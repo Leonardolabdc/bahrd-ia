@@ -186,6 +186,13 @@ tentativa de injeção de prompt.
 | **[05 · Deploy](docs/05-deploy-oci.md)** | Publicação da imagem, variáveis por ambiente, sequência de deploy e rollback |
 | **[06 · Custo mensal](docs/06-custo-mensal.md)** | Projeção por serviço, com o grau de confiança de cada linha |
 | **[07 · Segurança](docs/07-seguranca.md)** | O que já está protegido, o que fica para depois com o gatilho de cada item, e o que decidimos **não** fazer |
+| **[08 · Runbook de deploy](docs/08-runbook-deploy.md)** | Do zero ao ar: DNS, firewall, wallet, primeiro deploy, CD e ensaio de rollback |
+| **[Auditoria do protótipo](docs/auditoria-prototipo.md)** | As 14 lacunas encontradas antes de mexer, com o comando que revelou cada uma |
+| **[Matriz de decisão](docs/decisao-stack.md)** | Critérios, pesos e notas — os pesos fixados um dia antes das notas |
+| **[ADR-001](docs/adr/0001-stack.md)** · **[ADR-002](docs/adr/0002-plataforma-de-publicacao.md)** | Manter a stack herdada · publicar na Oracle Cloud |
+| **[C4 · nível 1](docs/architecture/c4-nivel-1-contexto.md)** · **[nível 2](docs/architecture/c4-nivel-2-containers.md)** | Contexto e contêineres |
+| **[Post-mortem 01](docs/post-mortem-01-pii-no-historico.md)** | Dado pessoal no histórico do Git: causa raiz e o que mudou |
+| **[CHANGELOG](CHANGELOG.md)** | O que mudou em cada versão |
 
 ## Configuração que muda por ambiente
 
@@ -214,8 +221,8 @@ evento → template com mapa → botões → conversa → desfecho → painel
 
 | | |
 |---|---|
-| Deploy em nuvem com URL pública | em andamento |
-| Persistência das conversas | ainda em memória — reiniciar a API apaga as conversas em curso |
+| Persistência das conversas | ainda em memória — reiniciar a API apaga as conversas em curso ([lacuna 3](docs/auditoria-prototipo.md)) |
+| Assinatura HMAC do webhook | desligada desde o protótipo herdado ([lacuna 4](docs/auditoria-prototipo.md)) |
 | Voz por telefone | sem provedor definido |
 
 ---

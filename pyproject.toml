@@ -1,6 +1,6 @@
 [project]
 name = "central-ia"
-version = "0.1.0"
+version = "1.0.0"
 description = "POC IA — URA com IA generativa para a central de monitoramento da Bahrd"
 requires-python = ">=3.12"
 readme = "README.md"

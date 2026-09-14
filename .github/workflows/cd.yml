@@ -100,6 +100,10 @@ jobs:
     name: Deploy · desenvolvimento
     needs: build
     runs-on: ubuntu-latest
+    # Pulado — e não falho — enquanto o Environment não existir. Antes de
+    # `BASE_URL` estar cadastrada não há para onde publicar, e um job vermelho
+    # por configuração ausente treina todo mundo a ignorar pipeline vermelho.
+    if: vars.BASE_URL != ''
     environment:
       name: dev
       url: ${{ vars.BASE_URL }}
@@ -128,6 +132,10 @@ jobs:
   prod:
     name: Deploy · producao
     needs: [build, dev]
+    # `always()` porque `dev` pulado faria `prod` ser pulado junto por herança.
+    # A condição real é: dev não pode ter FALHADO, e prod precisa estar
+    # configurado.
+    if: always() && needs.dev.result != 'failure' && needs.build.result == 'success' && vars.BASE_URL != ''
     runs-on: ubuntu-latest
     environment:
       name: prod
