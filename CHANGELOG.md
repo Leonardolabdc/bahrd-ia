@@ -8,9 +8,6 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 ## [Não publicado]
 
 ### A fazer
-- Sessões fora da memória do processo — hoje um reinício apaga as conversas em
-  curso, e todo deploy é um reinício ([auditoria](docs/auditoria-prototipo.md),
-  lacuna 3)
 - Religar a assinatura HMAC do webhook (lacuna 4)
 - Decidir `PANICO_AUTONOMO` — é decisão de operação, não de código (lacuna 5)
 
@@ -21,6 +18,16 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 Primeira versão publicada. O sistema deixa de existir só no notebook.
 
 ### Adicionado
+- **As conversas sobrevivem a um reinício.** Até aqui um deploy apagava toda
+  conversa em andamento, e quem estava falando recebia o menu de ajuda no meio
+  do atendimento. As sessões passam a ser espelhadas no Redis, e o boot recarrega
+  o que estava vivo ([ADR-003](docs/adr/0003-sessoes-fora-da-memoria.md))
+- **Os relógios de espera são rearmados** depois do reinício, descontando o tempo
+  em que o processo esteve fora — quem pediu dez minutos espera dez, e não
+  dezenove
+- **ADR-003**, com a correção do que a implementação ensinou: gravar a cada
+  mutação não era possível, porque quase toda mutação acontece no objeto
+  `Sessao` e não nos métodos do depósito
 - **Pilha de produção** (`docker-compose.prod.yml`): API, worker, Redis e borda
   em contêiner, com os dois bancos em serviço gerenciado na OCI
 - **TLS automático** com Caddy e Let's Encrypt, com redirect de HTTP para HTTPS
@@ -41,6 +48,9 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
   em formato MADR, com a matriz de decisão cujos pesos foram fixados antes das
   notas — a ordem é verificável no histórico do Git
 - **Auditoria do protótipo** com 14 lacunas em quatro níveis de severidade
+- **17 testes novos** — a suíte vai de 953 para **970**, sem regressão. Um deles
+  não exercita comportamento: compara os campos do dataclass com o payload
+  gravado e reprova quando alguém acrescenta um campo e esquece de serializá-lo
 
 ### Modificado
 - `ORACLE_POOL_MAX` de 10 para **6**: `api` e `worker` em processos separados

@@ -76,6 +76,7 @@ from central_ia.orchestration.sessao_whatsapp import (
     MAX_TURNOS_IA,
     SESSOES,
     Sessao,
+    Sessoes,
     _chave,
 )
 from central_ia.ports.llm import Mensagem
@@ -2916,6 +2917,55 @@ def cancelar_espera(ocorrencia_id: str) -> None:
     tarefa = _ESPERAS.pop(ocorrencia_id, None)
     if tarefa is not None:
         tarefa.cancel()
+
+
+async def rearmar_esperas(sessoes: Sessoes) -> int:
+    """Recomeça os relógios de espera depois de um reinício. Devolve quantos.
+
+    **Rearmar não é restaurar, e a diferença importa.** `_ESPERAS` guarda
+    `asyncio.Task`, e tarefa não serializa — não existe estado a trazer de
+    volta. O que sobrevive ao reinício é o fato de a sessão estar `aguardando`,
+    e o instante em que ela ficou assim. O relógio é reconstruído a partir
+    disso, descontando o tempo que passou com o processo fora do ar.
+
+    Sem este desconto, alguém que pediu "me dá 10 minutos" e teve o azar de um
+    deploy no minuto 9 esperaria 19 minutos. Com ele, espera os 10 combinados —
+    e se o processo ficou fora mais tempo que a espera inteira, a retomada sai
+    na hora, que é o comportamento certo: o prazo venceu.
+
+    ⚠️ Uma espera rearmada **não é idêntica à original**. A tarefa é outra, e
+    tudo o que estava no escopo dela se perdeu. O que se preserva é o contrato
+    visível para quem está do outro lado: o tempo combinado.
+    """
+    cfg = settings()
+    agora = datetime.now(UTC)
+    rearmadas = 0
+
+    for sessao in sessoes.todas():
+        if not sessao.viva or not sessao.aguardando:
+            continue
+
+        combinado = sessao.proxima_espera_s
+        decorridos = int((agora - sessao.ultima_em).total_seconds())
+        restante = max(combinado - decorridos, 0)
+
+        anterior = _ESPERAS.pop(sessao.ocorrencia_id, None)
+        if anterior is not None:
+            anterior.cancel()
+
+        _ESPERAS[sessao.ocorrencia_id] = asyncio.create_task(
+            _retomar(cfg, sessao, restante, ja_decorridos=decorridos)
+        )
+        rearmadas += 1
+        log.info(
+            "espera_rearmada",
+            ocorrencia=sessao.ocorrencia_id,
+            combinado_s=combinado,
+            decorridos_s=decorridos,
+            restante_s=restante,
+        )
+
+    return rearmadas
 
 
 async def _retomar(

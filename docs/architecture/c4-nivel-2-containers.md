@@ -96,17 +96,24 @@ Estes sobem em desenvolvimento e **não** sobem em produção:
 | **MinIO** | guarda o áudio | OCI Object Storage, API compatível com S3 |
 | **Oracle e MySQL locais** | contêiner | Autonomous Database e HeatWave |
 
-## O estado que ainda está no lugar errado
+## O estado que mudou de lugar
 
-A API guarda as conversas em curso **na memória do processo**. No desenho acima
-isso não aparece — e é exatamente o problema: um estado que não tem caixa é um
-estado que ninguém lembra de migrar.
+Até 14/09 a API guardava as conversas em curso **na memória do processo**, e no
+desenho isso não aparecia — que era exatamente o problema: um estado sem caixa é
+um estado que ninguém lembra de migrar. Cada deploy reiniciava o contêiner `api`
+e apagava toda conversa em andamento.
 
-A consequência é direta: **cada deploy reinicia o contêiner `api` e apaga toda
-conversa em andamento.** Está registrado como lacuna 3 da
-[auditoria](../auditoria-prototipo.md) e é a primeira coisa da fila depois desta
-entrega. Quando for resolvida, a seta `API → Redis` passa a carregar também a
-sessão, e o desenho muda.
+Hoje a seta `API → Redis` carrega também a sessão. A gravação acontece na saída
+de cada requisição e no desligamento; o boot recarrega o que estava vivo. É a
+[lacuna 3 da auditoria](../auditoria-prototipo.md), fechada pelo
+[ADR-003](../adr/0003-sessoes-fora-da-memoria.md).
+
+**O que continua sem caixa no desenho:** os relógios de espera. Eles são
+`asyncio.Task` dentro do processo da API, e tarefa não serializa. O que
+sobrevive é o fato de a sessão estar aguardando — no boot os relógios são
+**recomeçados** a partir disso, descontando o tempo em que o processo esteve
+fora. Uma espera rearmada não é a mesma tarefa; é o mesmo contrato com quem está
+do outro lado.
 
 ## Fronteiras de confiança
 

@@ -221,7 +221,6 @@ evento → template com mapa → botões → conversa → desfecho → painel
 
 | | |
 |---|---|
-| Persistência das conversas | ainda em memória — reiniciar a API apaga as conversas em curso ([lacuna 3](docs/auditoria-prototipo.md)) |
 | Assinatura HMAC do webhook | desligada desde o protótipo herdado ([lacuna 4](docs/auditoria-prototipo.md)) |
 | Voz por telefone | sem provedor definido |
 

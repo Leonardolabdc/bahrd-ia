@@ -60,6 +60,19 @@ JANELA_DE_ATENDIMENTO = timedelta(hours=24)
 VALIDADE = JANELA_DE_ATENDIMENTO
 
 
+def _momento(valor: str) -> datetime:
+    """Lê um instante gravado em ISO-8601, sempre com fuso.
+
+    ⚠️ `fromisoformat` devolve *naive* se a string não trouxer o fuso, e
+    comparar *naive* com *aware* levanta `TypeError` — que aqui apareceria
+    dentro de `viva`, ou seja, ao decidir se uma conversa continua. Toda
+    gravação deste módulo sai com fuso; esta rede existe para o dado que foi
+    gravado antes dela.
+    """
+    lido = datetime.fromisoformat(valor)
+    return lido if lido.tzinfo else lido.replace(tzinfo=UTC)
+
+
 def _chave(telefone: str) -> str:
     """Chave canônica da sessão — as duas grafias do celular caem no mesmo lugar.
 
@@ -112,12 +125,52 @@ class Fala:
     #: quando os únicos botões levavam para a loja de aplicativos.
     botoes: list[str] = field(default_factory=list)
 
+    def para_dicionario(self) -> dict:
+        return {
+            "quem": self.quem,
+            "texto": self.texto,
+            "momento": self.momento.isoformat(),
+            "audio": self.audio,
+            "transcrito": self.transcrito,
+            "duracao_s": self.duracao_s,
+            "tipo": self.tipo,
+            "botoes": list(self.botoes),
+        }
+
+    @classmethod
+    def de_dicionario(cls, d: dict) -> Fala:
+        return cls(
+            quem=d["quem"],
+            texto=d["texto"],
+            momento=_momento(d["momento"]),
+            audio=d.get("audio", False),
+            transcrito=d.get("transcrito", False),
+            duracao_s=d.get("duracao_s"),
+            tipo=d.get("tipo"),
+            botoes=list(d.get("botoes", [])),
+        )
+
 
 @dataclass
 class PassoDaTrilha:
     momento: datetime
     ator: str
     descricao: str
+
+    def para_dicionario(self) -> dict:
+        return {
+            "momento": self.momento.isoformat(),
+            "ator": self.ator,
+            "descricao": self.descricao,
+        }
+
+    @classmethod
+    def de_dicionario(cls, d: dict) -> PassoDaTrilha:
+        return cls(
+            momento=_momento(d["momento"]),
+            ator=d["ator"],
+            descricao=d["descricao"],
+        )
 
 
 @dataclass
@@ -519,6 +572,115 @@ class Sessao:
 
             self.desativada_ate = datetime.now(UTC) + duracao if duracao else None
 
+    # ───────────────────────── Serialização ─────────────────────────
+    #
+    # Pura de propósito: devolve e recebe `dict`, sem saber que existe Redis.
+    # É o que mantém `orchestration/` sem dependência de infraestrutura — quem
+    # conhece o depósito é `persistence/sessoes_redis.py` (ADR-003).
+    #
+    # ⚠️ Campo novo em `Sessao` precisa entrar nos DOIS métodos abaixo. Esquecer
+    #    não quebra nada visivelmente: a sessão volta do reinício com o campo no
+    #    valor padrão, e o defeito aparece como comportamento estranho muito
+    #    depois. `test_sessao_serializacao.py` compara com `dataclasses.fields`
+    #    e reprova justamente para esse esquecimento não passar.
+
+    def para_dicionario(self) -> dict:
+        return {
+            "ocorrencia_id": self.ocorrencia_id,
+            "telefone": self.telefone,
+            # Só o código: `TipoEvento` é catálogo, não dado da conversa.
+            # Gravar o objeto inteiro congelaria uma cópia do catálogo dentro
+            # de cada sessão, e uma correção de política nunca alcançaria as
+            # conversas já abertas.
+            "tipo": self.tipo.codigo,
+            "canal": self.canal,
+            "dados": dict(self.dados),
+            "origem": self.origem,
+            "modelo": self.modelo,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "endereco": self.endereco,
+            "historico": [m.model_dump() for m in self.historico],
+            "turnos_ia": self.turnos_ia,
+            "custo_usd": self.custo_usd,
+            "encerrada": self.encerrada,
+            "motivo_encerramento": self.motivo_encerramento,
+            "desfecho": self.desfecho,
+            "escalada": self.escalada,
+            "probabilidade_real": self.probabilidade_real,
+            "triagem_autoriza_encerrar": self.triagem_autoriza_encerrar,
+            "houve_resposta": self.houve_resposta,
+            "retomadas": self.retomadas,
+            "aguardando": self.aguardando,
+            "tentativas_de_injecao": self.tentativas_de_injecao,
+            "causa_escolhida": self.causa_escolhida,
+            "pediu_ajuda": self.pediu_ajuda,
+            # `set` não é JSON. Vira lista ordenada para o payload ser estável
+            # entre gravações — sem isso, duas gravações da mesma sessão geram
+            # bytes diferentes e qualquer comparação vira ruído.
+            "nossas_mensagens": sorted(self.nossas_mensagens),
+            "teto_de_retomadas": self.teto_de_retomadas,
+            "toque_adiado": self.toque_adiado,
+            "toque_ja_na_tela": self.toque_ja_na_tela,
+            "handoff": list(self.handoff),
+            "criada_em": self.criada_em.isoformat(),
+            "ultima_em": self.ultima_em.isoformat(),
+            "falas": [f.para_dicionario() for f in self.falas],
+            "trilha": [t.para_dicionario() for t in self.trilha],
+            "desativada_ate": self.desativada_ate.isoformat() if self.desativada_ate else None,
+            "desativada": self.desativada,
+        }
+
+    @classmethod
+    def de_dicionario(cls, d: dict) -> Sessao:
+        """Reconstrói a sessão. Devolve `None` se o tipo de evento não existe mais.
+
+        Tolerante a chave ausente de propósito: uma sessão gravada por uma
+        versão anterior precisa carregar, e não derrubar o boot inteiro.
+        """
+        tipo = eventos.por_codigo(d["tipo"])
+        if tipo is None:
+            raise ValueError(f"tipo de evento desconhecido: {d['tipo']!r}")
+
+        return cls(
+            ocorrencia_id=d["ocorrencia_id"],
+            telefone=d["telefone"],
+            tipo=tipo,
+            canal=d["canal"],
+            dados=dict(d.get("dados", {})),
+            origem=d.get("origem", "link"),
+            modelo=d.get("modelo"),
+            latitude=d.get("latitude"),
+            longitude=d.get("longitude"),
+            endereco=d.get("endereco"),
+            historico=[Mensagem(**m) for m in d.get("historico", [])],
+            turnos_ia=d.get("turnos_ia", 0),
+            custo_usd=d.get("custo_usd", 0.0),
+            encerrada=d.get("encerrada", False),
+            motivo_encerramento=d.get("motivo_encerramento"),
+            desfecho=d.get("desfecho"),
+            escalada=d.get("escalada", False),
+            probabilidade_real=d.get("probabilidade_real"),
+            triagem_autoriza_encerrar=d.get("triagem_autoriza_encerrar", False),
+            houve_resposta=d.get("houve_resposta", False),
+            retomadas=d.get("retomadas", 0),
+            aguardando=d.get("aguardando", False),
+            tentativas_de_injecao=d.get("tentativas_de_injecao", 0),
+            causa_escolhida=d.get("causa_escolhida"),
+            pediu_ajuda=d.get("pediu_ajuda", False),
+            nossas_mensagens=set(d.get("nossas_mensagens", [])),
+            teto_de_retomadas=d.get("teto_de_retomadas"),
+            toque_adiado=d.get("toque_adiado"),
+            toque_ja_na_tela=d.get("toque_ja_na_tela"),
+            handoff=list(d.get("handoff", [])),
+            criada_em=_momento(d["criada_em"]),
+            ultima_em=_momento(d["ultima_em"]),
+            falas=[Fala.de_dicionario(f) for f in d.get("falas", [])],
+            trilha=[PassoDaTrilha.de_dicionario(x) for x in d.get("trilha", [])],
+            desativada_ate=_momento(d["desativada_ate"]) if d.get("desativada_ate") else None,
+            desativada=d.get("desativada", False),
+        )
+
 
 class Sessoes:
     """Depósito das conversas, por telefone.
@@ -749,6 +911,58 @@ class Sessoes:
         self._historico.clear()
         self._ultima_entrada.clear()
 
+    # ──────────────────── Restauração depois de um reinício ────────────────────
+    #
+    # Os três métodos abaixo existem só para o depósito do Redis
+    # (`persistence/sessoes_redis.py`, ADR-003). Ficam aqui, e não lá, porque
+    # mexem nas estruturas privadas desta classe — e alcançá-las de fora
+    # transformaria qualquer mudança interna daqui numa quebra silenciosa lá.
 
-#: Instância única do processo. Vira Redis no Sprint 2.
+    def ultimas_entradas(self) -> dict[str, datetime]:
+        """Quando cada número falou conosco, para gravação.
+
+        Cópia, e não a estrutura viva: quem grava não deve conseguir alterar a
+        janela de 24 h sem passar por `registrar_entrada`.
+        """
+        return dict(self._ultima_entrada)
+
+    def readmitir(self, sessao: Sessao) -> None:
+        """Devolve ao depósito uma sessão que veio do Redis.
+
+        Não é `abrir`: `abrir` cria ocorrência nova, com identificador e relógio
+        novos. Aqui a sessão **já existia** — o que se recupera é a conversa que
+        estava em andamento quando o processo morreu.
+
+        Idempotente de propósito: carregar duas vezes não duplica a conversa no
+        painel, o que aconteceria se isto apenas anexasse à lista.
+        """
+        chave = _chave(sessao.telefone)
+
+        vivas = [
+            s for s in self._por_telefone.get(chave, [])
+            if s.ocorrencia_id != sessao.ocorrencia_id
+        ]
+        vivas.append(sessao)
+        vivas.sort(key=lambda s: s.ultima_em, reverse=True)
+        self._por_telefone[chave] = vivas
+
+        self._historico = [s for s in self._historico if s.ocorrencia_id != sessao.ocorrencia_id]
+        self._historico.append(sessao)
+        self._historico.sort(key=lambda s: s.criada_em, reverse=True)
+
+    def readmitir_janela(self, telefone: str, momento: datetime) -> None:
+        """Devolve a janela de 24 h da Meta para um número.
+
+        Perder isto num reinício não quebra nada visivelmente — só faz o próximo
+        disparo sair como template cobrado, quando poderia ser mensagem livre.
+        É defeito que aparece na fatura, não no log.
+        """
+        chave = _chave(telefone)
+        atual = self._ultima_entrada.get(chave)
+        if atual is None or momento > atual:
+            self._ultima_entrada[chave] = momento
+
+
+#: Instância única do processo. As conversas são espelhadas no Redis por
+#: `persistence/sessoes_redis.py` — ver ADR-003.
 SESSOES = Sessoes()

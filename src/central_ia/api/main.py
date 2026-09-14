@@ -26,7 +26,8 @@ from central_ia.api.seguranca import avisar_se_aberto
 from central_ia.config import settings
 from central_ia.observability.logging import configurar_logging, logger
 from central_ia.observability.tracing import configurar_tracing
-from central_ia.persistence import mysql, oracle, redis_bus
+from central_ia.orchestration.sessao_whatsapp import SESSOES
+from central_ia.persistence import mysql, oracle, redis_bus, sessoes_redis
 
 log = logger(__name__)
 
@@ -49,11 +50,34 @@ async def ciclo_de_vida(_app: FastAPI):
     # Oracle ainda estiver iniciando (ele leva minutos no primeiro boot).
     # Quem reporta indisponibilidade é /saude/pronto, não o processo morrendo.
 
+    # As conversas que estavam em andamento quando o processo anterior morreu.
+    # Sem isto, todo deploy trata quem estava conversando como desconhecido: a
+    # próxima mensagem do motorista chega a um sistema que não sabe quem ele é,
+    # e ele responde "sim" a uma pergunta que, deste lado, nunca foi feita.
+    # ADR-003.
+    voltaram = await sessoes_redis.carregar(cfg, SESSOES)
+    if voltaram:
+        log.info("conversas_retomadas", quantas=voltaram)
+
+    # As esperas são `asyncio.Task` e não sobrevivem ao processo. Não dá para
+    # restaurá-las — só para recomeçá-las, a partir de quem ficou `aguardando`.
+    # Uma espera reconstruída recomeça a contar, e isso é diferente da original.
+    rearmadas = await whatsapp.rearmar_esperas(SESSOES)
+    if rearmadas:
+        log.info("esperas_rearmadas", quantas=rearmadas)
+
     yield
 
     # Graceful shutdown: drena antes de sair. Sem isso o Kubernetes corta
     # conversa no meio durante um rolling update (doc 02 §3.4).
     log.info("api_encerrando")
+
+    # ⚠️ ANTES de fechar o cliente do Redis, e antes dos outros pools. Num
+    # desligamento gracioso — que é o caso do deploy — é isto que torna a
+    # janela de perda igual a zero.
+    gravadas = await sessoes_redis.sincronizar(cfg, SESSOES)
+    log.info("conversas_gravadas_na_saida", quantas=gravadas)
+
     await oracle.fechar_pool()
     await mysql.fechar_engine()
     await redis_bus.fechar_cliente()
@@ -109,6 +133,25 @@ def criar_app() -> FastAPI:
     # seguro e seria pior: a rota sumiria do `/openapi.json` conforme o
     # ambiente, e ninguém descobriria por que o botão da tela não funciona.
     app.include_router(eventos_de_teste.router)
+
+    # ── Espelho das conversas no Redis ──────────────────────────────────────
+    #
+    # Grava na saída de cada requisição, e não a cada mutação. O motivo está em
+    # `persistence/sessoes_redis.py`: quase toda mutação acontece no objeto
+    # `Sessao`, não nos métodos de `Sessoes`, então não há ponto único para
+    # interceptar. Comparar o payload inteiro no fim da requisição pega tudo —
+    # não importa quem mudou o quê, nem onde.
+    #
+    # Fica **depois** do roteador e do tracing de propósito: middleware do
+    # Starlette executa na ordem inversa do registro, e este precisa rodar por
+    # último na volta, quando a rota já terminou de mexer na sessão.
+    @app.middleware("http")
+    async def espelhar_sessoes(requisicao, proxima):  # type: ignore[no-untyped-def]
+        resposta = await proxima(requisicao)
+        # Nunca levanta: ver a docstring de `sincronizar`. Uma falha aqui não
+        # pode transformar uma resposta 200 em erro para quem está conversando.
+        await sessoes_redis.sincronizar(cfg, SESSOES)
+        return resposta
 
     # Instrumentação vai **aqui**, na construção — não no `lifespan`.
     #

@@ -77,10 +77,16 @@ produção.
 
 ### 🟠 Alto — quebra em produção
 
-**3 · Ocorrências vivem na memória do processo.**
-Reiniciar a API apaga as conversas em curso. Um *deploy* é um reinício, então
-**toda entrega derruba quem está conversando**. É a lacuna que mais pesa: sem
-ela resolvida, automatizar o deploy piora o sistema em vez de melhorar.
+**3 · Ocorrências vivem na memória do processo.** ✅ **Resolvida em 14/09/2026.**
+Reiniciar a API apagava as conversas em curso. Um *deploy* é um reinício, então
+**toda entrega derrubava quem estava conversando**. Era a lacuna que mais pesava:
+sem ela resolvida, automatizar o deploy pioraria o sistema em vez de melhorar.
+
+As sessões passaram a ser espelhadas no Redis
+([ADR-003](adr/0003-sessoes-fora-da-memoria.md)). Implementar revelou algo que a
+auditoria não tinha visto: **a maior parte das mutações acontece no objeto
+`Sessao`, e não nos métodos do depósito** — então não havia ponto único para
+interceptar, e o plano original de gravar a cada mutação não funcionaria.
 
 **4 · Assinatura HMAC do webhook desligada.**
 A linha está comentada com a nota *"desligado para teste"*. Enquanto estiver
@@ -160,7 +166,7 @@ Os itens 1 e 2 já estão corrigidos — foram a condição para este repositór
 existir. Os demais viram fila, nesta ordem:
 
 ```
-3 · sessões fora da memória      ← bloqueia o deploy automático
+3 · sessões fora da memória      ✅ FEITO — ADR-003
 8 · pool dimensionado para a nuvem ─┐
 9 · imagem ARM                     ─┴─ bloqueiam o deploy funcionar
 6 · entrega contínua
@@ -171,5 +177,6 @@ existir. Os demais viram fila, nesta ordem:
 5 · decidir PANICO_AUTONOMO       ← decisão de operação, não de código
 ```
 
-O item 3 vem primeiro e não é negociável: automatizar entrega num sistema que
-perde estado a cada reinício é automatizar a queda.
+O item 3 vinha primeiro e não era negociável: automatizar entrega num sistema que
+perde estado a cada reinício é automatizar a queda. Foi o primeiro a ser fechado,
+e por isso.
