@@ -2,6 +2,15 @@
 .env
 .env.local
 .env.*.local
+# Arquivos de ambiente de deploy. `.env` sozinho NAO casa com estes:
+# o padrao do gitignore e literal, entao cada um precisa estar listado.
+.env.prod
+.env.dev
+.env.hml
+# Wallet do Autonomous Database — chave privada e cwallet.sso.
+wallet/
+*.sso
+cwallet.*
 *.pem
 *.key
 wallet/

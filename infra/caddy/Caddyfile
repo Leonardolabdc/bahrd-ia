@@ -1,0 +1,50 @@
+# ============================================================================
+# Borda do Bahrd — TLS, roteamento e cabeçalhos de segurança.
+#
+# O Caddy pede e renova o certificado do Let's Encrypt sozinho, desde que a
+# porta 80 esteja alcançável e o DNS já aponte para esta máquina. Não há
+# certbot, não há cron de renovação, não há certificado para expirar num
+# domingo.
+#
+# O volume `caddy-dados` guarda os certificados. Apagá-lo força um ACME novo —
+# e o Let's Encrypt limita 5 emissões por domínio por semana, então não apague
+# por reflexo durante um incidente.
+# ============================================================================
+{
+	email {$EMAIL_ACME}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# ── Cabeçalhos ──────────────────────────────────────────────────────
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# O Caddy anuncia a si mesmo por padrão; versão de servidor é
+		# informação gratuita para quem varre.
+		-Server
+	}
+
+	# ── API ─────────────────────────────────────────────────────────────
+	# Os prefixos são os routers de `api/main.py`. Tudo o que não estiver
+	# aqui é do painel — a ordem importa: o handle_path do SPA é o último.
+	@api path /saude/* /painel/* /whatsapp/* /eventos/* /midia/*
+	handle @api {
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	# ── Painel (SPA) ────────────────────────────────────────────────────
+	handle {
+		reverse_proxy web:8080
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

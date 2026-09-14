@@ -1,0 +1,150 @@
+# ============================================================================
+# Bahrd — pilha de PRODUÇÃO.
+#
+# Diferente do `docker-compose.yml`, que é o ambiente de desenvolvimento, aqui
+# NÃO há banco: Oracle e MySQL são serviços gerenciados da OCI (ADR-002). O que
+# roda na máquina é processo sem estado, mais o Redis e a borda.
+#
+# A máquina é uma VM.Standard.E2.1.Micro: 1 OCPU e **1 GB de memória**. Por isso
+# Jaeger e MinIO, que sobem em desenvolvimento, não sobem aqui — o rastreamento
+# vai para os logs e o áudio para o Object Storage.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# As imagens NUNCA são construídas nesta máquina: 1 GB não constrói. Elas vêm
+# prontas do GHCR, etiquetadas por commit — e é isso que torna o rollback
+# determinístico (infra/deploy/rollback.sh).
+# ============================================================================
+
+name: bahrd-prod
+
+x-backend: &backend
+  image: ghcr.io/${GHCR_OWNER}/bahrd-backend:${IMAGE_TAG}
+  env_file: [.env.prod]
+  volumes:
+    # Wallet do Autonomous Database. Fica FORA do repositório e fora da imagem:
+    # é copiado para a máquina uma vez, por scp, e montado só-leitura. Colocar
+    # wallet dentro de imagem publicada é vazar credencial de banco.
+    - ./wallet:/app/wallet:ro
+  networks: [bahrd]
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  # ───────────────────────────── Borda ─────────────────────────────
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO}
+      EMAIL_ACME: ${EMAIL_ACME}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data     # certificados — perder isto refaz o ACME
+      - caddy-config:/config
+    depends_on: [api, web]
+    networks: [bahrd]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # ────────────────────────── Aplicação ──────────────────────────
+  api:
+    <<: *backend
+    command:
+      - uvicorn
+      - central_ia.api.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      # Um worker só: 1 GB não comporta dois intérpretes Python.
+      - --workers=1
+      # Caddy termina o TLS; sem isto a aplicação monta URL com http://.
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+      - --timeout-graceful-shutdown=30
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    command: ["arq", "central_ia.workers.main.WorkerSettings"]
+    healthcheck:
+      test: ["CMD", "arq", "--check", "central_ia.workers.main.WorkerSettings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/${GHCR_OWNER}/bahrd-web:${IMAGE_TAG}
+    environment:
+      APP_ENV: ${APP_ENV}
+      # Vazio de propósito: painel e API saem pelo mesmo domínio, então o SPA
+      # chama caminho relativo e não existe CORS entre eles.
+      VITE_API_BASE_URL: ""
+    networks: [bahrd]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # ──────────────────────── Estado local ────────────────────────
+  redis:
+    image: redis:7-alpine
+    # AOF ligado: o barramento não pode perder ocorrência num restart. `maxmemory`
+    # explícito porque, sem ele, o Redis cresce até a máquina começar a paginar —
+    # e com 1 GB isso derruba a API antes de derrubar o Redis.
+    command:
+      - redis-server
+      - --appendonly=yes
+      - --appendfsync=everysec
+      - --maxmemory=96mb
+      - --maxmemory-policy=noeviction
+    volumes:
+      - redis-dados:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [bahrd]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # ──────────────────────── Ferramentas ────────────────────────
+  # Perfil `ferramentas`: não sobe junto. Roda uma vez e sai.
+  migrate:
+    <<: *backend
+    profiles: ["ferramentas"]
+    restart: "no"
+    depends_on: []
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "→ migrações do Oracle (ADB-S)"
+        python -m migrations.oracle.runner
+        echo "→ migrações do MySQL (HeatWave)"
+        alembic upgrade head
+        echo "migrações concluídas."
+
+volumes:
+  redis-dados:
+  caddy-dados:
+  caddy-config:
+
+networks:
+  bahrd:
+    driver: bridge
