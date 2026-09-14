@@ -1,0 +1,36 @@
+# ============================================================================
+# Fim de linha. Este arquivo existe por um motivo específico e não cosmético.
+#
+# O repositório é editado no Windows, onde o Git converte para CRLF ao gravar
+# na árvore de trabalho. Um script de shell com CRLF é commitado com `\r` no
+# fim do shebang, e o Linux tenta executar o interpretador `/usr/bin/env bash\r`
+# — que não existe. O erro é `bad interpreter: No such file or directory`, e
+# ele aparece só no servidor, nunca na máquina de quem escreveu.
+#
+# O mesmo vale para o Dockerfile, o Caddyfile e o entrypoint: tudo que é lido
+# por um programa Linux precisa chegar com LF.
+# ============================================================================
+
+# Padrão: o Git decide, normalizando para LF no repositório.
+* text=auto
+
+# Estes NUNCA podem virar CRLF, em nenhuma máquina.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+Caddyfile       text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.env.example    text eol=lf
+.env.*.example  text eol=lf
+entrypoint.sh   text eol=lf
+Makefile        text eol=lf
+
+# Estes são do Windows e devem continuar com CRLF.
+*.ps1           text eol=crlf
+
+# Binários: o Git não deve tocar.
+*.png           binary
+*.jpg           binary
+*.ico           binary
+*.pdf           binary
