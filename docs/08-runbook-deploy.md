@@ -103,6 +103,26 @@ Preencha, no mínimo:
 >
 > Para gerar: `openssl rand -hex 32`
 
+## 3.5 · Tornar as imagens públicas
+
+**Este passo não é opcional, e é o que mais trava sem dar pista.**
+
+Pacotes no GitHub Container Registry nascem **privados**, mesmo quando o
+repositório é público. A máquina tenta baixar a imagem, recebe `denied` ou
+`unauthorized`, e a mensagem não diz que o problema é visibilidade.
+
+Depois que o CD rodar pela primeira vez e publicar as imagens:
+
+1. GitHub → sua foto → **Your packages**
+2. Abra `bahrd-backend` → **Package settings** → *Danger Zone* →
+   **Change visibility** → *Public*
+3. Repita para `bahrd-web`
+
+Com isso a máquina baixa sem credencial nenhuma, e o `docker login` deixa de ser
+necessário no servidor. A alternativa seria guardar um token de leitura em cada
+máquina — mais uma credencial para rotacionar, em troca de nada: a imagem é
+construída a partir de um repositório que já é público.
+
 ## 4 · Primeiro deploy, à mão
 
 Antes de automatizar, prove que funciona uma vez. Em cada máquina:
@@ -164,6 +184,7 @@ a entrega pede, e é a resposta para "quanto tempo você leva para voltar?".
 | `/saude/pronto` devolve 503 no `oracle` | Wallet ausente, senha errada, ou `ORACLE_DSN` não bate | `docker compose -f docker-compose.prod.yml logs api` |
 | `/saude/pronto` devolve 503 no `mysql` | A máquina não alcança a sub-rede privada | Conferir a rota e a *security list* da sub-rede do HeatWave |
 | API morre sozinha | 1 GB acabou | `free -h`; conferir se o swap está ativo |
+| `denied` ou `unauthorized` no pull | Pacote do GHCR ainda privado | Passo 3.5 — tornar `bahrd-backend` e `bahrd-web` públicos |
 | `bad interpreter` num script | Fim de linha CRLF | O `.gitattributes` previne; confirmar que o clone é recente |
 | Deploy passa mas a versão não muda | Etiqueta não mudou, ou pull não trouxe | O smoke test 1 pega exatamente isso |
 
