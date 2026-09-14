@@ -124,13 +124,13 @@ Detalhes de cada serviço e problemas conhecidos estão em
 | **Back-end** | Python 3.12 · FastAPI · Pydantic v2 · arq |
 | **Front-end** | React 19 · TypeScript · Vite · CSS com design tokens |
 | **Modelo** | Claude Sonnet 5 via OpenRouter, com cache de prompt |
-| **WhatsApp** | Cloud API da Meta |
+| **WhatsApp** | Twilio (sandbox) · adaptador para Cloud API da Meta disponível |
 | **STT / TTS** | Deepgram Nova-3 · ElevenLabs Flash v2.5 |
-| **Banco de registro** | Oracle 23ai (Blockchain Table) |
-| **Banco operacional** | MySQL 8.4 |
+| **Banco de registro** | Oracle 26ai (Blockchain Table) — Autonomous Database na OCI |
+| **Banco operacional** | MySQL 8.4 em dev · MySQL HeatWave 26.7 na OCI |
 | **Barramento / cache** | Redis 7 |
-| **Observabilidade** | OpenTelemetry → Jaeger |
-| **Infraestrutura** | Docker Compose |
+| **Observabilidade** | OpenTelemetry → Jaeger em dev · logs estruturados em produção |
+| **Infraestrutura** | Docker Compose · 2× VM.Standard.E2.1.Micro (x86) na OCI |
 
 ```
 bahrd-ia/

@@ -36,7 +36,7 @@ Restam quatro fatores:
 ## Opções consideradas
 
 - **A · Oracle Cloud, camada gratuita permanente** — Autonomous Database +
-  MySQL HeatWave + máquina Ampere
+  MySQL HeatWave + máquina de computação
 - **B · Railway** — ~US$ 5/mês, contêiner sempre ligado
 - **C · Render, plano gratuito** — R$ 0, com suspensão por inatividade
 - **D · VPS barato** — máquina Linux crua, ~€4/mês
@@ -48,10 +48,10 @@ publicado à parte numa plataforma de borda.
 
 | Camada | Onde | Cota | Custo |
 |---|---|---|---|
-| API, worker, Redis | Máquina Ampere A1 | 2 OCPU · 12 GB | **R$ 0** |
-| Sistema de registro | Autonomous Database 23ai | 1 OCPU · 20 GB · 20 sessões | **R$ 0** |
-| Banco operacional | MySQL HeatWave | 1 ECPU · 50 GB + 50 GB de backup | **R$ 0** |
-| Painel do operador | Plataforma de borda, plano gratuito | — | **R$ 0** |
+| API, worker, Redis, nginx | 2× VM.Standard.E2.1.Micro (x86) | 1 OCPU · 1 GB cada | **R$ 0** |
+| Sistema de registro | Autonomous Database 26ai | 1 OCPU · 20 GB · 20 sessões | **R$ 0** |
+| Banco operacional | MySQL HeatWave 26.7 | 1 ECPU · 50 GB + 50 GB de backup | **R$ 0** |
+| Painel do operador | nginx, na mesma máquina | — | **R$ 0** |
 | Tráfego de saída | — | 10 TB/mês | **R$ 0** |
 
 **Região: Brasil.** Escolhida no cadastro da conta, e **irreversível** — os
@@ -68,19 +68,23 @@ recursos gratuitos só existem na região de origem.
 ### A objeção que este ADR precisa responder
 
 O material da disciplina recomenda **PaaS** — *"é o que você vai usar agora"* —
-e a máquina Ampere é **IaaS**. Isso é contradição?
+e a máquina de computação é **IaaS**. Isso é contradição?
 
 Não, e a resposta está no próprio material: *"um único projeto de IA usa várias
 camadas ao mesmo tempo […] montamos a nossa pirâmide de infraestrutura"*.
 
-A pirâmide aqui tem **três das cinco camadas em serviço gerenciado**:
+A pirâmide aqui põe **em serviço gerenciado os dois bancos — que é onde mora o
+trabalho de operação de verdade**:
 
 ```
-PaaS   painel do operador, na borda
 PaaS   Autonomous Database — banco gerenciado, sem trabalho de DBA
 PaaS   MySQL HeatWave — idem
-IaaS   máquina Ampere — API, worker e Redis em contêiner
+IaaS   duas E2.1.Micro — API, worker, Redis e nginx em contêiner
 ```
+
+O que sobra para o IaaS é processo sem estado. *Patching* de banco, backup e
+ajuste de memória — o trabalho que realmente consome um time — continua sendo
+da Oracle.
 
 O IaaS aparece onde ele compra algo que o PaaS não vende: **ausência de partida
 a frio, de graça**. O material trata *warmup ping* como gambiarra e diz que, se
@@ -115,7 +119,8 @@ esse plano custa zero.
   borda guardam cada publicação e promovem uma antiga em segundos. Uma VM não
   guarda nada. O rollback aqui é reimplantar a etiqueta anterior da imagem, e
   **isso precisa estar ensaiado**, não descrito.
-- **A arquitetura é ARM.** Toda imagem precisa ser construída para `linux/arm64`.
+- **Só 1 GB de memória por máquina.** É a restrição que mais aperta, e ela
+  substituiu a de arquitetura — ver a atualização no fim deste documento.
 - **Teto de 20 sessões simultâneas** no banco gratuito, que obriga a reduzir o
   pool de conexões.
 - **Sem suporte.** Camada gratuita não tem atendimento; o que existe é fórum.
@@ -130,7 +135,7 @@ esse plano custa zero.
 | 1 | **Alerta de orçamento**, antes de qualquer recurso | É o que impede uma conta gratuita de virar fatura |
 | 2 | Criar a conta com **região no Brasil** | Irreversível |
 | 3 | `ORACLE_POOL_MAX=6` | O teto do banco é 20 sessões |
-| 4 | Build `linux/arm64` | A máquina é Ampere |
+| 4 | Build `linux/amd64` | As máquinas são x86 |
 | 5 | Ensaiar o rollback e **cronometrar** | Não há rollback de plataforma para socorrer |
 
 ## Gatilho de revisão
@@ -141,6 +146,59 @@ esse plano custa zero.
   custo, e precisa ser refeita com números reais.
 - **Se o ADR-001 for revisto** e o Oracle sair da stack, todo o espaço de opções
   deste ADR se reabre — e aí Railway e Render voltam a ser candidatos legítimos.
+
+## Atualização · 14/09/2026 — a máquina mudou, a decisão não
+
+Esta seção existe porque o que foi provisionado **não é** o que a decisão
+original descrevia, e apagar a diferença seria a forma errada de resolver isso.
+
+**O que estava escrito:** uma `VM.Standard.A1.Flex` — Ampere, ARM, 2 OCPU e
+12 GB, a máquina mais generosa da camada gratuita.
+
+**O que aconteceu:** `Out of capacity for shape VM.Standard.A1.Flex`. A região
+São Paulo tem **um único domínio de disponibilidade**, então não há para onde
+tentar dentro dela. Tentei 2 OCPU/12 GB, 1 OCPU/6 GB e 1 OCPU/2 GB — as três
+recusaram. A capacidade de A1 na camada gratuita é disputada e não se reserva.
+
+**O que foi provisionado:** duas `VM.Standard.E2.1.Micro`, x86, 1 OCPU e 1 GB
+cada, também Always Free e também permanentes.
+
+### O que isso muda, honestamente
+
+| | Antes | Agora | Efeito |
+|---|---|---|---|
+| Arquitetura | ARM | **x86** | 🟢 A restrição some. O runner do GitHub Actions é x86, então o build é nativo — sem QEMU, sem emulação, CI mais rápido |
+| Memória | 12 GB numa máquina | **1 GB em cada** | 🔴 É a nova restrição real, e é severa |
+| Máquinas | uma | **duas** | 🟢 Permite dev e produção em hosts de verdade separados, e não dois diretórios no mesmo host |
+
+A linha do meio é a que dói. Com 1 GB, a pilha de produção precisou encolher
+para o essencial — API, worker, Redis e nginx — e ganhou 2 GB de *swap* como
+rede de proteção. Jaeger e MinIO, que no ambiente de desenvolvimento sobem
+junto, **não sobem em produção**: o rastreamento vai para os logs e o áudio
+para o Object Storage. Não é elegante; é o que cabe.
+
+A linha de baixo foi um ganho acidental. A A1 era uma máquina só, e "ambientes
+separados" teria virado dois `docker compose` no mesmo host, com os mesmos
+recursos e o mesmo kernel — separação de nome. Com duas máquinas, dev e
+produção não compartilham nada. **A restrição produziu uma resposta melhor do
+que o plano original.**
+
+### O que não muda
+
+A decisão de plataforma continua valendo, e pelos mesmos motivos: custo zero
+permanente, sem partida a frio, dado no país, e os dois bancos gerenciados. A
+opção A não venceu por causa da A1 — venceu por causa do Autonomous Database,
+que é o que o ADR-001 exigiu. A forma do IaaS era detalhe de execução, e
+executar mostrou isso.
+
+### Gatilho novo
+
+**Se 1 GB não segurar a pilha de produção**, as saídas, em ordem de custo: mover
+o Redis para OCI Cache (fora da camada gratuita), tentar a A1 de novo em horário
+de baixa demanda, ou migrar a conta para pagamento por uso e subir de shape.
+A primeira medição real está nos *smoke tests*.
+
+---
 
 ## Mais informação
 

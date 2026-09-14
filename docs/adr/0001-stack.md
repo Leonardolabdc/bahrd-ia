@@ -11,7 +11,7 @@
 ## Contexto e problema
 
 O protótipo foi herdado funcionando: Python 3.12 com FastAPI no back-end, React
-19 com Vite no painel, Oracle 23ai como sistema de registro, MySQL 8.4 como
+19 com Vite no painel, Oracle 26ai como sistema de registro, MySQL 8.4 como
 camada operacional, Redis 7 como barramento, tudo em Docker. Passa 953 testes e
 atende um evento de ponta a ponta.
 
@@ -107,15 +107,22 @@ uma opção só.
   provedor deixou de ser barato, e isso alimenta diretamente o ADR-002.
 - **O teto de 20 sessões simultâneas** do banco gratuito obriga a reduzir o pool
   de conexões. É configuração, mas é uma restrição que não existia antes.
-- **A imagem precisa ser ARM.** A máquina gratuita é Ampere. Build sem
-  `--platform linux/arm64` sobe e morre com `exec format error`.
+- **A imagem precisa declarar a plataforma.** Build sem `--platform` explícito
+  pega a arquitetura de quem constrói, e num Mac com chip M isso gera uma
+  imagem que sobe na nuvem e morre com `exec format error`.
 
 ### Mudanças obrigatórias que esta decisão implica
 
 | O quê | De | Para | Por quê |
 |---|---|---|---|
 | `ORACLE_POOL_MAX` | 10 | **6** | `api` + `worker` pediriam 20 sessões; o teto do banco gratuito é exatamente 20, sem folga para migração |
-| Build da imagem | x86 | **`linux/arm64`** | A máquina gratuita é Ampere |
+| Build da imagem | implícito | **`linux/amd64`** | As máquinas gratuitas provisionadas são x86 ([ADR-002](0002-plataforma-de-publicacao.md)) |
+
+> **Nota de 14/09/2026.** Este ADR previa build ARM, porque o plano era usar a
+> máquina Ampere. A capacidade dessa máquina não existia na região, e o deploy
+> acabou em máquinas x86 — o que **elimina** a exigência de arquitetura em vez
+> de complicá-la. O registro completo está na
+> [atualização do ADR-002](0002-plataforma-de-publicacao.md#atualização--14092026--a-máquina-mudou-a-decisão-não).
 
 ## Gatilho de revisão
 
