@@ -7,6 +7,11 @@
 .env.prod
 .env.dev
 .env.hml
+# Etiqueta guardada pelo deploy.sh para o rollback voltar. Vive SO na
+# maquina: se entrasse no repositorio, o `git checkout --force` do CD a
+# sobrescreveria a cada deploy e o rollback perderia a referencia.
+.deploy-anterior
+
 # Wallet do Autonomous Database — chave privada e cwallet.sso.
 wallet/
 *.sso
@@ -75,3 +80,5 @@ Thumbs.db
 !docs/fluxo-genaiura.png
 !docs/auditoria-prototipo.md
 !docs/decisao-stack.md
+!docs/08-runbook-deploy.md
+!docs/post-mortem-01-pii-no-historico.md

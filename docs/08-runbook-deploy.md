@@ -1,0 +1,174 @@
+# Runbook · do zero ao ar
+
+O que rodar, em que ordem, para pôr o Bahrd no ar nas duas máquinas da OCI e
+ligar a entrega contínua. Cada bloco é copiável. Onde houver `SEU-...`, troque.
+
+> **Antes de começar**, tenha em mãos: o token do DuckDNS, o wallet do
+> Autonomous Database (.zip), o endereço privado e a senha do MySQL HeatWave, e
+> a chave SSH em `~/.ssh/bahrd.key`.
+
+| Papel | Máquina | IP | Domínio |
+|---|---|---|---|
+| **Produção** | `bahrd-app` | 64.181.191.98 | `SEU-DOMINIO.duckdns.org` |
+| **Desenvolvimento** | `bahrd-worker` | 168.138.147.121 | `SEU-DOMINIO-dev.duckdns.org` |
+
+> A máquina chamada `bahrd-worker` passa a ser o ambiente de desenvolvimento —
+> o nome ficou do plano antigo, em que havia uma máquina só e o worker morava
+> separado. Renomear o *display name* no console da OCI é gratuito e leva 30
+> segundos; não muda nada tecnicamente, mas evita confusão no vídeo.
+
+---
+
+## 1 · DNS
+
+Em [duckdns.org](https://www.duckdns.org), entre com o GitHub e crie **dois**
+subdomínios. Aponte cada um para o IP correspondente da tabela acima.
+
+Confira antes de seguir — o Let's Encrypt só emite certificado se o DNS já
+resolver:
+
+```bash
+nslookup SEU-DOMINIO.duckdns.org
+nslookup SEU-DOMINIO-dev.duckdns.org
+```
+
+## 2 · Preparar cada máquina
+
+Rode **nas duas**, trocando o IP. O usuário é `opc` no Oracle Linux e `ubuntu`
+no Ubuntu — se um recusar, é o outro.
+
+```bash
+ssh -i ~/.ssh/bahrd.key opc@64.181.191.98
+```
+
+Já dentro da máquina:
+
+```bash
+# Git e o repositório em /opt/bahrd
+sudo dnf install -y git || sudo apt-get install -y git
+sudo mkdir -p /opt/bahrd && sudo chown "$USER":"$USER" /opt/bahrd
+git clone https://github.com/Leonardolabdc/bahrd-ia.git /opt/bahrd
+cd /opt/bahrd
+
+# Portas 80 e 443. A regra precisa entrar ANTES do REJECT do Oracle Linux,
+# não no fim da cadeia — inserir depois dele não tem efeito nenhum.
+if sudo iptables -L INPUT --line-numbers -n | grep -q REJECT; then
+  pos=$(sudo iptables -L INPUT --line-numbers -n | awk '/REJECT/{print $1; exit}')
+  sudo iptables -I INPUT "$pos" -p tcp --dport 80  -j ACCEPT
+  sudo iptables -I INPUT "$pos" -p tcp --dport 443 -j ACCEPT
+  sudo netfilter-persistent save 2>/dev/null || sudo service iptables save
+fi
+sudo iptables -L INPUT -n --line-numbers | head -12   # confira a ordem
+```
+
+> As *Ingress Rules* da sub-rede pública, no console da OCI, precisam liberar
+> 80 e 443 também. São duas camadas de firewall, e esquecer a de cima dá o
+> mesmo sintoma de esquecer a de baixo: silêncio.
+
+## 3 · Wallet e configuração
+
+Do seu Windows, envie o wallet para **cada** máquina:
+
+```bash
+# Descompacte o .zip do console da OCI numa pasta local primeiro
+scp -i ~/.ssh/bahrd.key -r ./wallet opc@64.181.191.98:/opt/bahrd/wallet
+```
+
+Na máquina, crie o arquivo de ambiente:
+
+```bash
+cd /opt/bahrd
+cp .env.prod.example .env.prod
+chmod 600 .env.prod          # só o dono lê — é onde moram os segredos
+nano .env.prod
+```
+
+Preencha, no mínimo:
+
+| Variável | Produção | Desenvolvimento |
+|---|---|---|
+| `APP_ENV` | `prd-poc` | `dev` |
+| `DOMINIO` | seu domínio | seu domínio de dev |
+| `EMAIL_ACME` | seu e-mail | o mesmo |
+| `PUBLIC_BASE_URL` | `https://` + domínio | idem, o de dev |
+| `CORS_ORIGENS` | `["https://SEU-DOMINIO.duckdns.org"]` | idem |
+| `GHCR_OWNER` | `leonardolabdc` | idem |
+| `ORACLE_*` | usuário, senha, DSN e senha do wallet | **outros valores** |
+| `MYSQL_HOST` / `MYSQL_PASSWORD` | o endereço privado e a senha | **outros valores** |
+| `PAINEL_TOKEN` | um valor longo e aleatório | **outro valor** |
+
+> **Os segredos das duas máquinas precisam ser diferentes.** É isso que a
+> rubrica chama de "ambientes realmente separados". Dois arquivos com a mesma
+> senha são um ambiente só, servido em dois endereços.
+>
+> Para gerar: `openssl rand -hex 32`
+
+## 4 · Primeiro deploy, à mão
+
+Antes de automatizar, prove que funciona uma vez. Em cada máquina:
+
+```bash
+cd /opt/bahrd
+./infra/deploy/deploy.sh sha-$(git rev-parse --short HEAD)
+```
+
+Da sua máquina, confira de fora:
+
+```bash
+bash tests/smoke/smoke.sh https://SEU-DOMINIO.duckdns.org
+```
+
+Os três precisam passar. Se o terceiro falhar por TLS, dê ao Caddy um ou dois
+minutos: a primeira emissão do certificado não é instantânea.
+
+## 5 · Ligar a entrega contínua
+
+No GitHub, em **Settings → Environments**, crie `dev` e `prod`. Em **cada um**,
+cadastre:
+
+| Tipo | Nome | Valor |
+|---|---|---|
+| Secret | `SSH_HOST` | o IP daquela máquina |
+| Secret | `SSH_USER` | `opc` ou `ubuntu` |
+| Secret | `SSH_KEY` | o conteúdo de `~/.ssh/bahrd.key`, inteiro |
+| Variable | `BASE_URL` | `https://` + o domínio daquela máquina |
+
+> A chave privada vai no **secret do GitHub**, nunca no repositório. E não
+> reaproveite: gere um par por ambiente se quiser ser rigoroso.
+
+Depois disso, um push na `main` publica sozinho: constrói, sobe em dev, roda os
+smoke tests, e só então toca produção.
+
+## 6 · Ensaiar o rollback
+
+**Antes de precisar.** O ADR-002 registra que uma máquina virtual não tem
+rollback de plataforma, e um procedimento nunca executado não é procedimento.
+
+```bash
+ssh -i ~/.ssh/bahrd.key opc@64.181.191.98
+cd /opt/bahrd
+cat .deploy-anterior            # a etiqueta que o deploy guardou
+./infra/deploy/rollback.sh      # volta, e roda os smoke tests sozinho
+```
+
+O script cronometra e imprime o tempo. **Anote esse número** — é a evidência que
+a entrega pede, e é a resposta para "quanto tempo você leva para voltar?".
+
+---
+
+## Quando algo der errado
+
+| Sintoma | Causa provável | O que fazer |
+|---|---|---|
+| Certificado não emite | DNS ainda não propagou, ou porta 80 fechada | `nslookup`; conferir as duas camadas de firewall |
+| `/saude/pronto` devolve 503 no `oracle` | Wallet ausente, senha errada, ou `ORACLE_DSN` não bate | `docker compose -f docker-compose.prod.yml logs api` |
+| `/saude/pronto` devolve 503 no `mysql` | A máquina não alcança a sub-rede privada | Conferir a rota e a *security list* da sub-rede do HeatWave |
+| API morre sozinha | 1 GB acabou | `free -h`; conferir se o swap está ativo |
+| `bad interpreter` num script | Fim de linha CRLF | O `.gitattributes` previne; confirmar que o clone é recente |
+| Deploy passa mas a versão não muda | Etiqueta não mudou, ou pull não trouxe | O smoke test 1 pega exatamente isso |
+
+## Relacionados
+
+- Onde publicar, e por quê: [ADR-002](adr/0002-plataforma-de-publicacao.md)
+- As lacunas que o deploy fecha: [auditoria](auditoria-prototipo.md)
+- Custo por serviço: [`06-custo-mensal.md`](06-custo-mensal.md)
