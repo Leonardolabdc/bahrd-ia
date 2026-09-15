@@ -13,7 +13,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
-## [1.0.0] — 2026-09-21
+## [1.0.0] — 2026-09-15
 
 Primeira versão publicada. O sistema deixa de existir só no notebook.
 
@@ -41,8 +41,10 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - **Rollback automático** quando os smoke tests reprovam em produção, e
   `infra/deploy/rollback.sh` para o rollback manual, cronometrado
 - **Runbook de deploy** ([`docs/08-runbook-deploy.md`](docs/08-runbook-deploy.md))
-- **Post-mortem** do dado pessoal encontrado no histórico
-  ([`docs/post-mortem-01-pii-no-historico.md`](docs/post-mortem-01-pii-no-historico.md))
+- **Dois post-mortems**: o [dado pessoal no histórico do Git](docs/post-mortem-01-pii-no-historico.md)
+  e [o primeiro deploy](docs/post-mortem-02-primeiro-deploy.md), que falhou dez
+  vezes por dez causas diferentes — nenhuma visível em 970 testes verdes, porque
+  todas viviam em ramos que só existem contra serviço gerenciado
 - **C4 nível 1** ([contexto](docs/architecture/c4-nivel-1-contexto.md))
 - **ADR-001** (manter a stack herdada) e **ADR-002** (publicar na Oracle Cloud),
   em formato MADR, com a matriz de decisão cujos pesos foram fixados antes das
@@ -62,6 +64,12 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
   shebang quebra só no servidor, nunca na máquina de quem escreveu
 
 ### Corrigido
+- **Dez defeitos revelados pelo primeiro deploy**, cinco deles herdados do
+  protótipo: senha do wallet ausente no runner de migração, retenção da
+  auditoria acima do teto do Autonomous Database, TLS do MySQL montado como
+  dicionário em vez de `SSLContext`, sonda do painel resolvendo para IPv6, e
+  string vazia tratada como ausência na configuração do SPA. Todos detalhados
+  no [post-mortem 02](docs/post-mortem-02-primeiro-deploy.md)
 - `.gitignore` não cobria `.env.prod`: o padrão do gitignore é literal, e `.env`
   sozinho não casa com `.env.prod`. O wallet do Autonomous Database e o
   `.deploy-anterior` também passaram a ser ignorados
