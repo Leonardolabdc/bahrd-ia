@@ -75,8 +75,36 @@ O que a torna utilizável sem alguém olhando por cima:
 
 ## URL pública
 
-> 🚧 **Ainda não publicado.** O deploy é a etapa em andamento. Esta seção passa
-> a trazer o endereço, o ambiente e a versão no ar assim que ele existir.
+### **https://bahrd.duckdns.org**
+
+O painel do operador abre direto; a API responde no mesmo domínio.
+
+| | |
+|---|---|
+| **Produção** | [bahrd.duckdns.org](https://bahrd.duckdns.org) · versão `1.0.0` |
+| **Desenvolvimento** | [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) · secrets próprios |
+| **Onde roda** | Oracle Cloud, São Paulo, camada gratuita permanente ([ADR-002](docs/adr/0002-plataforma-de-publicacao.md)) |
+| **TLS** | Let's Encrypt, emitido e renovado pelo Caddy |
+
+Sondas abertas, sem autenticação:
+
+```bash
+curl https://bahrd.duckdns.org/saude/vivo     # o processo e a versão no ar
+curl https://bahrd.duckdns.org/saude/pronto   # Oracle, MySQL e Redis
+```
+
+E os três [smoke tests](tests/smoke/smoke.sh), que é como se confere de fora:
+
+```bash
+VERSAO_ESPERADA=1.0.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
+```
+
+> **O painel está aberto a quem tiver o endereço.** Não é descuido: é a
+> [lacuna 12 da auditoria](docs/auditoria-prototipo.md), aceita enquanto todo
+> dado é sintético e há um operador só. O segredo que protege `/painel/*` é
+> injetado pelo Caddy no caminho servidor-a-servidor e **nunca chega ao
+> navegador** — o que se garante aqui é não vazar credencial, não controle de
+> acesso. Autenticação de operador é item de fila, com gatilho declarado.
 
 ## Como rodar
 
