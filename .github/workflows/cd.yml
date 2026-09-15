@@ -47,16 +47,28 @@ jobs:
       packages: write
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
+      dono: ${{ steps.meta.outputs.dono }}
     steps:
       - uses: actions/checkout@v4
 
       - id: meta
-        name: Definir a etiqueta
+        name: Definir a etiqueta e o dono
         run: |
           tag="${{ inputs.tag }}"
           [[ -n "$tag" ]] || tag="sha-$(git rev-parse --short HEAD)"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "Etiqueta desta publicacao: $tag"
+
+          # ⚠️ Minúsculas, obrigatoriamente.
+          #
+          # `github.repository_owner` devolve o nome como o usuário o escreveu
+          # — aqui, com maiúsculas. O GHCR recusa: "repository name must be
+          # lowercase". O build falha na VALIDAÇÃO da etiqueta, antes de
+          # construir qualquer coisa, então o erro não aparece no log do Docker
+          # e sim numa linha só do buildx.
+          dono=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "dono=$dono" >> "$GITHUB_OUTPUT"
+
+          echo "Publicando ghcr.io/$dono/bahrd-{backend,web}:$tag"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -78,7 +90,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/bahrd-backend:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.dono }}/bahrd-backend:${{ steps.meta.outputs.tag }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -91,7 +103,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/bahrd-web:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.dono }}/bahrd-web:${{ steps.meta.outputs.tag }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
