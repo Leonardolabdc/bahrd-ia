@@ -16,8 +16,20 @@ from central_ia.config import Settings
 _pool: oracledb.AsyncConnectionPool | None = None
 
 
-def _parametros_wallet(cfg: Settings) -> dict:
-    """Só a Fase 2 usa wallet; em dev o dicionário sai vazio."""
+def parametros_wallet(cfg: Settings) -> dict:
+    """Parâmetros de wallet para qualquer conexão Oracle. Vazio em dev.
+
+    ⚠️ **Público de propósito, e é uma correção de defeito.** O runner de
+    migração montava esses parâmetros por conta própria e **esquecia o
+    `wallet_password`**. Contra o banco local, que não usa wallet, os dois
+    caminhos eram idênticos e nada denunciava a diferença. Contra o Autonomous
+    Database, cujo `ewallet.pem` é cifrado, o driver não conseguia decifrar a
+    chave e falhava em `create_ssl_context` com `[Errno 22] Invalid argument` —
+    uma mensagem que fala de TLS e não menciona senha nenhuma.
+
+    Ter um lugar só que responde "como me conecto ao Oracle" é o que impede
+    esse tipo de divergência de existir.
+    """
     if not cfg.oracle_wallet_dir:
         return {}
     return {
@@ -41,7 +53,7 @@ async def abrir_pool(cfg: Settings) -> oracledb.AsyncConnectionPool:
             min=cfg.oracle_pool_min,
             max=cfg.oracle_pool_max,
             increment=1,
-            **_parametros_wallet(cfg),
+            **parametros_wallet(cfg),
         )
     return _pool
 

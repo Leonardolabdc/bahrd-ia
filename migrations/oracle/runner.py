@@ -23,6 +23,7 @@ from pathlib import Path
 import oracledb
 
 from central_ia.config import Settings, settings
+from central_ia.persistence.oracle import parametros_wallet
 
 DIRETORIO = Path(__file__).parent
 PADRAO_ARQUIVO = re.compile(r"^(\d{3})_(.+)\.sql$")
@@ -139,11 +140,10 @@ async def executar(cfg: Settings, apenas_status: bool = False) -> int:
         user=cfg.oracle_user,
         password=cfg.oracle_password.get_secret_value(),
         dsn=cfg.oracle_dsn,
-        **(
-            {"config_dir": cfg.oracle_wallet_dir, "wallet_location": cfg.oracle_wallet_dir}
-            if cfg.oracle_wallet_dir
-            else {}
-        ),
+        # A MESMA função que a aplicação usa. Ver a docstring dela: montar
+        # estes parâmetros à mão aqui foi o que fez o runner esquecer o
+        # `wallet_password` e quebrar só contra o Autonomous Database.
+        **parametros_wallet(cfg),
     )
 
     try:
