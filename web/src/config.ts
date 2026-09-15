@@ -7,6 +7,17 @@
  *
  * Em desenvolvimento o Vite não passa pelo nginx, então o fallback usa
  * import.meta.env.
+ *
+ * ⚠️ **String vazia é um valor, não uma ausência.** `apiBaseUrl: ""` significa
+ * "chame a própria origem" — é o que acontece em produção, onde o Caddy serve
+ * painel e API sob o mesmo domínio e nenhum CORS existe entre eles.
+ *
+ * Isto era escrito com `||`, que trata `""` como ausente e caía no padrão
+ * `http://localhost:8000`. Em produção o painel tentava falar com a máquina de
+ * quem estava olhando, e a tela dizia "API inacessível em http://localhost:8000"
+ * — mensagem que parece problema de servidor e é de configuração.
+ *
+ * Por isso `??` e não `||`: só cai para o próximo quando o valor **não existe**.
  */
 
 declare global {
@@ -17,8 +28,8 @@ declare global {
 
 export const config = {
   apiBaseUrl:
-    window.__CONFIG__?.apiBaseUrl ||
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+    window.__CONFIG__?.apiBaseUrl ??
+    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
     "http://localhost:8000",
   ambiente: window.__CONFIG__?.ambiente || "dev",
 

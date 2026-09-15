@@ -240,7 +240,9 @@ export function App() {
 
       {erro && (
         <p className="erro-api">
-          API inacessível em {config.apiBaseUrl}
+          {/* Vazio significa "mesma origem" — dizer "API inacessível em "
+              seguido de nada deixaria a mensagem sem sentido. */}
+          API inacessível em {config.apiBaseUrl || "mesma origem"}
           <code>{erro}</code>
         </p>
       )}

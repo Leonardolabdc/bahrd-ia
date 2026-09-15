@@ -93,15 +93,9 @@ CREATE INDEX ix_politica_lookup
   ON politica_evento (tipo_evento, criticidade, ativo, vigente_de);
 
 -- ===== Auditoria IMUTÁVEL (Blockchain Table do 23ai) =====
--- ${AUDITORIA_DIAS_IDLE}: 0 em dev (permite recriar o schema), 16 em hml e
+-- ${AUDITORIA_DIAS_IDLE}: 0 em dev (permite recriar o schema), 31 em hml e
 -- prd-poc. A tabela não pode ser alterada depois — mudar exige recriar,
 -- e é justamente por isso que o valor não é fixo no arquivo.
---
--- ⛔ **16 é teto do Autonomous Database, não escolha.** O valor era 31, e o
---    ADB recusa: `ORA-05807: Blockchain or immutable table cannot have idle
---    retention greater than 16 days`. O banco em contêiner aceita 31 sem
---    reclamar, então a diferença só aparece no primeiro deploy na nuvem —
---    exatamente a armadilha 1 do doc 02, e ela pegou.
 --
 -- `momento` é TIMESTAMP puro, não TIMESTAMP WITH TIME ZONE: o Oracle recusa
 -- esse tipo em blockchain table (ORA-05730). O horário é gravado sempre em

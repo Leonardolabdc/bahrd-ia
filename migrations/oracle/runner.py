@@ -41,7 +41,19 @@ CREATE TABLE migracao_aplicada (
 def _substituicoes(cfg: Settings) -> dict[str, str]:
     """Valores que diferem entre ambientes, injetados nos placeholders ${...}."""
     return {
-        # 0 em dev permite recriar o schema; 31 em hml/prd-poc protege a trilha.
+        # 0 em dev permite recriar o schema; **16** em hml/prd-poc protege a trilha.
+        #
+        # ⛔ 16 é TETO do Autonomous Database, não escolha. Acima disso ele
+        #    recusa: `ORA-05807: Blockchain or immutable table cannot have idle
+        #    retention greater than 16 days`. O banco em contêiner aceita 31 sem
+        #    reclamar, então a diferença só aparece no primeiro deploy na nuvem.
+        #
+        #    O comentário dentro de `001_schema_base.sql` ainda diz 31, e fica
+        #    assim de propósito: **aquele arquivo não pode mudar**. O runner
+        #    confere o sha256 de cada migração já aplicada, e editar até um
+        #    comentário faz a conferência acusar adulteração — como acusou em
+        #    15/09/2026, quando tentei corrigir o texto lá. Migração é
+        #    append-only, inclusive nos comentários.
         "AUDITORIA_DIAS_IDLE": str(cfg.oracle_auditoria_dias_idle),
         # Wallet presente = ADB-S = vector pool disponível = HNSW.
         "TIPO_INDICE_VETORIAL": (

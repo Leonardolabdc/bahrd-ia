@@ -51,8 +51,17 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
 USER app
 EXPOSE 8080
 
-HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -q -O /dev/null http://localhost:8080/ || exit 1
+# ⚠️ `127.0.0.1`, e não `localhost`.
+#
+# `listen 8080` no nginx escuta **só em IPv4**. Dentro do contêiner,
+# `localhost` resolve primeiro para `::1`, o wget tenta IPv6 e recebe
+# "Connection refused" — com o nginx servindo 200 normalmente o tempo todo. O
+# sintoma é um contêiner eternamente `unhealthy` que funciona perfeitamente, e
+# o `depends_on: service_healthy` de quem depende dele nunca libera.
+#
+# `/healthz` em vez de `/`: é o endpoint dedicado, com `access_log off`, então
+# a sonda não enche o log de uma requisição a cada 15 segundos.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3   CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
