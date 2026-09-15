@@ -13,6 +13,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.2.1] — 2026-09-15
+
+### Corrigido
+- **A IA repetia "Entendi, Leonardo!" em toda mensagem.** Observado numa
+  conversa real por WhatsApp. O problema não é a palavra: reconhecer o que a
+  pessoa disse é boa conversa na primeira vez — na terceira seguida vira tique,
+  e tique é o que denuncia a máquina. Agora o reconhecimento passa uma vez e é
+  cortado quando se repete, inclusive quando a palavra muda mas a função é a
+  mesma: alternar entre "Entendi" e "Beleza" é o mesmo tique com outra roupa.
+  Poderia ser instrução de prompt; instrução é pedido, e o filtro é garantia
+- `BASE_URL` documentado como *variable*, não *secret* — como secret o workflow
+  leria vazio, e o GitHub mascararia o endereço nos logs
+
+---
+
 ## [1.2.0] — 2026-09-15
 
 A conversa acontece por voz. Quem manda áudio recebe áudio.
@@ -147,7 +162,8 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Leonardolabdc/bahrd-ia/releases/tag/v1.0.0
