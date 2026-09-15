@@ -13,6 +13,46 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.1.0] — 2026-09-15
+
+O WhatsApp passa a funcionar de ponta a ponta pelo Twilio. Um evento entra, a
+mensagem chega ao celular, a pessoa responde e a IA conduz a conversa.
+
+### Adicionado
+- **O canal Twilio consegue abrir conversa.** Ele respondia e nunca abria: a
+  notificação chamava a Meta direto, sem olhar `CANAL_WHATSAPP`, e com as
+  credenciais da Meta ausentes — o normal rodando em Twilio — desistia em
+  silêncio. Template é conceito da Meta; o texto é reconstruído do manifesto e
+  sai como mensagem comum, com os botões viram lista e o mapa vira link
+- **Script de limpeza de conversas** ([`infra/deploy/limpar-sessoes.sh`](infra/deploy/limpar-sessoes.sh)),
+  que recusa rodar em produção — apagar conversa viva é o que o ADR-003 impede
+- **Nove testes novos** para o caminho do Twilio, que não tinha nenhum
+
+### Corrigido
+- **O Twilio exige o prefixo `whatsapp:` nos dois lados.** Recusava com
+  `21910: Invalid From and To pair`. A normalização foi para dentro do cliente,
+  não para o chamador: um lugar só que responde "como se endereça um número"
+- **O nono dígito precisa sair do número de destino.** O Twilio respondia
+  `201 Created` e, segundos depois, a mensagem virava `failed` com `63015` —
+  falha assíncrona, invisível no momento do envio. O projeto já tinha a regra:
+  o `_chave` canoniza tirando o nono, *"porque é a forma que a Meta usa"*. Ela
+  existia para decidir **de quem** é uma mensagem que chega; faltava aplicá-la
+  para decidir **para quem** vai uma que sai
+- **Dezesseis testes cobriam o canal errado.** Passavam `object()` como
+  configuração e nunca declaravam o canal, então exercitavam a Meta por
+  acidente — num projeto cujo padrão é `twilio`. Agora cada um declara qual
+  caminho percorre
+- A evidência do rollback estava sendo ignorada pela regra global `*.log`
+
+### Segurança
+- Ao documentar o defeito do nono dígito, um celular real entrou num teste e
+  numa docstring. O `test_nada_de_dado_real_no_repositorio`, criado por causa
+  do [post-mortem 01](docs/post-mortem-01-pii-no-historico.md), pegou antes do
+  commit. É a ação de causa raiz daquele incidente funcionando contra um erro
+  que ninguém previu
+
+---
+
 ## [1.0.0] — 2026-09-15
 
 Primeira versão publicada. O sistema deixa de existir só no notebook.
@@ -83,5 +123,6 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.0.0...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Leonardolabdc/bahrd-ia/releases/tag/v1.0.0
