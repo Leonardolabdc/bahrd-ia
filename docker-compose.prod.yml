@@ -42,6 +42,8 @@ services:
     environment:
       DOMINIO: ${DOMINIO}
       EMAIL_ACME: ${EMAIL_ACME}
+      # Injetado nas chamadas a /painel/*; ver o comentário no Caddyfile.
+      PAINEL_TOKEN: ${PAINEL_TOKEN}
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-dados:/data     # certificados — perder isto refaz o ACME

@@ -35,6 +35,21 @@
 	handle @api {
 		reverse_proxy api:8000 {
 			header_up X-Forwarded-Proto https
+
+			# O token do painel é injetado AQUI, e não entregue ao navegador.
+			#
+			# A alternativa seria escrevê-lo em /config.js, que o SPA lê no boot
+			# — mas /config.js é servido a qualquer visitante, então publicar o
+			# segredo ali o reduziria a zero.
+			#
+			# Assim ele passa a ser o que sempre deveria ter sido: credencial
+			# entre a borda e a API, nunca do lado do cliente.
+			#
+			# ⚠️ Isto NÃO é autenticação. Quem alcança este domínio alcança o
+			#    painel. É a lacuna 12 da auditoria, aceita de propósito
+			#    enquanto todo dado é sintético e há um operador só. O que se
+			#    ganha aqui é não vazar o segredo — não controle de acesso.
+			header_up X-Painel-Token {$PAINEL_TOKEN}
 		}
 	}
 
