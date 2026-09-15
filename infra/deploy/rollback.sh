@@ -65,13 +65,16 @@ echo "→ subindo $ALVO"
 $COMPOSE up -d --remove-orphans
 
 echo "→ aguardando"
-for i in $(seq 1 30); do
+# A cada 2s. O teto segue 150 segundos — aqui a pressa importa mais que no
+# deploy: um rollback acontece com algo quebrado no ar, e cada segundo de
+# arredondamento e um segundo a mais de sistema errado atendendo gente.
+for i in $(seq 1 75); do
   if docker exec "$($COMPOSE ps -q api)" curl -fsS --max-time 3 \
        http://127.0.0.1:8000/saude/vivo >/dev/null 2>&1; then
     break
   fi
-  [[ "$i" -lt 30 ]] || { echo "ERRO: a versao anterior tambem nao subiu"; exit 1; }
-  sleep 5
+  [[ "$i" -lt 75 ]] || { echo "ERRO: a versao anterior tambem nao subiu"; exit 1; }
+  sleep 2
 done
 
 # Quem voltou não é mais "o anterior" — o anterior agora é a versão quebrada,

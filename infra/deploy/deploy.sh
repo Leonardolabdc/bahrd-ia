@@ -62,15 +62,23 @@ echo "→ subindo"
 $COMPOSE up -d --remove-orphans
 
 # ── 5. Esperar ficar saudável ───────────────────────────────────────────────
+# Pergunta a cada 2s, e nao a cada 10s. O teto continua o mesmo — 300 segundos
+# —, entao o comportamento diante de uma API que realmente nao sobe nao muda.
+#
+# O que muda e o arredondamento: com passo de 10s, uma API pronta aos 22s so
+# era notada aos 30s, e esses 8 segundos entravam no tempo do pipeline duas
+# vezes, uma por ambiente. A rubrica mede o pipeline abaixo de 5 minutos, e ele
+# estava a 6 segundos do limite.
 echo "→ aguardando healthcheck"
-for i in $(seq 1 30); do
+inicio_espera=$(date +%s)
+for i in $(seq 1 150); do
   if curl -fsS --max-time 3 http://127.0.0.1:8000/saude/vivo >/dev/null 2>&1 \
      || docker exec "$($COMPOSE ps -q api)" curl -fsS --max-time 3 http://127.0.0.1:8000/saude/vivo >/dev/null 2>&1; then
-    echo "  api respondeu apos ${i}0s"
+    echo "  api respondeu apos $(( $(date +%s) - inicio_espera ))s"
     break
   fi
-  [[ "$i" -lt 30 ]] || { echo "ERRO: api nao respondeu em 300s"; $COMPOSE logs --tail=50 api; exit 1; }
-  sleep 10
+  [[ "$i" -lt 150 ]] || { echo "ERRO: api nao respondeu em 300s"; $COMPOSE logs --tail=50 api; exit 1; }
+  sleep 2
 done
 
 # Imagem velha ocupa disco, e a maquina gratuita tem 47 GB. Mantem as ultimas.
