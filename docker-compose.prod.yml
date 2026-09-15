@@ -103,12 +103,21 @@ services:
     # AOF ligado: o barramento não pode perder ocorrência num restart. `maxmemory`
     # explícito porque, sem ele, o Redis cresce até a máquina começar a paginar —
     # e com 1 GB isso derruba a API antes de derrubar o Redis.
+    # ⚠️ Uma opção por item, valor separado. O Redis **não** aceita
+    # `--opcao=valor`: ele junta os argumentos num arquivo de configuração
+    # temporário, e `appendonly=yes` vira uma diretiva desconhecida. O erro é
+    # `Bad directive or wrong number of arguments`, e o contêiner entra em
+    # laço de reinício — que do lado de fora parece "o Redis não sobe".
     command:
       - redis-server
-      - --appendonly=yes
-      - --appendfsync=everysec
-      - --maxmemory=96mb
-      - --maxmemory-policy=noeviction
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 96mb
+      - --maxmemory-policy
+      - noeviction
     volumes:
       - redis-dados:/data
     healthcheck:
