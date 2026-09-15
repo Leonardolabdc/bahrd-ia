@@ -167,3 +167,50 @@ def sem_saudacao_no_inicio(texto: str) -> str:
     # "Boa noite, Bruno! você costuma..." → a frase que sobra precisa começar
     # com maiúscula, senão o corte fica visível.
     return sem[0].upper() + sem[1:]
+
+
+#: O "Entendi, Leonardo!" que abre a resposta.
+#:
+#: **O problema não é a palavra, é a repetição.** Reconhecer o que a pessoa
+#: acabou de dizer é boa conversa na primeira vez; na terceira seguida vira
+#: tique, e tique é o que denuncia a máquina — o mesmo motivo do travessão lá
+#: em cima.
+#:
+#: O nome entra no padrão de propósito: "Entendi, Leonardo!" é a forma que mais
+#: se repete, porque o modelo tem o nome à mão e usa sempre que pode.
+_ECO_DE_ABERTURA = re.compile(
+    r"^\s*\b(?:entendi|entendido|certo|perfeito|beleza|ok|okay|show|legal"
+    r"|bacana|combinado|tranquilo|ótimo|otimo|ótima|otima|isso\s+mesmo|isso)\b"
+    r"(?:[,\s]+[A-ZÁÂÃÀÉÊÍÓÔÕÚÇ][\wÀ-ÿ]*)?"
+    r"\s*[!.,…]*\s*",
+    re.IGNORECASE,
+)
+
+
+def abre_com_reconhecimento(texto: str) -> bool:
+    """A fala começa com um "entendi", "certo", "beleza"?"""
+    return bool(texto and _ECO_DE_ABERTURA.match(texto))
+
+
+def sem_eco_de_abertura(texto: str, anterior: str | None) -> str:
+    """Corta o "entendi" de abertura **quando a fala anterior já usou um**.
+
+    Permite uma vez, bloqueia a repetição. É como gente conversa: reconhecer o
+    que o outro disse é natural; abrir toda frase do mesmo jeito é tique.
+
+    `anterior` é a última coisa que a IA disse nesta conversa. Sem ela — na
+    primeira fala — nada é cortado, porque ali o reconhecimento está certo.
+
+    Não adivinha nada além disso: se a anterior não abriu assim, esta pode.
+    """
+    if anterior is None or not abre_com_reconhecimento(anterior):
+        return texto
+    if not abre_com_reconhecimento(texto):
+        return texto
+
+    sem = _ECO_DE_ABERTURA.sub("", texto).lstrip()
+    if not sem:
+        # A fala inteira era o eco. Cortar deixaria a IA muda, que é pior que
+        # repetir — o silêncio, numa central, é informação errada.
+        return texto
+    return sem[0].upper() + sem[1:]

@@ -36,7 +36,12 @@ from central_ia.agent import (
     prompts,
     triagem_panico,
 )
-from central_ia.agent.escrita import sem_html, sem_saudacao_no_inicio, sem_travessao
+from central_ia.agent.escrita import (
+    sem_eco_de_abertura,
+    sem_html,
+    sem_saudacao_no_inicio,
+    sem_travessao,
+)
 from central_ia.api.rotas import midia
 from central_ia.config import Settings, settings
 from central_ia.domain import eventos
@@ -527,6 +532,17 @@ async def _dizer(cfg: Settings, sessao: Sessao, texto: str) -> bool:
     # uma frase e o cliente receberia outra — e é a cópia do painel que vira
     # HTML na tela do operador.
     texto = com_a_referencia(sessao, sem_html(sem_travessao(texto)))
+
+    # ⭐ **O "Entendi, Leonardo!" de toda mensagem.** Reconhecer o que a pessoa
+    # disse é boa conversa na primeira vez; na terceira seguida é tique, e
+    # tique é o que denuncia a máquina.
+    #
+    # Precisa da fala ANTERIOR da IA, e é por isso que mora aqui e não em
+    # `_responder`: lá só passa o texto, sem a conversa. Instrução de prompt
+    # pediria; aqui é garantia — a mesma razão do travessão.
+    ultima_da_ia = next((f.texto for f in reversed(sessao.falas) if f.quem == "ia"), None)
+    texto = sem_eco_de_abertura(texto, ultima_da_ia)
+
     sessao.registrar_ia(texto, 0.0, em_audio=sessao.canal == "AUDIO")
     enviada = await _responder(
         cfg, sessao.telefone, texto, em_audio=sessao.canal == "AUDIO"
