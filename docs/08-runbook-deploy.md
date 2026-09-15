@@ -158,6 +158,15 @@ cadastre:
 | Secret | `SSH_HOST` | o IP daquela máquina |
 | Secret | `SSH_USER` | `ubuntu` |
 | Secret | `SSH_KEY` | o conteúdo de `~/.ssh/bahrd.key`, inteiro |
+
+> Para copiar a chave sem errar a seleção: `cat ~/.ssh/bahrd.key | clip`.
+> Faltar uma linha é a causa mais comum de falha aqui, e o SSH não diz que o
+> problema é a chave.
+>
+> ⚠️ **`BASE_URL` é _variable_, não _secret_.** O workflow lê `vars.BASE_URL`,
+> que não enxerga secrets — como secret, ele leria vazio e o smoke test rodaria
+> contra uma URL em branco. E o GitHub **mascara secrets nos logs**: o endereço
+> apareceria como `***` justamente na saída que se mostra numa demonstração.
 | Variable | `BASE_URL` | `https://` + o domínio daquela máquina |
 
 > A chave privada vai no **secret do GitHub**, nunca no repositório. E não
