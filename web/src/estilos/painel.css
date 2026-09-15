@@ -140,6 +140,21 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--mono); font-size: var(--t-lb); letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--ink-3); cursor: help; white-space: nowrap;
 }
+/* O selo de ambiente NÃO é discreto, e é essa a intenção. O `.selo-fonte`
+   acima diz algo sobre o dado e pode ocupar o peso que tem; este diz "você
+   não está em produção", e precisa ser visto sem ser procurado. Uma ocorrência
+   de teste tem a mesma cara de uma real — alguém agindo sobre a errada é
+   incidente, não incômodo.
+
+   Só aparece fora de produção. Em produção a ausência de aviso é o normal, e
+   um selo "PROD" acabaria virando ruído que ninguém lê. */
+.selo-ambiente {
+  padding: 3px 8px; border-radius: 3px;
+  font-family: var(--mono); font-size: var(--t-lb); letter-spacing: 0.08em;
+  font-weight: 600; text-transform: uppercase; white-space: nowrap; cursor: help;
+  background: var(--aviso, #b45309); color: #fff;
+}
+
 .topo-dir { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .usuario { font-size: var(--t-sm); color: var(--ink-2); }
 .link-quieto {

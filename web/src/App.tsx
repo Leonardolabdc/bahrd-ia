@@ -154,12 +154,34 @@ export function App() {
             <span className={`ponto${degradado ? " ponto-degradado" : ""}`} />
             <span>{frase}</span>
           </div>
-          <span
-            className="selo-fonte"
-            title="Dados de exemplo servidos pela API. Sem conexão com o sistema de rastreamento da Bahrd."
-          >
-            Amostra
-          </span>
+          {/* O selo segue a FONTE DE DADOS, não o ambiente.
+              Estava fixo no código, e isso o fazia mentir nas duas direções:
+              continuaria dizendo "Amostra" no dia em que o rastreamento real
+              fosse ligado, e sumir dele em produção faria a tela alegar dado
+              real onde não há. O que ele afirma é sobre a origem do dado, e só
+              a origem pode decidir se ele aparece. */}
+          {estado?.fonte_rastreamento === "amostra" && (
+            <span
+              className="selo-fonte"
+              title="Dados de exemplo servidos pela API. Sem conexão com o sistema de rastreamento."
+            >
+              Amostra
+            </span>
+          )}
+
+          {/* Este existe para o lado contrário: deixar o ambiente que NÃO é
+              produção impossível de confundir. Uma ocorrência de teste tem a
+              mesma cara de uma real, e alguém agindo sobre a errada é um
+              incidente — não um incômodo. Produção não ganha selo nenhum:
+              ausência de aviso é o estado normal. */}
+          {estado && estado.ambiente !== "prd-poc" && (
+            <span
+              className="selo-ambiente"
+              title={`Ambiente de ${estado.ambiente}. Nada aqui é atendimento real.`}
+            >
+              {estado.ambiente.toUpperCase()}
+            </span>
+          )}
           <div className="topo-dir">
             {testesLigados && (
               <button

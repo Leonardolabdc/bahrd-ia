@@ -13,6 +13,30 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.2.0] — 2026-09-15
+
+A conversa acontece por voz. Quem manda áudio recebe áudio.
+
+### Adicionado
+- **Conversa por áudio de ponta a ponta.** Deepgram transcreve a nota de voz do
+  motorista, o modelo entende e o ElevenLabs responde falando. Espelhar o canal
+  é o padrão certo: quem mandou áudio está dirigindo e não vai parar para ler
+- **Selo de ambiente no painel.** Aparece fora de produção, em cor de alerta.
+  Uma ocorrência de teste tem a mesma cara de uma real, e alguém agindo sobre a
+  errada é incidente, não incômodo. Produção não ganha selo: ausência de aviso é
+  o estado normal, e um selo "PROD" viraria ruído que ninguém lê
+
+### Modificado
+- **O selo `Amostra` passa a seguir a fonte de dados, não o ambiente.** Estava
+  fixo no código, e isso o fazia mentir nas duas direções: continuaria dizendo
+  "Amostra" no dia em que o rastreamento real fosse ligado, e escondê-lo em
+  produção faria a tela alegar dado real onde não há. O que ele afirma é sobre a
+  origem do dado, e só a origem pode decidir se ele aparece
+- A API já devolvia `fonte_rastreamento` e `ambiente` em `/painel/estado`, e o
+  tipo no front-end já os declarava. Nenhuma linha de back-end mudou
+
+---
+
 ## [1.1.0] — 2026-09-15
 
 O WhatsApp passa a funcionar de ponta a ponta pelo Twilio. Um evento entra, a
@@ -123,6 +147,7 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Leonardolabdc/bahrd-ia/releases/tag/v1.0.0
