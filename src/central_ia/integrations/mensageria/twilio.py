@@ -37,7 +37,9 @@ log = logger(__name__)
 
 
 def endereco_whatsapp(numero: str) -> str:
-    """Prefixa com `whatsapp:` se ainda não estiver. Idempotente.
+    """O número na forma que o WhatsApp entrega. Idempotente.
+
+    Faz **duas** coisas, e as duas foram aprendidas em envio real.
 
     ⛔ **O Twilio exige que `From` e `To` sejam do mesmo canal.** Sem o
     prefixo ele recusa com `21910: Invalid From and To pair`, que não diz qual
@@ -51,9 +53,28 @@ def endereco_whatsapp(numero: str) -> str:
 
     Normalizar aqui, e não em cada chamador, é o que impede o próximo caminho
     novo de repetir o erro.
+
+    ⛔ **Tira o nono dígito dos celulares brasileiros**, e isto é o que faz a
+    mensagem chegar. O Twilio aceitou `whatsapp:+5541999998888` com `201
+    Created`, e **segundos depois** a mensagem virou `failed` com o código
+    `63015` — falha assíncrona, que nenhuma tentativa síncrona alcança. As
+    mensagens que o mesmo celular recebeu e leu foram endereçadas a
+    `whatsapp:+554199998888`, sem o nono.
+
+    É a mesma canonização de `_chave`, em `sessao_whatsapp.py`, e pelo mesmo
+    motivo declarado lá: **é a forma que a Meta usa, e é a que menos varia
+    entre fornecedores.** O projeto já tinha essa regra para decidir *de quem*
+    é uma mensagem que chega; faltava aplicá-la para decidir *para quem* vai
+    uma que sai.
     """
-    limpo = numero.strip()
-    return limpo if limpo.startswith("whatsapp:") else f"whatsapp:{limpo}"
+    limpo = numero.removeprefix("whatsapp:").strip()
+    digitos = "".join(c for c in limpo if c.isdigit())
+
+    # 55 + DDD(2) + 9 dígitos começando em 9 → o nono é o índice 4.
+    if len(digitos) == 13 and digitos.startswith("55") and digitos[4] == "9":
+        digitos = digitos[:4] + digitos[5:]
+
+    return f"whatsapp:+{digitos}" if digitos else f"whatsapp:{limpo}"
 
 
 @dataclass(frozen=True)

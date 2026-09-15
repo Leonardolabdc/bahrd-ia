@@ -194,14 +194,35 @@ async def test_sem_credencial_devolve_false_sem_levantar(
 def test_prefixo_e_acrescentado_quando_falta() -> None:
     from central_ia.integrations.mensageria.twilio import endereco_whatsapp
 
-    assert endereco_whatsapp("+5541999999999") == "whatsapp:+5541999999999"
+    assert endereco_whatsapp("+554199999999") == "whatsapp:+554199999999"
 
 
 def test_prefixo_nao_e_duplicado() -> None:
     """Idempotente: o caminho de resposta já recebe o número prefixado."""
     from central_ia.integrations.mensageria.twilio import endereco_whatsapp
 
-    assert endereco_whatsapp("whatsapp:+5541999999999") == "whatsapp:+5541999999999"
+    assert endereco_whatsapp("whatsapp:+554199999999") == "whatsapp:+554199999999"
+
+
+def test_o_nono_digito_sai_do_celular_brasileiro() -> None:
+    """O defeito que fez a mensagem ser aceita e **não** chegar.
+
+    O Twilio respondeu `201 Created`, e segundos depois a mensagem virou
+    `failed` com `63015`. Falha assíncrona: nenhuma tentativa síncrona alcança.
+    As mensagens que o mesmo celular recebeu e leu foram endereçadas sem o
+    nono dígito.
+    """
+    from central_ia.integrations.mensageria.twilio import endereco_whatsapp
+
+    assert endereco_whatsapp("+5541999998888") == "whatsapp:+554199998888"
+    assert endereco_whatsapp("whatsapp:+5541999998888") == "whatsapp:+554199998888"
+
+
+def test_numero_estrangeiro_nao_e_tocado() -> None:
+    """A regra é do Brasil. O próprio remetente do sandbox é dos EUA."""
+    from central_ia.integrations.mensageria.twilio import endereco_whatsapp
+
+    assert endereco_whatsapp("+14155238886") == "whatsapp:+14155238886"
 
 
 @pytest.mark.asyncio
@@ -218,4 +239,7 @@ async def test_a_abertura_endereca_pelo_canal_certo(monkeypatch: pytest.MonkeyPa
     sessao = _sessao()
     await rota._abrir_com_template(_so_twilio(), sessao, _evento())
 
-    assert endereco_whatsapp(_TwilioFalso.ultimo["para"]).startswith("whatsapp:+")
+    endereco = endereco_whatsapp(_TwilioFalso.ultimo["para"])
+    assert endereco.startswith("whatsapp:+")
+    # 55 + DDD + 8 dígitos: a forma que o WhatsApp entrega no Brasil.
+    assert len(endereco.removeprefix("whatsapp:+")) == 12
