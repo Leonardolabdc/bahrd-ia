@@ -52,6 +52,7 @@ from central_ia.integrations.mensageria.meta import (
     MetaIndisponivel,
     parametro_seguro,
 )
+from central_ia.integrations.mensageria.twilio import ClienteTwilio, TwilioIndisponivel
 from central_ia.integrations.rastreamento import construir_fonte
 from central_ia.integrations.rastreamento.bahrd import FUSO_BAHRD
 from central_ia.integrations.rastreamento.bahrd_webhook import (
@@ -859,6 +860,94 @@ async def _atender(cfg: Settings, evento, origem: str = "link") -> Sessao | None
     return sessao if await _abrir_com_template(cfg, sessao, evento) else None
 
 
+async def _abrir_pelo_twilio(cfg: Settings, sessao, tentativas) -> bool:
+    """Primeira mensagem pelo Twilio, que não tem template aprovado.
+
+    **A cadeia de tentativas não se aplica aqui.** Ela existe porque um modelo
+    da Meta pode estar em análise, reprovado ou pausado, e a próxima variante
+    entrega mesmo assim. No Twilio nada disso acontece: ou o texto vai, ou o
+    canal está fora. Então usa-se a primeira — que é a preferida — e pronto.
+
+    **Os botões viram lista de texto.** O sandbox não tem botão interativo. O
+    conteúdo é o mesmo, e é isso que importa: a pessoa precisa saber quais são
+    as respostas esperadas, senão um "não respondeu" fica sem sentido.
+
+    **O mapa vira link.** A Meta manda um ponto no mapa; aqui vai um endereço
+    do Google Maps. Perder o pino é chato, perder a notificação é grave — é a
+    mesma escala que ordena as tentativas do canal da Meta.
+    """
+    nome, parametros, localizacao = tentativas[0]
+
+    texto = modelos.corpo(nome, parametros)
+    if texto is None:
+        log.warning("template_sem_corpo", template=nome, canal="twilio")
+        return False
+
+    opcoes = modelos.botoes(nome)
+    if opcoes:
+        texto = texto + "\n\n" + "\n".join(f"• {o}" for o in opcoes)
+    if localizacao:
+        texto = (
+            f"{texto}\n\n📍 {localizacao.get('address', '')}\n"
+            f"https://maps.google.com/?q={localizacao['latitude']},{localizacao['longitude']}"
+        )
+
+    try:
+        cliente = ClienteTwilio(cfg)
+    except TwilioIndisponivel as erro:
+        log.warning("twilio_sem_credencial", erro=str(erro))
+        return False
+
+    try:
+        enviada = await cliente.enviar_texto(sessao.telefone, texto)
+    except TwilioIndisponivel as erro:
+        log.warning("template_falhou", template=nome, erro=str(erro), canal="twilio")
+        return False
+    finally:
+        await cliente.fechar()
+
+    # O `sid` do Twilio faz aqui o papel do `id` da Meta: amarra a resposta da
+    # pessoa a esta notificação. Ele não serve para roteamento por citação — o
+    # sandbox não devolve `context.id` — mas serve para o aviso de entrega.
+    anotar_mensagem_enviada(sessao, enviada.sid)
+
+    para_o_modelo = modelos.como_turno(nome, parametros, com_mapa=localizacao is not None)
+    para_o_operador = modelos.corpo(nome, parametros)
+    if para_o_modelo is not None and para_o_operador is not None:
+        sessao.registrar_template(para_o_modelo, para_o_operador, opcoes)
+
+    sessao.anotar(
+        "IA",
+        f"Primeiro contato pelo Twilio, com o texto do modelo <b>{nome}</b>. "
+        "A conversa segue quando a pessoa responder.",
+    )
+
+    vigiar_silencio_apos_template(cfg, sessao)
+
+    marcar_notificacao(
+        sessao.tipo.codigo,
+        Identificacao(
+            ocorrencia=sessao.ocorrencia_id,
+            telefone=sessao.telefone.replace("whatsapp:", ""),
+            nome=sessao.dados.get("interlocutor"),
+            placa=sessao.dados.get("placa"),
+            origem=sessao.origem,
+        ),
+    )
+
+    log.info(
+        "abertura_por_texto",
+        ocorrencia=sessao.ocorrencia_id,
+        template=nome,
+        canal="twilio",
+        com_mapa=localizacao is not None,
+        para=sessao.telefone,
+        sid=enviada.sid,
+        status=enviada.status,
+    )
+    return True
+
+
 async def _abrir_com_template(cfg: Settings, sessao, evento) -> bool:
     """Primeira mensagem por template, quando a janela está fechada.
 
@@ -882,6 +971,14 @@ async def _abrir_com_template(cfg: Settings, sessao, evento) -> bool:
     if not tentativas:
         log.warning("evento_link_sem_template", tipo=sessao.tipo.codigo)
         return False
+
+    # ⚠️ **O template é um conceito da Meta, e só dela.** O Twilio em sandbox
+    # não tem modelo aprovado — mas tem o mesmo texto, porque `modelos.corpo()`
+    # o reconstrói a partir do manifesto. Sem este desvio, o canal `twilio`
+    # respondia conversa e **nunca conseguia abrir uma**: a notificação caía no
+    # `ClienteMeta`, que levantava por falta de credencial da Meta.
+    if cfg.canal_whatsapp == "twilio":
+        return await _abrir_pelo_twilio(cfg, sessao, tentativas)
 
     try:
         cliente = ClienteMeta(cfg)

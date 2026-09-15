@@ -142,12 +142,27 @@ def test_coordenada_zero_ainda_e_coordenada() -> None:
 # ─────────────────────────── a escolha do modelo ───────────────────────────
 
 
+class _so_meta:
+    """Configuração mínima que declara **qual canal** o teste exercita.
+
+    Era `object()`, e passava — porque `_abrir_com_template` chamava a Meta sem
+    olhar o canal. Quando a abertura passou a respeitar `CANAL_WHATSAPP`, estes
+    testes quebraram com `AttributeError`, e foi um bom sinal: eles exercitavam
+    o caminho da Meta **por acidente**, num projeto cujo padrão é `twilio`.
+
+    Declarar o canal é o ponto. Um teste que não diz qual caminho percorre
+    continua verde quando o caminho muda debaixo dele.
+    """
+
+    canal_whatsapp = "meta"
+
+
 @pytest.mark.asyncio
 async def test_com_coordenada_usa_o_modelo_com_mapa(monkeypatch) -> None:
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
 
     await rota._abrir_com_template(
-        object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
+        _so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
     )
 
     assert _ClienteFalso.ultimo["nome"] == "evento_alerta_pergunta_mapa"
@@ -175,7 +190,7 @@ async def test_sem_coordenada_cai_no_modelo_de_texto(monkeypatch) -> None:
     """A reserva. É ela que garante que a notificação sai de qualquer forma."""
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
 
-    ok = await rota._abrir_com_template(object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
+    ok = await rota._abrir_com_template(_so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
 
     assert ok is True
     assert _ClienteFalso.ultimo["nome"] == "evento_alerta_pergunta"
@@ -197,7 +212,7 @@ async def test_nunca_manda_modelo_com_mapa_sem_o_bloco(monkeypatch) -> None:
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
 
     for evento in [_evento(), _evento(latitude=-25.45), _evento(longitude=-49.25)]:
-        await rota._abrir_com_template(object(), _SessaoFalsa("REMOCAO_BATERIA"), evento)
+        await rota._abrir_com_template(_so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), evento)
         enviado = _ClienteFalso.ultimo
         if enviado["nome"].endswith("_mapa"):
             assert enviado["localizacao"] is not None, "modelo com mapa sem o bloco de mapa"
@@ -215,7 +230,7 @@ async def test_os_tres_eventos_tem_variante_com_mapa(monkeypatch) -> None:
         ("MOVIMENTO_SEM_IGNICAO", "evento_alerta_pergunta_mapa"),
     ]:
         await rota._abrir_com_template(
-            object(), _SessaoFalsa(codigo), _evento(latitude=-25.45, longitude=-49.25)
+            _so_meta(), _SessaoFalsa(codigo), _evento(latitude=-25.45, longitude=-49.25)
         )
         assert _ClienteFalso.ultimo["nome"] == esperado
 
@@ -304,7 +319,7 @@ async def test_mapa_reprovado_cai_na_reserva_e_a_notificacao_sai(monkeypatch) ->
     _ClienteQueRecusaMapa.tentativas = []
 
     ok = await rota._abrir_com_template(
-        object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
+        _so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
     )
 
     assert ok is True, "a notificação precisa sair mesmo sem o mapa"
@@ -349,7 +364,7 @@ async def test_tudo_falhando_devolve_false_sem_explodir(monkeypatch) -> None:
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteQueRecusaTudo)
 
     ok = await rota._abrir_com_template(
-        object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
+        _so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento(latitude=-25.45, longitude=-49.25)
     )
 
     assert ok is False
@@ -371,7 +386,7 @@ async def test_o_texto_entregue_e_registrado_para_as_duas_plateias(monkeypatch) 
     sessao = _SessaoFalsa("REMOCAO_BATERIA")
 
     ok = await rota._abrir_com_template(
-        object(), sessao, _evento(latitude=-25.45, longitude=-49.25)
+        _so_meta(), sessao, _evento(latitude=-25.45, longitude=-49.25)
     )
 
     assert ok is True
@@ -411,7 +426,7 @@ async def test_template_que_falhou_nao_e_registrado(monkeypatch) -> None:
     sessao = _SessaoFalsa("REMOCAO_BATERIA")
 
     ok = await rota._abrir_com_template(
-        object(), sessao, _evento(latitude=-25.45, longitude=-49.25)
+        _so_meta(), sessao, _evento(latitude=-25.45, longitude=-49.25)
     )
 
     assert ok is False

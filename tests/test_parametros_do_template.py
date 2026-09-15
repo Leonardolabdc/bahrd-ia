@@ -87,6 +87,17 @@ def _evento(**campos) -> EventoRastreamento:
     return EventoRastreamento(**{**base, **campos})
 
 
+class _so_meta:
+    """Declara que este teste exercita o caminho da **Meta**.
+
+    Era `object()`. Passava porque `_abrir_com_template` chamava a Meta sem
+    olhar `CANAL_WHATSAPP` — e o padrão do projeto é `twilio`. Ou seja: estes
+    testes cobriam o canal que não é o padrão, sem dizer isso em lugar nenhum.
+    """
+
+    canal_whatsapp = "meta"
+
+
 @pytest.mark.asyncio
 async def test_ordem_e_evento_placa_horario_local(monkeypatch) -> None:
     """Os quatro na ordem certa. A Meta não sabe o que cada um significa.
@@ -98,7 +109,7 @@ async def test_ordem_e_evento_placa_horario_local(monkeypatch) -> None:
     sessao = _SessaoFalsa("REMOCAO_BATERIA")
     evento = _evento(endereco="Rua Comendador Roseira, Curitiba - PR")
 
-    assert await rota._abrir_com_template(object(), sessao, evento) is True
+    assert await rota._abrir_com_template(_so_meta(), sessao, evento) is True
 
     assert _ClienteFalso.ultimo["parametros"] == [
         # A abertura entrou como {{1}} em 10/09/2026. Sem `contato_nome` no
@@ -122,7 +133,7 @@ async def test_horario_sai_no_fuso_de_brasilia(monkeypatch) -> None:
     """
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
 
-    await rota._abrir_com_template(object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
+    await rota._abrir_com_template(_so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
 
     # [abertura, evento, placa, horario, local] -- a abertura entrou na frente
     # em 10/09/2026 e empurrou os outros quatro uma casa.
@@ -138,7 +149,7 @@ async def test_modelo_de_texto_nunca_manda_local_vazio(monkeypatch) -> None:
     """
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
 
-    await rota._abrir_com_template(object(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
+    await rota._abrir_com_template(_so_meta(), _SessaoFalsa("REMOCAO_BATERIA"), _evento())
 
     parametros = _ClienteFalso.ultimo["parametros"]
     assert parametros[2] == "ABC-1234"
@@ -166,7 +177,7 @@ async def test_um_modelo_so_para_bateria_e_movimento(monkeypatch) -> None:
         ("MOVIMENTO_SEM_IGNICAO", "evento_alerta_pergunta"),
         ("PANICO", "evento_panico_saudacao"),
     ]:
-        await rota._abrir_com_template(object(), _SessaoFalsa(codigo), _evento())
+        await rota._abrir_com_template(_so_meta(), _SessaoFalsa(codigo), _evento())
         assert _ClienteFalso.ultimo["nome"] == esperado
 
 
@@ -186,7 +197,7 @@ async def test_evento_elegivel_sem_permissao_de_notificar_nao_envia(monkeypatch)
     _ClienteFalso.ultimo = {}
 
     assert "VELOCIDADE_EXCEDIDA" not in rota.EVENTOS_QUE_NOTIFICAM
-    ok = await rota._abrir_com_template(object(), _SessaoFalsa("VELOCIDADE_EXCEDIDA"), _evento())
+    ok = await rota._abrir_com_template(_so_meta(), _SessaoFalsa("VELOCIDADE_EXCEDIDA"), _evento())
 
     assert ok is False
     assert _ClienteFalso.ultimo == {}
@@ -198,7 +209,7 @@ async def test_evento_sem_template_nao_envia(monkeypatch) -> None:
     monkeypatch.setattr(rota, "ClienteMeta", _ClienteFalso)
     _ClienteFalso.ultimo = {}
 
-    ok = await rota._abrir_com_template(object(), _SessaoFalsa("EXCESSO_VELOCIDADE"), _evento())
+    ok = await rota._abrir_com_template(_so_meta(), _SessaoFalsa("EXCESSO_VELOCIDADE"), _evento())
 
     assert ok is False
     assert _ClienteFalso.ultimo == {}
