@@ -280,7 +280,11 @@ class Settings(BaseSettings):
     oracle_pool_max: int = 10
     oracle_auditoria_dias_idle: int = Field(
         default=0,
-        description="Retenção da BLOCKCHAIN TABLE de auditoria. 0 em dev, 31 em hml/prd-poc.",
+        description=(
+            "Retenção da BLOCKCHAIN TABLE de auditoria. 0 em dev, 16 em hml/prd-poc. "
+            "16 é o teto do Autonomous Database (ORA-05807), não uma escolha — o banco "
+            "em contêiner aceita mais e não reclama."
+        ),
     )
 
     # ─────────── MySQL (operacional) ───────────
