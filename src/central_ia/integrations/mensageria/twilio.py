@@ -36,6 +36,26 @@ from central_ia.observability.logging import logger
 log = logger(__name__)
 
 
+def endereco_whatsapp(numero: str) -> str:
+    """Prefixa com `whatsapp:` se ainda não estiver. Idempotente.
+
+    ⛔ **O Twilio exige que `From` e `To` sejam do mesmo canal.** Sem o
+    prefixo ele recusa com `21910: Invalid From and To pair`, que não diz qual
+    dos dois está errado nem que falta prefixo.
+
+    Existe porque os dois caminhos recebem o número em formas diferentes: na
+    resposta ele vem do próprio webhook do Twilio, **já prefixado**; na
+    abertura vem de `sessao.telefone`, que é canônico e **nunca** tem prefixo
+    (ver `_chave` em `sessao_whatsapp.py` — a canonização existe justamente
+    para as duas grafias caírem no mesmo lugar).
+
+    Normalizar aqui, e não em cada chamador, é o que impede o próximo caminho
+    novo de repetir o erro.
+    """
+    limpo = numero.strip()
+    return limpo if limpo.startswith("whatsapp:") else f"whatsapp:{limpo}"
+
+
 @dataclass(frozen=True)
 class MensagemEnviada:
     sid: str
@@ -87,7 +107,7 @@ class ClienteTwilio:
         """`para` no formato `whatsapp:+5511999999999`."""
         resposta = await self._http.post(
             "/Messages.json",
-            data={"From": self._remetente, "To": para, "Body": corpo},
+            data={"From": self._remetente, "To": endereco_whatsapp(para), "Body": corpo},
         )
 
         if resposta.status_code >= 400:
@@ -115,7 +135,7 @@ class ClienteTwilio:
         Se a URL não for alcançável de fora, a mensagem falha do lado deles e
         o motorista simplesmente não recebe nada.
         """
-        dados = {"From": self._remetente, "To": para, "MediaUrl": url_do_audio}
+        dados = {"From": self._remetente, "To": endereco_whatsapp(para), "MediaUrl": url_do_audio}
         if legenda:
             dados["Body"] = legenda
 

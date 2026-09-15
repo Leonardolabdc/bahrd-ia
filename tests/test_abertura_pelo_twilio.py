@@ -181,3 +181,41 @@ async def test_sem_credencial_devolve_false_sem_levantar(
     assert not any(f.tipo == "template" for f in sessao.falas), (
         "envio que falhou nao pode virar turno: a IA acreditaria ter falado"
     )
+
+
+# ─────────────── o prefixo que o Twilio exige ───────────────
+#
+# Descoberto no primeiro envio real: `21910 — Invalid From and To pair. From
+# and To should be of the same channel`. O `From` do sandbox é
+# `whatsapp:+1415...`; o `To` saía sem prefixo, porque `sessao.telefone` é
+# canônico e a canonização remove o prefixo de propósito.
+
+
+def test_prefixo_e_acrescentado_quando_falta() -> None:
+    from central_ia.integrations.mensageria.twilio import endereco_whatsapp
+
+    assert endereco_whatsapp("+5541999999999") == "whatsapp:+5541999999999"
+
+
+def test_prefixo_nao_e_duplicado() -> None:
+    """Idempotente: o caminho de resposta já recebe o número prefixado."""
+    from central_ia.integrations.mensageria.twilio import endereco_whatsapp
+
+    assert endereco_whatsapp("whatsapp:+5541999999999") == "whatsapp:+5541999999999"
+
+
+@pytest.mark.asyncio
+async def test_a_abertura_endereca_pelo_canal_certo(monkeypatch: pytest.MonkeyPatch) -> None:
+    """O teste que representa o 21910.
+
+    `sessao.telefone` é canônico e não tem prefixo. Se ele chegar assim ao
+    Twilio, o envio é recusado — e a recusa não menciona prefixo nenhum.
+    """
+    from central_ia.integrations.mensageria.twilio import endereco_whatsapp
+
+    monkeypatch.setattr(rota, "ClienteTwilio", _TwilioFalso)
+
+    sessao = _sessao()
+    await rota._abrir_com_template(_so_twilio(), sessao, _evento())
+
+    assert endereco_whatsapp(_TwilioFalso.ultimo["para"]).startswith("whatsapp:+")
