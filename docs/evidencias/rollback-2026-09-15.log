@@ -1,0 +1,44 @@
+═══ ROLLBACK · 2026-09-15T02:00:20+00:00 ═══
+  saindo de: sha-a1335a9
+  voltando para: sha-8f07df7
+
+→ garantindo a imagem sha-8f07df7
+ Image ghcr.io/leonardolabdc/bahrd-backend:sha-8f07df7 Pulled 
+ Image ghcr.io/leonardolabdc/bahrd-web:sha-8f07df7 Pulled 
+→ subindo sha-8f07df7
+ Container bahrd-prod-redis-1 Running 
+ Container bahrd-prod-caddy-1 Running 
+ Container bahrd-prod-api-1 Recreate 
+ Container bahrd-prod-web-1 Recreate 
+ Container bahrd-prod-worker-1 Recreate 
+ Container bahrd-prod-web-1 Recreated 
+ Container bahrd-prod-worker-1 Recreated 
+ Container bahrd-prod-api-1 Recreated 
+ Container bahrd-prod-web-1 Starting 
+ Container bahrd-prod-redis-1 Healthy 
+ Container bahrd-prod-redis-1 Healthy 
+ Container bahrd-prod-worker-1 Starting 
+ Container bahrd-prod-api-1 Starting 
+ Container bahrd-prod-web-1 Started 
+ Container bahrd-prod-worker-1 Started 
+ Container bahrd-prod-api-1 Started 
+→ aguardando
+
+═══ ROLLBACK CONCLUIDO em 33s ═══
+
+Conferindo o que ficou no ar:
+
+Smoke tests · https://bahrd.duckdns.org
+ambiente esperado: prd-poc
+
+  PASSOU  [1/3] liveness e versao no ar  (898ms)
+          prova: o deploy pegou, e quem responde e a versao que acabou de subir
+          versao=1.0.0 ambiente=prd-poc
+  PASSOU  [2/3] readiness das dependencias  (1826ms)
+          prova: Autonomous Database, MySQL HeatWave e Redis respondem de dentro da OCI
+          oracle, mysql e redis responderam
+  PASSOU  [3/3] painel, TLS e variaveis de ambiente  (492ms)
+          prova: o SPA e servido sob certificado valido e sabe em que ambiente esta
+          painel servido, TLS valido, certificado expira em Dec 14 00:38:24 2026 GMT
+
+3/3 passaram.

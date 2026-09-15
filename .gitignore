@@ -84,3 +84,9 @@ Thumbs.db
 !docs/post-mortem-01-pii-no-historico.md
 !docs/post-mortem-02-primeiro-deploy.md
 !docs/evidencias/
+# ⚠️ `*.log` (acima) barra tudo que termina em .log, e a liberação da pasta
+#    sozinha não vence isso — a regra mais específica precisa vir depois.
+#    Aqui o log É o entregável: é a evidência de execução do rollback que a
+#    entrega exige. Sem esta linha ele fica no disco e some da entrega, sem
+#    erro nenhum para avisar.
+!docs/evidencias/*.log
