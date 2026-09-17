@@ -46,6 +46,7 @@ demonstração e sistema.
 | ADR-002 (MADR) — onde o projeto é publicado | [docs/adr/0002-plataforma-de-publicacao.md](docs/adr/0002-plataforma-de-publicacao.md) |
 | Diagrama C4 — nível 1 (contexto) e nível 2 (containers) | [nível 1](docs/architecture/c4-nivel-1-contexto.md) · [nível 2](docs/architecture/c4-nivel-2-containers.md) |
 | Ambientes de dev e produção separados, com secrets diferentes em cada um | Seção **URL pública**, logo abaixo — máquina, banco e credencial próprios em cada um |
+| Rollback testado, com evidência de execução | [docs/evidencias/rollback-2026-09-15.log](docs/evidencias/rollback-2026-09-15.log) — 33s, 3/3 smoke tests depois |
 
 ---
 
