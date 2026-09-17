@@ -1,5 +1,7 @@
 # Bahrd · atendimento de eventos de frota com IA
 
+## 🎥 [Vídeo de apresentação do projeto](https://youtu.be/NSaoHzc8wSc)
+
 Quando um veículo monitorado dispara um alerta, alguém precisa descobrir se é
 problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
 sistema atende no lugar dela o que consegue confirmar sozinho — e chama a
@@ -48,6 +50,7 @@ demonstração e sistema.
 | Ambientes de dev e produção separados, com secrets diferentes em cada um | Seção **URL pública**, logo abaixo — máquina, banco e credencial próprios em cada um |
 | Rollback testado, com evidência de execução | Seção **Rollback**, logo abaixo — print e log, 33-37s, 3/3 smoke tests depois |
 | Post-mortem leve, um incidente, uma página, sem apontar culpados | [Post-mortem 03](docs/post-mortem-03-dependencia-sem-teto.md) — os dois mais longos, com vários incidentes cada, estão na seção **Documentação**, logo abaixo |
+| Vídeo de demonstração | [youtu.be/NSaoHzc8wSc](https://youtu.be/NSaoHzc8wSc) |
 
 ---
 
