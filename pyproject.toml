@@ -22,8 +22,13 @@ dependencies = [
   # Persistência
   "oracledb>=2.5",
   "sqlalchemy[asyncio]>=2.0",
-  "aiomysql>=0.2",
-  "pymysql>=1.1",          # driver síncrono usado pelo Alembic
+  "aiomysql==0.3.2",
+  # ⚠️ Travado, não ">=". O 1.2.1 removeu `escape_dict` de
+  # `pymysql.converters`, e o aiomysql 0.3.2 ainda importa esse nome — build
+  # sem teto pegou o 1.2.1 na hora e o /saude/pronto passou a reportar
+  # "ImportError" para o MySQL, com o código intacto. Nada no `requirements.txt`
+  # protegia disso: o Dockerfile instala do `pyproject.toml`, não dele.
+  "pymysql==1.2.0",        # driver síncrono usado pelo Alembic
   "cryptography>=43.0",    # exigido pelo caching_sha2_password (padrão no MySQL 8.4)
   "alembic>=1.14",
 
