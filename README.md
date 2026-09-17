@@ -283,3 +283,4 @@ que pareça real entrar, e o `gitleaks` varre o histórico em todo push.
 Licença em [LICENSE](LICENSE) · como contribuir em
 [CONTRIBUTING.md](CONTRIBUTING.md) · política de segurança em
 [SECURITY.md](SECURITY.md).
+
