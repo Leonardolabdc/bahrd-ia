@@ -45,6 +45,7 @@ demonstração e sistema.
 | ADR-001 (MADR) — escolha de stack, alternativas descartadas e o porquê | [docs/adr/0001-stack.md](docs/adr/0001-stack.md) |
 | ADR-002 (MADR) — onde o projeto é publicado | [docs/adr/0002-plataforma-de-publicacao.md](docs/adr/0002-plataforma-de-publicacao.md) |
 | Diagrama C4 — nível 1 (contexto) e nível 2 (containers) | [nível 1](docs/architecture/c4-nivel-1-contexto.md) · [nível 2](docs/architecture/c4-nivel-2-containers.md) |
+| Ambientes de dev e produção separados, com secrets diferentes em cada um | Seção **URL pública**, logo abaixo — máquina, banco e credencial próprios em cada um |
 
 ---
 
@@ -97,6 +98,31 @@ O painel do operador abre direto; a API responde no mesmo domínio.
 | **Desenvolvimento** | [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) · secrets próprios |
 | **Onde roda** | Oracle Cloud, São Paulo, camada gratuita permanente ([ADR-002](docs/adr/0002-plataforma-de-publicacao.md)) |
 | **TLS** | Let's Encrypt, emitido e renovado pelo Caddy |
+
+### Separação de ambientes
+
+Não é só domínio diferente — cada camada tem sua própria credencial, e nenhuma
+é compartilhada entre dev e produção:
+
+| Camada | Produção | Desenvolvimento |
+|---|---|---|
+| Máquina | VM própria, IP próprio | VM própria, IP próprio |
+| Deploy (SSH, token do painel) | [GitHub Environment](https://github.com/Leonardolabdc/bahrd-ia/settings/environments) `prod` | [GitHub Environment](https://github.com/Leonardolabdc/bahrd-ia/settings/environments) `dev` — secrets isolados, um não enxerga o outro |
+| Oracle Autonomous Database | usuário `CENTRAL_IA`, schema próprio | usuário `CENTRAL_IA_DEV`, schema próprio (tabelas independentes, mesmas migrações) |
+| MySQL HeatWave | usuário `bahrd`, schema `central_ia` | usuário `central_ia_dev`, schema `central_ia_dev` — sem permissão sobre o schema de produção |
+
+Cada usuário de banco tem senha própria, nunca reaproveitada entre os dois
+ambientes. Um bug em desenvolvimento não tem como escrever num dado de
+produção — a credencial que a aplicação usa em dev simplesmente **não tem
+acesso** às tabelas de produção, no nível do próprio banco, não só por
+convenção de código.
+
+> ⚠️ **Lacuna conhecida:** produção ainda conecta ao MySQL com `bahrd`, a
+> conta administrativa da instância (a mesma usada para criar o usuário de
+> dev), em vez de uma conta de aplicação com privilégio restrito só ao seu
+> schema. Funciona e está isolado de dev, mas não segue o princípio de menor
+> privilégio — fica registrado para a próxima iteração, mesmo padrão do
+> Oracle (`CENTRAL_IA`, sem privilégio de DBA).
 
 Sondas abertas, sem autenticação:
 
