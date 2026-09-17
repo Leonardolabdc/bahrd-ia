@@ -46,7 +46,7 @@ demonstração e sistema.
 | ADR-002 (MADR) — onde o projeto é publicado | [docs/adr/0002-plataforma-de-publicacao.md](docs/adr/0002-plataforma-de-publicacao.md) |
 | Diagrama C4 — nível 1 (contexto) e nível 2 (containers) | [nível 1](docs/architecture/c4-nivel-1-contexto.md) · [nível 2](docs/architecture/c4-nivel-2-containers.md) |
 | Ambientes de dev e produção separados, com secrets diferentes em cada um | Seção **URL pública**, logo abaixo — máquina, banco e credencial próprios em cada um |
-| Rollback testado, com evidência de execução | [docs/evidencias/rollback-2026-09-15.log](docs/evidencias/rollback-2026-09-15.log) — 33s, 3/3 smoke tests depois |
+| Rollback testado, com evidência de execução | Seção **Rollback**, logo abaixo — print e log, 33-37s, 3/3 smoke tests depois |
 
 ---
 
@@ -137,6 +137,18 @@ E os três [smoke tests](tests/smoke/smoke.sh), que é como se confere de fora:
 ```bash
 VERSAO_ESPERADA=1.0.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
 ```
+
+### Rollback
+
+Uma VM não tem rollback de plataforma — não existe nada guardado além do que
+[infra/deploy/rollback.sh](infra/deploy/rollback.sh) guarda. Testado ao vivo:
+janela da esquerda mostra a versão caindo de `1.2.1` para `1.2.0` e voltando,
+pedida de fora por `curl`; janela da direita é o script rodando, terminando em
+37s com os três smoke tests passando sozinho no fim.
+
+![Rollback testado: versão caindo e voltando, 3/3 smoke tests](docs/evidencias/rollback-2026-09-17.png)
+
+Log de outra execução, 33s: [docs/evidencias/rollback-2026-09-15.log](docs/evidencias/rollback-2026-09-15.log).
 
 > **O painel está aberto a quem tiver o endereço.** Não é descuido: é a
 > [lacuna 12 da auditoria](docs/auditoria-prototipo.md), aceita enquanto todo
