@@ -133,7 +133,6 @@ jobs:
           host:     ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_KEY }}
-          script_stop: true
           script: |
             cd /opt/bahrd
             git fetch --all --prune
@@ -170,7 +169,6 @@ jobs:
           host:     ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_KEY }}
-          script_stop: true
           script: |
             cd /opt/bahrd
             git fetch --all --prune
