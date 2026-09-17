@@ -86,6 +86,10 @@ echo
 echo "═══ ROLLBACK CONCLUIDO em ${decorrido}s ═══"
 echo
 echo "Conferindo o que ficou no ar:"
-bash tests/smoke/smoke.sh "https://$(grep -E '^DOMINIO=' "$ENVFILE" | cut -d= -f2-)" || {
+# Sem isto o smoke test usa o padrao dele (`prd-poc`) mesmo rodando em dev, e
+# dois testes "falham" comparando contra o ambiente errado — nada quebrou, o
+# script so nao sabia onde estava.
+AMBIENTE_ESPERADO="$(grep -E '^APP_ENV=' "$ENVFILE" | cut -d= -f2- | cut -d'#' -f1 | xargs)" \
+  bash tests/smoke/smoke.sh "https://$(grep -E '^DOMINIO=' "$ENVFILE" | cut -d= -f2-)" || {
   echo "⚠️  a versao anterior subiu mas nao passou nos smoke tests."
   exit 1; }
