@@ -83,6 +83,7 @@ Thumbs.db
 !docs/08-runbook-deploy.md
 !docs/post-mortem-01-pii-no-historico.md
 !docs/post-mortem-02-primeiro-deploy.md
+!docs/post-mortem-03-dependencia-sem-teto.md
 !docs/evidencias/
 # ⚠️ `*.log` (acima) barra tudo que termina em .log, e a liberação da pasta
 #    sozinha não vence isso — a regra mais específica precisa vir depois.
