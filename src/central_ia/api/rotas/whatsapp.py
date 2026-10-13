@@ -21,6 +21,7 @@ o timeout do Twilio.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import html
 import json
 import re
@@ -34,6 +35,7 @@ from central_ia.agent import (
     blindagem,
     pedido_de_humano,
     prompts,
+    pseudonimizacao,
     triagem_panico,
 )
 from central_ia.agent.escrita import (
@@ -3088,14 +3090,25 @@ async def _falar(cfg: Settings, sessao: Sessao) -> None:
     conversa em diante: quem já está falando termina no modelo em que começou.
     Ler do `cfg` aqui faria a troca pegar conversas no meio de um turno, com a
     triagem decidida por um modelo e a condução por outro.
+
+    ⚠️ **A LLM nunca vê nome, placa nem endereço reais.** O mapa de apelidos
+    (`pseudonimizacao.py`) troca os três por um apelido fixo antes de montar o
+    histórico que vai para fora, e troca de volta assim que a resposta chega —
+    `sessao.historico` em si nunca é tocado, só a cópia que atravessa a
+    fronteira. Ver docs/mapa-dados-pessoais.md para o porquê.
     """
+    mapa = pseudonimizacao.montar_mapa(
+        nome=sessao.dados.get("interlocutor"),
+        placa=sessao.dados.get("placa"),
+        endereco=sessao.endereco,
+    )
     llm = construir_cliente_llm(cfg, sessao.modelo)
     try:
         turno = await atendimento_real.proximo_turno(
             llm,
             sessao.tipo,
             sessao.canal,
-            sessao.historico,
+            pseudonimizacao.sanitizar_historico(sessao.historico, mapa),
             # Como achar este atendimento depois. O que dali vira atributo de
             # trace é decidido em `observability/tracing.py`, junto da tranca
             # de conteúdo — daqui sai o que se sabe, não o que pode sair.
@@ -3111,6 +3124,10 @@ async def _falar(cfg: Settings, sessao: Sessao) -> None:
                 origem=sessao.origem,
             ),
         )
+        # A IA só conhece o apelido — devolve o apelido. Troca de volta aqui,
+        # antes de QUALQUER outro código ler `turno.mensagem` (blindagem de
+        # saída, trilha, entrega): dali para frente é a mensagem real.
+        turno = dataclasses.replace(turno, mensagem=mapa.reidentificar(turno.mensagem))
     except Exception as erro:  # noqa: BLE001 — falha vira humano, princípio 2
         log.warning("whatsapp_turno_falhou", ocorrencia=sessao.ocorrencia_id, erro=str(erro))
         frase = _encaminhar(
