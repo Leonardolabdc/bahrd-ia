@@ -41,13 +41,21 @@ dependencies = [
 
   # Observabilidade
   "structlog>=24.4",
-  "opentelemetry-sdk>=1.28",
-  "opentelemetry-exporter-otlp>=1.28",
-  "opentelemetry-instrumentation-fastapi>=0.49b0",
+  # ⚠️ Travados, não ">=". O 1.45.1 trocou a implementação interna do
+  # OTLPSpanExporter (de `requests.Session` para um `_client`/`_transport`
+  # novo) e removeu o atributo `_session` que o teste de smoke do Langfuse
+  # inspeciona. Build sem teto pegou o 1.45.1 sozinho — mesma causa do
+  # incidente do PyMySQL (post-mortem 03), driver diferente. `1.44.0` é a
+  # última combinação com os quatro pacotes mutuamente compatíveis (ver
+  # requirements.txt, que já carregava este snapshot sem ninguém ter
+  # amarrado isto aqui).
+  "opentelemetry-sdk==1.44.0",
+  "opentelemetry-exporter-otlp==1.44.0",
+  "opentelemetry-instrumentation-fastapi==0.65b0",
   # Traça as chamadas de saída — OpenRouter, Twilio, Deepgram, ElevenLabs. É
   # metade do valor da telemetria: mostra qual integração está lenta ou
   # falhando, sem uma linha de span escrita à mão.
-  "opentelemetry-instrumentation-httpx>=0.49b0",
+  "opentelemetry-instrumentation-httpx==0.65b0",
 ]
 
 [project.optional-dependencies]
