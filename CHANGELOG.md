@@ -10,6 +10,49 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 ### A fazer
 - Religar a assinatura HMAC do webhook (lacuna 4)
 - Decidir `PANICO_AUTONOMO` — é decisão de operação, não de código (lacuna 5)
+- Conta de aplicação com privilégio restrito no MySQL de produção (hoje usa a
+  conta administrativa `bahrd`, mesmo padrão que o Oracle já segue)
+
+---
+
+## [1.3.0] — 2026-10-14
+
+Etapa 2: segurança de credenciais, conformidade LGPD, observabilidade e uma
+otimização medida.
+
+### Adicionado
+- **Sanitização de PII antes de qualquer chamada ao LLM.** Nome, placa e
+  endereço viram apelido fixo antes de montar o histórico que vai para o
+  modelo, e voltam ao valor real só depois da resposta — a OpenRouter/
+  Anthropic nunca recebe o dado cru. CPF, telefone de terceiro e e-mail
+  soltos na conversa viram marcador, por padrão estrutural
+  (`agent/pseudonimizacao.py`).
+- **Expurgo automático de conversa antiga.** A retenção de 90 dias estava
+  desenhada desde 11/08/2026 e nunca tinha sido implementada — job diário
+  via `arq cron_jobs`, às 3h, apaga `mensagem`/`conversa` de ocorrência
+  encerrada há mais de 90 dias. Nunca toca conversa sem `encerrada_em`
+  preenchido (`workers/retencao.py`).
+- **Alerta de taxa de erro, por e-mail.** P2, acima de 5% de erro em 15 min,
+  amostra mínima de 10 turnos, cooldown de 1h (`observability/alertas.py`).
+- **Langfuse ativo em dev e produção**, dois projetos separados — uma
+  conversa de teste não contamina a métrica de produção.
+- `docs/mapa-dados-pessoais.md`, `docs/retencao-e-exclusao.md` e
+  `docs/rotacao-de-credenciais.md` — este último com evidência de uma
+  rotação real, não simulada.
+- README: seções **LGPD**, **Observabilidade**, **Otimização medida** e
+  **Troubleshooting**.
+
+### Corrigido
+- **Dependências do OpenTelemetry sem teto de versão.** O
+  `opentelemetry-exporter-otlp` 1.45.1 trocou a implementação interna do
+  exportador e quebrou o CI sem nenhum código nosso ter mudado — mesma causa
+  do incidente do PyMySQL (post-mortem 03), pacote diferente. Travado em
+  `1.44.0`.
+
+### Medido
+- **Cache de prompt da OpenRouter: 94,3% de economia de custo**, medido com
+  duas chamadas reais e consecutivas (US$ 0,0705 → US$ 0,0040). Ver seção
+  "Otimização medida" no README.
 
 ---
 
@@ -162,7 +205,8 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.1...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.0.0...v1.1.0

@@ -52,6 +52,20 @@ demonstração e sistema.
 | Post-mortem leve, um incidente, uma página, sem apontar culpados | [Post-mortem 03](docs/post-mortem-03-dependencia-sem-teto.md) — os dois mais longos, com vários incidentes cada, estão na seção **Documentação**, logo abaixo |
 | Vídeo de demonstração | [youtu.be/NSaoHzc8wSc](https://youtu.be/NSaoHzc8wSc) |
 
+## Entregáveis da Etapa 2
+
+| Pedido | Onde está |
+|---|---|
+| Trio sagrado (.env, .gitignore, .env.example) com secrets por ambiente | `.env.prod.example` · seção **Separação de ambientes**, abaixo |
+| Rotação de credenciais, documentada | [docs/rotacao-de-credenciais.md](docs/rotacao-de-credenciais.md) — com evidência real, não simulada |
+| Mapa de dados pessoais, com base legal de cada coleta | [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md) |
+| Retenção e exclusão, com mecanismo real | [docs/retencao-e-exclusao.md](docs/retencao-e-exclusao.md) — [`workers/retencao.py`](src/central_ia/workers/retencao.py), job diário |
+| Sanitização de PII antes do LLM | [`agent/pseudonimizacao.py`](src/central_ia/agent/pseudonimizacao.py) — detalhado em [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md) |
+| 5 métricas essenciais + alerta configurado + dashboard no README | Seção **Observabilidade**, abaixo |
+| Uma otimização medida, com número antes e depois | Seção **Otimização medida**, logo abaixo |
+| README v1.0 (LGPD, observabilidade, otimizações, troubleshooting) | As quatro seções homônimas, abaixo |
+| Vídeo de demonstração (Etapa 2) | *(link quando gravado)* |
+
 ---
 
 ## O problema
@@ -99,7 +113,7 @@ O painel do operador abre direto; a API responde no mesmo domínio.
 
 | | |
 |---|---|
-| **Produção** | [bahrd.duckdns.org](https://bahrd.duckdns.org) · versão `1.0.0` |
+| **Produção** | [bahrd.duckdns.org](https://bahrd.duckdns.org) · versão `1.3.0` |
 | **Desenvolvimento** | [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) · secrets próprios |
 | **Onde roda** | Oracle Cloud, São Paulo, camada gratuita permanente ([ADR-002](docs/adr/0002-plataforma-de-publicacao.md)) |
 | **TLS** | Let's Encrypt, emitido e renovado pelo Caddy |
@@ -139,7 +153,7 @@ curl https://bahrd.duckdns.org/saude/pronto   # Oracle, MySQL e Redis
 E os três [smoke tests](tests/smoke/smoke.sh), que é como se confere de fora:
 
 ```bash
-VERSAO_ESPERADA=1.0.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
+VERSAO_ESPERADA=1.3.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
 ```
 
 ### Rollback
@@ -291,6 +305,55 @@ por trace:
 | **Público** | A operação |
 | **Canal** | E-mail — de propósito, não WhatsApp (o número de teste já serve para a conversa com a IA; misturar aviso de sistema ali confundiria os dois papéis) |
 | **Cooldown** | 1h — sem isso, cada turno que mantém a taxa alta manda um e-mail novo |
+
+## LGPD
+
+Detalhado em [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md),
+[docs/retencao-e-exclusao.md](docs/retencao-e-exclusao.md) e
+[docs/rotacao-de-credenciais.md](docs/rotacao-de-credenciais.md). Resumo:
+
+| | |
+|---|---|
+| **Base legal** | Execução de contrato — nenhum ponto de coleta usa consentimento. Ninguém clica em "aceito" antes de reportar que a bateria do caminhão foi removida |
+| **PII antes do LLM** | Nome, placa e endereço viram apelido fixo antes de qualquer chamada ao modelo, e voltam ao valor real só depois — [`pseudonimizacao.py`](src/central_ia/agent/pseudonimizacao.py). CPF, telefone de terceiro e e-mail soltos na conversa viram marcador, nunca chegam crus |
+| **Transferência internacional** | Toda chamada de LLM é transferência — documentada por integração, base: execução de contrato |
+| **Retenção** | 90 dias para a transcrição crua (MySQL), expurgo automático diário. Resumo e desfecho (Oracle) ficam como auditoria de longo prazo |
+| **Rotação de credenciais** | Procedimento documentado, com evidência real de execução — não simulada |
+
+## Otimização medida
+
+**Cache de prompt na OpenRouter**, para o modelo `anthropic/claude-sonnet-5`
+(o único prefixo que ativa `cache_control` — ver `integrations/llm/openrouter.py::_sistema`).
+Medido de verdade, duas chamadas reais e consecutivas, mesmo prompt de sistema:
+
+| | Chamada 1 (sem cache) | Chamada 2 (cache lido) |
+|---|---|---|
+| Tokens de entrada | 17.492 | 17.492 |
+| Tokens lidos do cache | 0 | 17.477 |
+| Custo | US$ 0,0705 | US$ 0,0040 |
+
+**Economia: 94,3%** na segunda chamada em diante — e é exatamente o padrão de
+uma conversa real: o *playbook* e a persona (o grosso do prompt de sistema)
+não mudam turno a turno, só a conversa cresce.
+
+*Trade-off, com honestidade*: a primeira chamada de cada conversa nova paga o
+preço cheio — é ela que escreve o cache. O ganho aparece a partir do segundo
+turno, e cresce com o tamanho da conversa. Latência não muda de forma
+perceptível; o ganho é só de custo.
+
+## Troubleshooting
+
+Problemas reais, já enfrentados neste projeto — não hipotéticos.
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| `docker compose restart` não aplica uma variável nova do `.env.prod` | `restart` reinicia o processo com o ambiente **antigo** — não relê o arquivo | Use `up -d <serviço>`, que recria o container com o ambiente atual |
+| `API inacessível em http://localhost:8000` | A porta 8000 não é publicada para o host — só existe na rede interna dos containers | `docker exec $(docker compose ps -q api) curl http://127.0.0.1:8000/saude/vivo` |
+| `401` em `/painel/fila` | O token do painel não está em `config.js` **de propósito** (publicá-lo ali vazaria o segredo para qualquer visitante) | O Caddy injeta o token servidor-a-servidor; confirme que está acessando pelo domínio público, não por IP direto |
+| Build quebra sozinho, sem ninguém ter mexido no código | Dependência sem teto de versão (`>=`) pegou um release novo que quebrou algo interno — já aconteceu com PyMySQL e com o OpenTelemetry | Travar a versão exata no `pyproject.toml` — ver [Post-mortem 03](docs/post-mortem-03-dependencia-sem-teto.md) |
+| `ORA-05807` ao conectar no Oracle | Autonomous Database Always Free limita a retenção de inatividade a 16 dias; o projeto pedia 31 | Ajustar a expectativa para 16 dias — é limite da camada gratuita, não bug |
+| Smoke test acusa ambiente errado depois de um rollback | `rollback.sh` chamava o smoke test sem dizer qual ambiente esperar, e o padrão do script é `prd-poc` | Corrigido — lê `APP_ENV` do próprio `.env.prod` da máquina |
+| Colar no terminal produz `^[[200~` no início da linha | Colagem por botão direito do mouse, em vez de atalho — o modo de colagem em blocos (*bracketed paste*) vaza como texto | Cole com `Shift+Insert` |
 
 ## Documentação
 
