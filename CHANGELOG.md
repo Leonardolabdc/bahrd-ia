@@ -15,6 +15,34 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.3.1] — 2026-10-14
+
+Três correções encontradas testando o alerta pela primeira vez, de verdade,
+nos dois ambientes.
+
+### Corrigido
+- **`scripts/` não ia para a imagem Docker.** Os scripts de demonstração
+  (`testar_alerta.py`, `medir_cache_llm.py`) existiam no repositório mas o
+  `docker exec` falhava com "arquivo não encontrado" — o Dockerfile nunca
+  copiava a pasta.
+- **Alerta sem canal configurado consumia o cooldown de 1h do mesmo jeito.**
+  Uma tentativa sem e-mail configurado reservava o cooldown antes de checar
+  se havia canal — quando o canal fosse configurado em seguida, o primeiro
+  alerta de verdade ficava mudo até o cooldown vencer sozinho.
+- **SMTP direto do Gmail era bloqueado pelo próprio Google.** Testado de
+  verdade: a conexão e o `STARTTLS` funcionavam, mas o login era derrubado
+  com `Connection unexpectedly closed` em todas as portas (587 e 465) — IP
+  de camada gratuita de nuvem (Oracle) sendo bloqueado por reputação, não
+  senha errada. Trocado para a API HTTPS do Resend, mesmo padrão já usado
+  para Twilio, OpenRouter, Deepgram e ElevenLabs neste projeto.
+
+### Testado
+- **Alerta confirmado funcionando de ponta a ponta**, e-mail recebido de
+  verdade nos dois ambientes (dev e produção), cada um com sua própria
+  chave de API do Resend.
+
+---
+
 ## [1.3.0] — 2026-10-14
 
 Etapa 2: segurança de credenciais, conformidade LGPD, observabilidade e uma
@@ -205,7 +233,8 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.0...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.1.0...v1.2.0

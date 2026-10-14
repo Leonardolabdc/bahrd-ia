@@ -59,8 +59,13 @@ _CHAVE_FALHAS = "alerta:turnos:falhas"
 _CHAVE_COOLDOWN = "alerta:taxa_de_erro:cooldown"
 
 
-async def registrar_turno(cfg: Settings, *, sucesso: bool) -> None:
-    """Chamado a cada turno de IA — sucesso ou falha. Barato: dois `INCR`."""
+async def registrar_turno(cfg: Settings, *, sucesso: bool) -> bool:
+    """Chamado a cada turno de IA — sucesso ou falha. Barato: dois `INCR`.
+
+    Devolve se o alerta disparou neste turno — repassa o retorno de
+    `verificar_e_alertar` para quem quiser saber (`scripts/testar_alerta.py`,
+    por exemplo) sem precisar chamar os dois separadamente.
+    """
     r = redis_bus.cliente(cfg)
     pipe = r.pipeline()
     pipe.incr(_CHAVE_TOTAL)
@@ -71,7 +76,8 @@ async def registrar_turno(cfg: Settings, *, sucesso: bool) -> None:
     await pipe.execute()
 
     if not sucesso:
-        await verificar_e_alertar(cfg)
+        return await verificar_e_alertar(cfg)
+    return False
 
 
 async def verificar_e_alertar(cfg: Settings) -> bool:
