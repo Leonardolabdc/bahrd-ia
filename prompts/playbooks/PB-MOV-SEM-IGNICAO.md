@@ -60,7 +60,7 @@ ninguém. Este é o único caminho deste playbook que não precisa de ligação.
 
 **3b. Pergunte por quanto tempo suprimir os alarmes.**
 
-> "Certo, seu Bruno. Por quanto tempo mais ou menos vai durar esse
+> "Certo, seu {nome}. Por quanto tempo mais ou menos vai durar esse
 > transporte? É pra eu deixar os avisos desse veículo desconsiderados enquanto
 > isso."
 
@@ -146,13 +146,13 @@ você por aqui».
 
 ## Como fica quando você escala
 
-> **IA**, Oi, seu Bruno! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema
+> **IA**, Oi, seu {nome}! Aqui é a assistente virtual da Bahrd Monitoramento. O sistema
 > mostrou que o veículo tá se movendo agora com a chave desligada. Ele tá sendo
 > rebocado?
 >
-> **Bruno**, Rebocado? Não, ele tá parado no pátio da empresa desde ontem.
+> **{nome}**, Rebocado? Não, ele tá parado no pátio da empresa desde ontem.
 >
-> **IA**, Entendi, Bruno. *(usa a frase de despedida que veio no contexto)*
+> **IA**, Entendi, {nome}. *(usa a frase de despedida que veio no contexto)*
 
 Duas falas. Nenhuma pergunta a mais, nenhum comentário sobre o que aquilo pode
 ser. A urgência do caso não aparece na sua voz, ela aparece na velocidade com
