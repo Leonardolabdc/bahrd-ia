@@ -63,10 +63,20 @@ def redis(monkeypatch: pytest.MonkeyPatch) -> _RedisFalso:
 
 def _cfg_com_email() -> Settings:
     return Settings(
+        alerta_resend_api_key="re_chave-de-teste",
         alerta_email_remetente="central@exemplo.com",
-        alerta_email_senha_app="senha-de-teste-16-letras",
         alerta_email_destinatario="operacao@exemplo.com",
     )
+
+
+def _grava_em(lista: list) -> object:
+    """Substitui `_enviar_email` nos testes — `async` porque o código real
+    faz `await _enviar_email(...)`."""
+
+    async def _fn(cfg: Settings, *, assunto: str, corpo: str) -> None:
+        lista.append((assunto, corpo))
+
+    return _fn
 
 
 async def _registrar(cfg: Settings, *, sucessos: int, falhas: int) -> None:
@@ -103,12 +113,8 @@ async def test_taxa_abaixo_do_limiar_nao_alerta(redis) -> None:
 async def test_taxa_acima_do_limiar_com_amostra_suficiente_dispara(
     redis, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    enviados = []
-    monkeypatch.setattr(
-        alertas,
-        "_enviar_email",
-        lambda cfg, *, assunto, corpo: enviados.append((assunto, corpo)),
-    )
+    enviados: list = []
+    monkeypatch.setattr(alertas, "_enviar_email", _grava_em(enviados))
     cfg = _cfg_com_email()
     # 10 turnos, 2 falharam — 20%, bem acima dos 5%. `registrar_turno` já
     # dispara `verificar_e_alertar` sozinho a cada falha — é no 2º falho,
@@ -125,10 +131,8 @@ async def test_taxa_acima_do_limiar_com_amostra_suficiente_dispara(
 async def test_cooldown_impede_segundo_email_na_mesma_janela(
     redis, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    enviados = []
-    monkeypatch.setattr(
-        alertas, "_enviar_email", lambda cfg, *, assunto, corpo: enviados.append(1)
-    )
+    enviados: list = []
+    monkeypatch.setattr(alertas, "_enviar_email", _grava_em(enviados))
     cfg = _cfg_com_email()
     # A 2ª falha já dispara (ver teste acima). Uma 3ª falha, na mesma janela,
     # não deveria mandar um segundo e-mail — é o cooldown funcionando.
@@ -142,17 +146,27 @@ async def test_cooldown_impede_segundo_email_na_mesma_janela(
 async def test_sem_canal_configurado_nao_tenta_enviar(
     redis, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    chamou_smtp = []
-    monkeypatch.setattr(
-        alertas.smtplib, "SMTP", lambda *a, **k: chamou_smtp.append(1) or _SMTPFalso()
-    )
+    chamou_http = []
+
+    class _ClienteFalso:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc) -> bool:
+            return False
+
+        async def post(self, *_a, **_k):
+            chamou_http.append(1)
+            raise AssertionError("nao deveria chamar a API sem canal configurado")
+
+    monkeypatch.setattr(alertas.httpx, "AsyncClient", lambda **_k: _ClienteFalso())
     cfg = Settings()  # sem nenhuma das três variáveis de alerta preenchidas
 
     # A lógica de limiar roda igual — só o canal é checado antes do cooldown,
     # e o envio em si fica mudo.
     await _registrar(cfg, sucessos=8, falhas=2)
 
-    assert chamou_smtp == [], "sem email/senha configurados, SMTP nunca deveria ser chamado"
+    assert chamou_http == [], "sem resend configurado, a API nunca deveria ser chamada"
 
 
 @pytest.mark.asyncio
@@ -166,10 +180,8 @@ async def test_sem_canal_configurado_nao_consome_o_cooldown(
     depois, o primeiro alerta de verdade fica mudo até o cooldown vencer
     sozinho, sem ninguém entender por quê.
     """
-    enviados = []
-    monkeypatch.setattr(
-        alertas, "_enviar_email", lambda cfg, *, assunto, corpo: enviados.append(1)
-    )
+    enviados: list = []
+    monkeypatch.setattr(alertas, "_enviar_email", _grava_em(enviados))
 
     # Primeira rodada, sem e-mail configurado — cruza o limiar, mas não deve
     # reservar o cooldown.
@@ -186,13 +198,44 @@ async def test_sem_canal_configurado_nao_consome_o_cooldown(
     )
 
 
-class _SMTPFalso:
-    def __enter__(self):
-        return self
+@pytest.mark.asyncio
+async def test_chamada_real_ao_resend_tem_o_formato_certo(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Confere o contrato com a API do Resend sem bater na rede — mesmo
+    espírito de `test_cache_openrouter.py`: o formato é preso por teste
+    porque falha em silêncio (manda errado, a resposta não avisa o porquê)."""
 
-    def __exit__(self, *_exc):
-        return False
+    chamadas = []
 
-    def starttls(self) -> None: ...
-    def login(self, *_a, **_k) -> None: ...
-    def send_message(self, *_a, **_k) -> None: ...
+    class _RespostaFalsa:
+        def raise_for_status(self) -> None:
+            pass
+
+    class _ClienteFalso:
+        def __init__(self, **kwargs) -> None:
+            self._kwargs = kwargs
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc) -> bool:
+            return False
+
+        async def post(self, url: str, *, headers: dict, json: dict):
+            chamadas.append((url, headers, json))
+            return _RespostaFalsa()
+
+    monkeypatch.setattr(alertas.httpx, "AsyncClient", _ClienteFalso)
+    cfg = _cfg_com_email()
+
+    await alertas._enviar_email(cfg, assunto="[P2] teste", corpo="corpo do alerta")
+
+    assert len(chamadas) == 1
+    url, headers, corpo_json = chamadas[0]
+    assert url == "https://api.resend.com/emails"
+    assert headers["Authorization"] == "Bearer re_chave-de-teste"
+    assert corpo_json["from"] == "central@exemplo.com"
+    assert corpo_json["to"] == ["operacao@exemplo.com"]
+    assert corpo_json["subject"] == "[P2] teste"
+    assert corpo_json["text"] == "corpo do alerta"

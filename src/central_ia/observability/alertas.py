@@ -21,13 +21,21 @@ sem um job de limpeza à parte.
 **Cooldown de 1h.** Sem isso, cada turno que mantém a taxa acima de 5% manda
 um e-mail novo — e um alerta que pinga a cada minuto vira o mesmo problema
 que o curso descreve: tanto alerta que vira ruído, e ruído se ignora.
+
+⚠️ **Por que API HTTPS (Resend), e não SMTP direto do Gmail.** Primeira
+versão usava `smtplib` contra `smtp.gmail.com`. Testado de verdade em
+14/10/2026: a conexão e o `STARTTLS` funcionavam, mas o login era derrubado
+com `Connection unexpectedly closed` — padrão de IP de camada gratuita de
+nuvem (Oracle, neste caso) sendo bloqueado preventivamente por reputação,
+não de senha errada. Trocar para uma API HTTPS de terceiro resolve porque
+quem entrega o e-mail é a infraestrutura deles, não o IP da VM — mesmo
+padrão já usado para Twilio, OpenRouter, Deepgram e ElevenLabs neste
+projeto: nenhuma outra integração fala protocolo bruto.
 """
 
 from __future__ import annotations
 
-import asyncio
-import smtplib
-from email.message import EmailMessage
+import httpx
 
 from central_ia.config import Settings
 from central_ia.observability.logging import logger
@@ -101,10 +109,7 @@ async def verificar_e_alertar(cfg: Settings) -> bool:
         return False
 
     log.warning("alerta_taxa_de_erro", total=total, falhas=falhas, taxa=round(taxa, 3))
-    # smtplib é síncrono — numa thread à parte para não travar o loop
-    # assíncrono enquanto o handshake SMTP acontece.
-    await asyncio.to_thread(
-        _enviar_email,
+    await _enviar_email(
         cfg,
         assunto="[P2] Bahrd — taxa de erro de turnos da IA acima do limiar",
         corpo=(
@@ -120,33 +125,35 @@ async def verificar_e_alertar(cfg: Settings) -> bool:
 
 def _alerta_configurado(cfg: Settings) -> bool:
     return bool(
-        cfg.alerta_email_remetente
-        and cfg.alerta_email_senha_app
+        cfg.alerta_resend_api_key
+        and cfg.alerta_email_remetente
         and cfg.alerta_email_destinatario
     )
 
 
-def _enviar_email(cfg: Settings, *, assunto: str, corpo: str) -> None:
+async def _enviar_email(cfg: Settings, *, assunto: str, corpo: str) -> None:
     """Sem as três variáveis preenchidas, não tenta enviar — fica só no log.
 
-    Sem try/except escondendo erro de envio: se o SMTP falhar, o erro sobe e
-    aparece no log do worker. Um alerta que falha em silêncio é pior que não
-    ter alerta — ninguém percebe a ausência até o incidente de verdade.
+    Sem try/except escondendo erro de envio: se a API do Resend falhar, o
+    erro sobe e aparece no log do worker. Um alerta que falha em silêncio é
+    pior que não ter alerta — ninguém percebe a ausência até o incidente de
+    verdade.
     """
     if not _alerta_configurado(cfg):
-        log.info("alerta_sem_canal_configurado", motivo="variaveis de email ausentes")
+        log.info("alerta_sem_canal_configurado", motivo="variaveis de e-mail ausentes")
         return
 
-    mensagem = EmailMessage()
-    mensagem["Subject"] = assunto
-    mensagem["From"] = cfg.alerta_email_remetente
-    mensagem["To"] = cfg.alerta_email_destinatario
-    mensagem.set_content(corpo)
-
-    with smtplib.SMTP(cfg.alerta_smtp_host, cfg.alerta_smtp_port) as smtp:
-        smtp.starttls()
-        smtp.login(
-            cfg.alerta_email_remetente,
-            cfg.alerta_email_senha_app.get_secret_value(),  # type: ignore[union-attr]
+    async with httpx.AsyncClient(timeout=15.0) as cliente:
+        resposta = await cliente.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {cfg.alerta_resend_api_key.get_secret_value()}",  # type: ignore[union-attr]
+            },
+            json={
+                "from": cfg.alerta_email_remetente,
+                "to": [cfg.alerta_email_destinatario],
+                "subject": assunto,
+                "text": corpo,
+            },
         )
-        smtp.send_message(mensagem)
+        resposta.raise_for_status()

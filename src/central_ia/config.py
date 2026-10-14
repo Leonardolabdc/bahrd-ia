@@ -403,14 +403,18 @@ class Settings(BaseSettings):
     # 15 min exige ação imediata". Canal é e-mail, de propósito — WhatsApp
     # misturaria aviso de operação com a conversa de teste, no mesmo número.
     #
+    # ⚠️ API do Resend, não SMTP direto do Gmail. Testado de verdade em
+    # 14/10/2026: `smtp.gmail.com` derrubava a conexão no login — IP de
+    # camada gratuita de nuvem sendo bloqueado por reputação, não senha
+    # errada. Ver cabeçalho de `observability/alertas.py`.
+    #
     # Sem as três variáveis preenchidas, o alerta fica mudo: a contagem roda
     # (é dado barato, Redis), o envio não.
-    alerta_email_remetente: str = ""
-    alerta_email_senha_app: SegredoOpcional = None
+    alerta_resend_api_key: SegredoOpcional = None
+    #: `onboarding@resend.dev` é o remetente de testes do próprio Resend —
+    #: funciona sem verificar domínio próprio, suficiente para a POC.
+    alerta_email_remetente: str = "onboarding@resend.dev"
     alerta_email_destinatario: str = ""
-    #: Gmail. Para outro provedor, troca os dois.
-    alerta_smtp_host: str = "smtp.gmail.com"
-    alerta_smtp_port: int = 587
 
     @model_validator(mode="before")
     @classmethod
