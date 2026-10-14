@@ -10,10 +10,12 @@ antes de sair.
 from __future__ import annotations
 
 from arq.connections import RedisSettings
+from arq.cron import cron
 
 from central_ia.config import settings
 from central_ia.observability.logging import configurar_logging, logger
 from central_ia.persistence import mysql, oracle, redis_bus
+from central_ia.workers.retencao import expurgo_diario
 
 log = logger(__name__)
 
@@ -57,7 +59,13 @@ class WorkerSettings:
     on_shutdown = ao_encerrar
     redis_settings = _redis_settings()
 
-    # Timers e SLA da ocorrência entram aqui no Sprint 2 (cron_jobs).
+    # Timers e SLA da ocorrência entram aqui no Sprint 2.
+    #
+    # 03:00 porque é a hora de menor tráfego medida (doc 06) — um DELETE em
+    # massa durante o horário de pico competiria por conexão com os turnos de
+    # atendimento reais.
+    cron_jobs = [cron(expurgo_diario, hour=3, minute=0)]
+
     max_jobs = 20
     job_timeout = 300
     keep_result = 3600
