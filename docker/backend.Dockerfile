@@ -55,6 +55,9 @@ COPY --chown=app:app prompts/ ./prompts/
 # lê o corpo deles para saber o texto que o cliente recebeu e não repeti-lo na
 # primeira resposta da IA (integrations/mensageria/modelos.py).
 COPY --chown=app:app infra/templates-whatsapp/ ./infra/templates-whatsapp/
+# Ferramentas operacionais sob demanda (testar o alerta, medir o cache) —
+# não rodam sozinhas, só via `docker exec` quando alguém pede.
+COPY --chown=app:app scripts/ ./scripts/
 # alembic.ini é obrigatório em runtime: é ele que aponta para migrations/mysql.
 # pyproject.toml carrega a configuração do pytest e do ruff.
 COPY --chown=app:app alembic.ini pyproject.toml ./
