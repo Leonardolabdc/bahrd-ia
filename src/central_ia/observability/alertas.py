@@ -83,6 +83,15 @@ async def verificar_e_alertar(cfg: Settings) -> bool:
     if taxa <= LIMIAR_TAXA_DE_ERRO:
         return False
 
+    # Checa o canal **antes** de reservar o cooldown. Defeito real, achado
+    # testando o alerta pela primeira vez (14/10/2026): sem isto, uma
+    # tentativa sem e-mail configurado consumia o cooldown de 1h do mesmo
+    # jeito — e quando o canal fosse configurado depois, o próximo alerta de
+    # verdade ficava mudo até o cooldown vencer sozinho.
+    if not _alerta_configurado(cfg):
+        log.info("alerta_sem_canal_configurado", motivo="variaveis de email ausentes")
+        return False
+
     # `SET ... NX` com TTL: só o primeiro turno a cruzar o limiar, depois do
     # cooldown anterior expirar, consegue escrever a chave e disparar. Os
     # turnos seguintes, na mesma janela, encontram a chave já lá e desistem —

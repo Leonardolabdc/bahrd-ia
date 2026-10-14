@@ -148,10 +148,42 @@ async def test_sem_canal_configurado_nao_tenta_enviar(
     )
     cfg = Settings()  # sem nenhuma das três variáveis de alerta preenchidas
 
-    # A lógica de limiar e cooldown roda igual — só o envio fica mudo.
+    # A lógica de limiar roda igual — só o canal é checado antes do cooldown,
+    # e o envio em si fica mudo.
     await _registrar(cfg, sucessos=8, falhas=2)
 
     assert chamou_smtp == [], "sem email/senha configurados, SMTP nunca deveria ser chamado"
+
+
+@pytest.mark.asyncio
+async def test_sem_canal_configurado_nao_consome_o_cooldown(
+    redis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Defeito real, achado testando o alerta pela primeira vez (14/10/2026).
+
+    Sem canal configurado, uma tentativa que cruza o limiar não pode
+    reservar o cooldown de 1h — senão, quando alguém configurar o e-mail
+    depois, o primeiro alerta de verdade fica mudo até o cooldown vencer
+    sozinho, sem ninguém entender por quê.
+    """
+    enviados = []
+    monkeypatch.setattr(
+        alertas, "_enviar_email", lambda cfg, *, assunto, corpo: enviados.append(1)
+    )
+
+    # Primeira rodada, sem e-mail configurado — cruza o limiar, mas não deve
+    # reservar o cooldown.
+    sem_email = Settings()
+    await _registrar(sem_email, sucessos=8, falhas=2)
+    assert enviados == []
+
+    # Segunda rodada, agora com e-mail configurado — se o cooldown tivesse
+    # sido reservado antes, este alerta ficaria mudo.
+    com_email = _cfg_com_email()
+    await _registrar(com_email, sucessos=8, falhas=2)
+    assert len(enviados) == 1, (
+        "o alerta de verdade nao pode ficar mudo por causa da tentativa anterior"
+    )
 
 
 class _SMTPFalso:
