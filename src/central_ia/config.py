@@ -398,6 +398,20 @@ class Settings(BaseSettings):
     #: Em produção, `langfuse_com_conteudo` ignora esta variável — ver lá.
     langfuse_enviar_conteudo: bool = False
 
+    # ─────────── Alerta de taxa de erro ───────────
+    # P2 do próprio material da disciplina: "taxa de erro > 5% em janela de
+    # 15 min exige ação imediata". Canal é e-mail, de propósito — WhatsApp
+    # misturaria aviso de operação com a conversa de teste, no mesmo número.
+    #
+    # Sem as três variáveis preenchidas, o alerta fica mudo: a contagem roda
+    # (é dado barato, Redis), o envio não.
+    alerta_email_remetente: str = ""
+    alerta_email_senha_app: SegredoOpcional = None
+    alerta_email_destinatario: str = ""
+    #: Gmail. Para outro provedor, troca os dois.
+    alerta_smtp_host: str = "smtp.gmail.com"
+    alerta_smtp_port: int = 587
+
     @model_validator(mode="before")
     @classmethod
     def _recusar_variaveis_mortas(cls, valores: object) -> object:

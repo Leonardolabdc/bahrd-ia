@@ -1,0 +1,166 @@
+"""O alerta de taxa de erro — P2, e-mail, com cooldown.
+
+Etapa 2: "alerta sem ação é ruído". Prioridade, público e canal estão fixados
+no cabeçalho de `observability/alertas.py` — aqui os testes conferem que o
+limiar, a amostra mínima e o cooldown funcionam de verdade, sem tocar Redis
+nem enviar e-mail real.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from central_ia.config import Settings
+from central_ia.observability import alertas
+from central_ia.persistence import redis_bus
+
+
+class _PipelineFalso:
+    def __init__(self, dono: _RedisFalso) -> None:
+        self._dono = dono
+        self._comandos: list[tuple[str, tuple]] = []
+
+    def incr(self, chave: str) -> _PipelineFalso:
+        self._comandos.append(("incr", (chave,)))
+        return self
+
+    def expire(self, chave: str, segundos: int) -> _PipelineFalso:
+        self._comandos.append(("expire", (chave, segundos)))
+        return self
+
+    async def execute(self) -> None:
+        for nome, args in self._comandos:
+            if nome == "incr":
+                (chave,) = args
+                self._dono.dados[chave] = str(int(self._dono.dados.get(chave, 0)) + 1)
+            # `expire` não precisa de efeito nenhum para o teste — a lógica
+            # de negócio não lê TTL, só confia que o Redis vai honrá-lo.
+
+
+class _RedisFalso:
+    def __init__(self) -> None:
+        self.dados: dict[str, str] = {}
+
+    def pipeline(self) -> _PipelineFalso:
+        return _PipelineFalso(self)
+
+    async def get(self, chave: str) -> str | None:
+        return self.dados.get(chave)
+
+    async def set(self, chave: str, valor: str, *, nx: bool = False, ex: int | None = None) -> bool:
+        if nx and chave in self.dados:
+            return False
+        self.dados[chave] = valor
+        return True
+
+
+@pytest.fixture
+def redis(monkeypatch: pytest.MonkeyPatch) -> _RedisFalso:
+    falso = _RedisFalso()
+    monkeypatch.setattr(redis_bus, "cliente", lambda _cfg: falso)
+    return falso
+
+
+def _cfg_com_email() -> Settings:
+    return Settings(
+        alerta_email_remetente="central@exemplo.com",
+        alerta_email_senha_app="senha-de-teste-16-letras",
+        alerta_email_destinatario="operacao@exemplo.com",
+    )
+
+
+async def _registrar(cfg: Settings, *, sucessos: int, falhas: int) -> None:
+    for _ in range(sucessos):
+        await alertas.registrar_turno(cfg, sucesso=True)
+    for _ in range(falhas):
+        await alertas.registrar_turno(cfg, sucesso=False)
+
+
+@pytest.mark.asyncio
+async def test_amostra_pequena_nao_alerta_mesmo_com_100_por_cento_de_erro(redis) -> None:
+    cfg = _cfg_com_email()
+    # 2 turnos, os 2 falharam — 100% de erro, mas abaixo da amostra mínima.
+    await _registrar(cfg, sucessos=0, falhas=2)
+
+    disparou = await alertas.verificar_e_alertar(cfg)
+
+    assert disparou is False
+
+
+@pytest.mark.asyncio
+async def test_taxa_abaixo_do_limiar_nao_alerta(redis) -> None:
+    cfg = _cfg_com_email()
+    # 20 turnos, 1 falhou — 5% exatos não deve passar o limiar (é "< 0.05").
+    await _registrar(cfg, sucessos=19, falhas=0)
+    await alertas.registrar_turno(cfg, sucesso=False)
+
+    disparou = await alertas.verificar_e_alertar(cfg)
+
+    assert disparou is False
+
+
+@pytest.mark.asyncio
+async def test_taxa_acima_do_limiar_com_amostra_suficiente_dispara(
+    redis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    enviados = []
+    monkeypatch.setattr(
+        alertas,
+        "_enviar_email",
+        lambda cfg, *, assunto, corpo: enviados.append((assunto, corpo)),
+    )
+    cfg = _cfg_com_email()
+    # 10 turnos, 2 falharam — 20%, bem acima dos 5%. `registrar_turno` já
+    # dispara `verificar_e_alertar` sozinho a cada falha — é no 2º falho,
+    # o que fecha a amostra mínima, que o disparo acontece.
+    await _registrar(cfg, sucessos=8, falhas=2)
+
+    assert len(enviados) == 1
+    assunto, corpo = enviados[0]
+    assert "[P2]" in assunto
+    assert "2 de 10" in corpo
+
+
+@pytest.mark.asyncio
+async def test_cooldown_impede_segundo_email_na_mesma_janela(
+    redis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    enviados = []
+    monkeypatch.setattr(
+        alertas, "_enviar_email", lambda cfg, *, assunto, corpo: enviados.append(1)
+    )
+    cfg = _cfg_com_email()
+    # A 2ª falha já dispara (ver teste acima). Uma 3ª falha, na mesma janela,
+    # não deveria mandar um segundo e-mail — é o cooldown funcionando.
+    await _registrar(cfg, sucessos=8, falhas=2)
+    await alertas.registrar_turno(cfg, sucesso=False)
+
+    assert len(enviados) == 1, "o cooldown deveria impedir o segundo disparo"
+
+
+@pytest.mark.asyncio
+async def test_sem_canal_configurado_nao_tenta_enviar(
+    redis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    chamou_smtp = []
+    monkeypatch.setattr(
+        alertas.smtplib, "SMTP", lambda *a, **k: chamou_smtp.append(1) or _SMTPFalso()
+    )
+    cfg = Settings()  # sem nenhuma das três variáveis de alerta preenchidas
+
+    # A lógica de limiar e cooldown roda igual — só o envio fica mudo.
+    await _registrar(cfg, sucessos=8, falhas=2)
+
+    assert chamou_smtp == [], "sem email/senha configurados, SMTP nunca deveria ser chamado"
+
+
+class _SMTPFalso:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_exc):
+        return False
+
+    def starttls(self) -> None: ...
+    def login(self, *_a, **_k) -> None: ...
+    def send_message(self, *_a, **_k) -> None: ...

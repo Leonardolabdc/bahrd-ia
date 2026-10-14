@@ -72,6 +72,7 @@ from central_ia.integrations.mensageria.meta import (
     extrair as extrair_meta,
 )
 from central_ia.integrations.rastreamento import construir_fonte
+from central_ia.observability import alertas
 from central_ia.observability.logging import logger
 from central_ia.observability.tracing import (
     Identificacao,
@@ -3128,8 +3129,10 @@ async def _falar(cfg: Settings, sessao: Sessao) -> None:
         # antes de QUALQUER outro código ler `turno.mensagem` (blindagem de
         # saída, trilha, entrega): dali para frente é a mensagem real.
         turno = dataclasses.replace(turno, mensagem=mapa.reidentificar(turno.mensagem))
+        await alertas.registrar_turno(cfg, sucesso=True)
     except Exception as erro:  # noqa: BLE001 — falha vira humano, princípio 2
         log.warning("whatsapp_turno_falhou", ocorrencia=sessao.ocorrencia_id, erro=str(erro))
+        await alertas.registrar_turno(cfg, sucesso=False)
         frase = _encaminhar(
             cfg,
             sessao,

@@ -251,7 +251,7 @@ reescrita.
 
 | | |
 |---|---|
-| **953 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
+| **1029 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
 | **Lint** | `ruff` sobre `src`, `migrations` e `tests`. |
 | **Varredura de segredo** | `gitleaks` sobre o **histórico**, não só o último commit. |
 | **CI** | Os três acima rodam em todo push e pull request. |
@@ -259,6 +259,38 @@ reescrita.
 A suíte foi construída contra conversas escritas como um motorista escreve —
 com erro de digitação, caixa alta, gíria, mensagem picada, cliente irritado e
 tentativa de injeção de prompt.
+
+## Observabilidade
+
+Instrumentado com [Langfuse](https://langfuse.com) — trace por ocorrência,
+turno a turno, com custo e tokens ao lado. Dois projetos, um por ambiente,
+nunca misturados: um teste em dev não contamina a métrica de produção.
+
+| | |
+|---|---|
+| **Dashboard · produção** | [cloud.langfuse.com/project/cmv7c3sgg04bqad0esqwirp4d](https://us.cloud.langfuse.com/project/cmv7c3sgg04bqad0esqwirp4d) |
+| **Dashboard · dev** | [cloud.langfuse.com/project/cmv7c40tw04bvad0ehm27s0da](https://us.cloud.langfuse.com/project/cmv7c40tw04bvad0ehm27s0da) |
+
+**As 5 métricas essenciais de LLMOps**, as mesmas que o Langfuse já calcula
+por trace:
+
+| Métrica | O que mede | Por quê esse threshold |
+|---|---|---|
+| Latência (p50/p95/p99) | Tempo de resposta do turno | Percentil, nunca média — a média esconde o cliente que esperou 30s |
+| Custo por execução | Tokens × preço do modelo | Direto da resposta do provedor, por turno |
+| Taxa de erro | % de turnos que falharam | **Acima de 5% em 15 min dispara o alerta P2** abaixo |
+| Volume | Turnos por minuto/hora | Queda súbita = app fora do ar; pico anormal = bot ou viralização |
+| Qualidade | Modelo aprovado por medição real, não por confiança no fornecedor | Ver seletor de modelo no painel — `aprovado_para_producao` |
+
+**Alerta configurado** — [`observability/alertas.py`](src/central_ia/observability/alertas.py):
+
+| | |
+|---|---|
+| **O quê** | Taxa de erro de turnos acima de 5%, em janela de 15 min, amostra mínima de 10 turnos |
+| **Prioridade** | P2 — degradação significativa, não sistema parado |
+| **Público** | A operação |
+| **Canal** | E-mail — de propósito, não WhatsApp (o número de teste já serve para a conversa com a IA; misturar aviso de sistema ali confundiria os dois papéis) |
+| **Cooldown** | 1h — sem isso, cada turno que mantém a taxa alta manda um e-mail novo |
 
 ## Documentação
 
