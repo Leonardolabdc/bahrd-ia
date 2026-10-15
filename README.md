@@ -64,7 +64,7 @@ demonstração e sistema.
 | 5 métricas essenciais + alerta configurado + dashboard no README | Seção **Observabilidade**, abaixo |
 | Uma otimização medida, com número antes e depois | Seção **Otimização medida**, logo abaixo |
 | README v1.0 (LGPD, observabilidade, otimizações, troubleshooting) | As quatro seções homônimas, abaixo |
-| Vídeo de demonstração (Etapa 2) | *(link quando gravado)* |
+| Vídeo de demonstração (Etapa 2) | [youtu.be/_jKgJpvK4Uk](https://youtu.be/_jKgJpvK4Uk) |
 
 ---
 
