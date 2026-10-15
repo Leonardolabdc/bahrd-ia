@@ -1,6 +1,9 @@
 # Bahrd · atendimento de eventos de frota com IA
 
-## 🎥 [Vídeo de apresentação do projeto](https://youtu.be/NSaoHzc8wSc)
+## 🎥 Vídeos de apresentação
+
+- [Etapa 1](https://youtu.be/NSaoHzc8wSc)
+- [Etapa 2](https://youtu.be/_jKgJpvK4Uk)
 
 Quando um veículo monitorado dispara um alerta, alguém precisa descobrir se é
 problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
