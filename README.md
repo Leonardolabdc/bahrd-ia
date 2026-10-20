@@ -35,9 +35,11 @@ pessoa. Nenhum modelo participa dessa escolha.
 **A triagem existe só para evento crítico**, e a régua é 90%: acima disso o caso
 é de gente, sem conversa. Abaixo, a IA atende.
 
-**O banco está tracejado porque ainda não foi ligado.** A ocorrência vive em
-memória, e reiniciar a API apaga as conversas em curso — é a diferença entre
-demonstração e sistema.
+**O banco está tracejado porque ainda não foi ligado.** Oracle e MySQL estão no
+ar e respondem à sonda, mas a aplicação ainda não grava ocorrência nem conversa
+neles. A conversa em andamento sobrevive a um reinício, guardada no Redis
+([ADR-003](docs/adr/0003-sessoes-fora-da-memoria.md)); o histórico de encerrados
+e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 
 ---
 
@@ -186,7 +188,7 @@ painel sobem em contêiner.
 ```bash
 make setup     # cria o .env a partir do .env.example
 make up        # sobe a pilha
-make test      # 953 testes, sem tocar rede nem API paga
+make test      # a suíte inteira, sem tocar rede nem API paga
 ```
 
 No Windows, o mesmo pelo PowerShell: `.\dev.ps1 setup`, `.\dev.ps1 up`,
@@ -217,26 +219,26 @@ local e **não vem no clone**, então cada pessoa liga a sua.
 Detalhes de cada serviço e problemas conhecidos estão em
 [04 · Ambiente Docker](docs/04-ambiente-docker.md).
 
-## Arquitetura
+## Arquitetura e stack
 
 | Camada | O que roda |
 |---|---|
 | **Back-end** | Python 3.12 · FastAPI · Pydantic v2 · arq |
 | **Front-end** | React 19 · TypeScript · Vite · CSS com design tokens |
-| **Modelo** | Claude Sonnet 5 via OpenRouter, com cache de prompt |
+| **Modelo** | Via OpenRouter, escolhido no painel: Gemini 2.5 Flash Lite (padrão, o mais barato), Gemini 2.5 Flash ou Claude Sonnet 5. O cache de prompt medido vale só para o Claude |
 | **WhatsApp** | Twilio (sandbox) · adaptador para Cloud API da Meta disponível |
 | **STT / TTS** | Deepgram Nova-3 · ElevenLabs Flash v2.5 |
 | **Banco de registro** | Oracle 26ai (Blockchain Table) — Autonomous Database na OCI |
 | **Banco operacional** | MySQL 8.4 em dev · MySQL HeatWave 26.7 na OCI |
 | **Barramento / cache** | Redis 7 |
-| **Observabilidade** | OpenTelemetry → Jaeger em dev · logs estruturados em produção |
+| **Observabilidade** | OpenTelemetry → Langfuse (um projeto por ambiente) · Jaeger na máquina local · logs estruturados · alerta por e-mail (Resend) |
 | **Infraestrutura** | Docker Compose · 2× VM.Standard.E2.1.Micro (x86) na OCI |
 
 ```
 bahrd-ia/
 ├── src/central_ia/        o código da aplicação
 ├── web/                   painel do operador (React + Vite)
-├── tests/                 953 testes
+├── tests/                 testes automatizados (ver Qualidade)
 ├── prompts/               os textos que definem como a IA fala
 ├── docs/                  arquitetura, custo e segurança
 ├── docker/                imagens e composição dos contêineres
@@ -268,7 +270,7 @@ reescrita.
 
 | | |
 |---|---|
-| **1029 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
+| **1034 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
 | **Lint** | `ruff` sobre `src`, `migrations` e `tests`. |
 | **Varredura de segredo** | `gitleaks` sobre o **histórico**, não só o último commit. |
 | **CI** | Os três acima rodam em todo push e pull request. |
@@ -392,7 +394,7 @@ importam.
 O valor de desenvolvimento do HMAC se chama `dev-hmac-nao-usar-em-producao`
 justamente para não passar despercebido numa revisão.
 
-## Estado
+## Limitações conhecidas
 
 **Funciona ponta a ponta, com evento sintético e celular de verdade:**
 
@@ -400,12 +402,21 @@ justamente para não passar despercebido numa revisão.
 evento → template com mapa → botões → conversa → desfecho → painel
 ```
 
-**O que ainda não existe:**
+O que ainda não funciona, ou funciona com ressalva:
 
-| | |
-|---|---|
-| Assinatura HMAC do webhook | desligada desde o protótipo herdado ([lacuna 4](docs/auditoria-prototipo.md)) |
-| Voz por telefone | sem provedor definido |
+| Limitação | Por quê | Consequência |
+|---|---|---|
+| **Sem rastreador real** | Não há acesso ao sistema de rastreamento de uma frota de verdade. Os eventos entram pelo painel de testes (só em dev) ou pelo webhook com payload sintético | O selo **Amostra** aparece no cabeçalho, e parte da Visão geral (contenção de 58%, 1º contato, falsos fechamentos) é número de exemplo fixo |
+| **Ocorrência e conversa não vão para o banco** | Oracle e MySQL sobem e respondem à sonda, mas nenhum código grava neles ainda | Encerrados e números da Visão geral zeram quando a API reinicia. O expurgo de 90 dias roda todo dia, mas sobre tabelas vazias |
+| **Curva de contenção** | Sem nenhum caso real no dia, a tela mantém a curva de amostra em vez de ficar vazia | Hora com caso real usa o número real; hora sem caso nunca vira 0% |
+| **Painel sem login** | [Lacuna 12](docs/auditoria-prototipo.md), aceita enquanto todo dado é sintético | Quem tiver o endereço vê o painel. O token do servidor não chega ao navegador |
+| **Assinatura do webhook sem segredo** | A conferência HMAC-SHA256 está implementada, mas o segredo ainda não foi combinado com quem envia o evento ([lacuna 4](docs/auditoria-prototipo.md)) | Sem o segredo, o webhook aceita o evento e avisa no log. Não há como provar que ele veio do rastreador |
+| **MySQL de produção com conta administrativa** | A conta de aplicação com privilégio mínimo ainda não foi criada | Isolado de dev, mas fora do princípio de menor privilégio |
+| **Nome de terceiro em texto livre** | A sanitização troca nome, placa e endereço cadastrados e barra CPF, telefone e e-mail, mas não reconhece um nome solto na frase | Risco residual registrado em [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md) |
+| **Cache de prompt só com Claude** | Só o prefixo `anthropic/` recebe `cache_control` | Os 94,3% de economia valem quando o modelo escolhido é o Claude Sonnet 5, não com o Gemini padrão |
+| **Alerta por e-mail de teste** | O remetente é o `onboarding@resend.dev`, de testes, sem domínio próprio verificado | Serve para a POC: só entrega para o e-mail dono da conta do Resend |
+| **Sem alta disponibilidade** | Uma VM gratuita de 1 GB por ambiente | Se a VM de produção cair, o sistema cai junto. O rollback cobre deploy ruim, não queda de máquina |
+| **Voz por telefone** | Sem provedor de telefonia definido | O canal de ligação existe no domínio e nos testes, não no ar |
 
 ---
 
