@@ -168,9 +168,20 @@ export interface Barra {
   valor: number;
 }
 
+/** Os números da sessão, crus, para os cartões e anéis da Visão geral. */
+export interface ResumoDaSessao {
+  atendidos: number;
+  pela_ia: number;
+  pelo_operador: number;
+  escalados: number;
+  custo_medio_usd: number;
+}
+
 export interface Metricas {
   vitais: Vital[];
-  contencao_por_hora: number[];
+  resumo: ResumoDaSessao | null;
+  /** 00h até a hora atual de hoje; `null` na hora sem caso (não é 0%). */
+  contencao_por_hora: (number | null)[];
   volume_por_evento: Barra[];
   motivos_de_escalonamento: Barra[];
   total_escalonamentos: number;

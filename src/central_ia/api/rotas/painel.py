@@ -29,6 +29,7 @@ from central_ia.api.esquemas_painel import (
     Metricas,
     Ocorrencia,
     PassoRoteiro,
+    ResumoDaSessao,
     Turno,
 )
 from central_ia.api.seguranca import exigir_token_do_painel
@@ -655,6 +656,60 @@ async def obter_reincidencia() -> list[EquipamentoReincidente]:
     return amostra.reincidencia()
 
 
+def _escalados_da_sessao() -> int:
+    """Quantos casos desta sessão a IA passou para uma pessoa.
+
+    Mesma fonte que `_contencao_por_hora` usa para "abertos": simulações que
+    pararam em "aguardando operador" (o teste não chegou a fechar sozinho) e
+    sessões reais de WhatsApp marcadas como escaladas. As duas contas usam a
+    mesma definição de "escalado" de propósito — senão a Visão geral e o
+    gráfico por hora descreveriam o mesmo caso de dois jeitos.
+    """
+    pendentes = sum(1 for r in _SIMULADAS if r.estado == "AGUARDANDO_OPERADOR")
+    reais = sum(1 for s in SESSOES.todas() if s.escalada)
+    return pendentes + reais
+
+
+def _contencao_por_hora(fechadas: Encerrados) -> list[int | None]:
+    """A contenção de cada hora de hoje, de 00h até a hora atual.
+
+    As contas são as do vital «Encerradas»: fechados pela IA ÷ (fechados pela
+    IA + passados para uma pessoa). O fechado pela IA conta na hora em que
+    fechou; o escalado, na hora em que o caso abriu, que é o que a sessão
+    guarda (não há registro de "quando escalou", só de "quando começou").
+
+    ⛔ **Hora sem caso é `None`, nunca 0.** "0% às 3h" não é zero, é "não
+    houve" — e `_SIMULADAS`/`SESSOES` só guardam o que rodou nesta sessão do
+    processo, então a madrugada quase sempre não tem nada mesmo.
+    """
+    agora = datetime.now(FUSO_PAINEL)
+    hoje = f"{agora:%d/%m/%Y}"
+    contidos = [0] * 24
+    escalados_por_hora = [0] * 24
+    for e in fechadas.itens:
+        if e.encerrada_por == "ia" and e.encerrada_dia in (None, hoje):
+            contidos[int(e.encerrada_em[:2])] += 1
+    # A simulação não guarda quando abriu; o primeiro passo da trilha é isso.
+    abertos = [
+        r.auditoria[0].momento
+        for r in _SIMULADAS
+        if r.estado == "AGUARDANDO_OPERADOR" and r.auditoria
+    ]
+    abertos += [s.criada_em for s in SESSOES.todas() if s.escalada]
+    for quando in abertos:
+        local = quando.astimezone(FUSO_PAINEL)
+        if f"{local:%d/%m/%Y}" == hoje:
+            escalados_por_hora[local.hour] += 1
+    serie: list[int | None] = [
+        round(100 * contidos[h] / (contidos[h] + escalados_por_hora[h]))
+        if contidos[h] + escalados_por_hora[h]
+        else None
+        for h in range(agora.hour + 1)
+    ]
+    # Dia sem nenhum caso: lista vazia, e a tela mostra a moldura «sem dados».
+    return serie if any(v is not None for v in serie) else []
+
+
 @router.get(
     "/metricas",
     response_model=Metricas,
@@ -665,16 +720,33 @@ async def obter_metricas() -> Metricas:
     não vê números agregados enquanto atende."""
     m = amostra.metricas()
 
-    # O vital tem de contar o mesmo que a aba Encerrados lista, incluindo o que
-    # foi simulado nesta sessão. Dois números diferentes para a mesma coisa em
-    # duas telas é como se perde a confiança no painel inteiro.
-    if simuladas := len(_encerradas_simuladas()):
-        base = amostra.encerrados()
-        total_ia = base.total_ia + simuladas
-        for vital in m.vitais:
-            if vital.rotulo == "Encerradas":
-                vital.valor = str(total_ia + base.total_operador)
-                vital.nota = f"{total_ia} pela IA · {base.total_operador} pelo operador"
+    # A mesma função que a aba Encerrados usa — as duas telas contam a mesma
+    # coisa, senão o painel inteiro perde a confiança. `fechadas` já soma a
+    # amostra com o que esta sessão simulou (painel de testes) e com as
+    # conversas reais de WhatsApp que a IA fechou sozinha.
+    fechadas = await obter_encerrados()
+    escalados = _escalados_da_sessao()
+
+    for vital in m.vitais:
+        if vital.rotulo == "Encerradas":
+            vital.valor = str(fechadas.total_ia + fechadas.total_operador)
+            vital.nota = f"{fechadas.total_ia} pela IA · {fechadas.total_operador} pelo operador"
+
+    m.resumo = ResumoDaSessao(
+        atendidos=fechadas.total_ia + escalados,
+        pela_ia=fechadas.total_ia,
+        pelo_operador=fechadas.total_operador,
+        escalados=escalados,
+        custo_medio_usd=round(amostra._custo_medio(), 4),
+    )
+    # Sem nenhum caso real hoje, mantém a curva de amostra que `amostra.py` já
+    # traz — mesmo padrão do vital «Encerradas» acima: dado real sobrescreve
+    # quando existe, amostra continua de pé quando não há nada ainda. É o
+    # mesmo "Amostra" que já aparece no selo do cabeçalho, não dado inventado
+    # fora desse contrato.
+    real = _contencao_por_hora(fechadas)
+    if real:
+        m.contencao_por_hora = real
 
     return m
 

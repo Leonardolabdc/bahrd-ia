@@ -10,9 +10,11 @@ import { Marca } from "./componentes/Marca";
 import { EventosDeTeste } from "./componentes/EventosDeTeste";
 import { Ocorrencia } from "./componentes/Ocorrencia";
 import { VisaoGeral } from "./componentes/VisaoGeral";
+import { Grafico, Lua, Sol } from "./componentes/Icones";
+import { CampoBusca } from "./componentes/CampoBusca";
 import type { EstadoIA, Fila, Prontidao } from "./tipos";
 
-type Aba = "voce" | "ia" | "encerrados" | "desativados" | "removidos" | "geral";
+export type Aba = "voce" | "ia" | "encerrados" | "desativados" | "removidos" | "geral";
 
 /**
  * A tela ao vivo guarda o **id**, não o item.
@@ -37,9 +39,14 @@ function useTema() {
     if (tema) localStorage.setItem("tema", tema);
   }, [tema]);
 
+  // Sem escolha guardada, vale o do sistema. Sem isto, o primeiro clique no
+  // modo noite de um Windows escuro "ligava" o escuro que já estava na tela.
+  const efetivo =
+    tema ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro");
+
   return {
-    tema,
-    alterna: () => setTema((t) => (t === "escuro" ? "claro" : "escuro")),
+    tema: efetivo,
+    alterna: () => setTema(efetivo === "escuro" ? "claro" : "escuro"),
   };
 }
 
@@ -55,6 +62,10 @@ export function App() {
   const [tela, setTela] = useState<Tela>({ nome: "fila" });
   const [testesLigados, setTestesLigados] = useState(false);
   const [enviandoTeste, setEnviandoTeste] = useState(false);
+  // Um campo de busca por aba — trocar de aba não apaga o que a outra tinha
+  // digitado.
+  const [buscaVoce, setBuscaVoce] = useState("");
+  const [buscaIa, setBuscaIa] = useState("");
   const { tema, alterna } = useTema();
 
   // O botão só aparece se o servidor disser que a tela existe. A rota devolve
@@ -134,66 +145,107 @@ export function App() {
   const degradado = prontidao !== null && prontidao.status !== "pronto";
   const iaAtiva = estado?.ia_ativa ?? true;
 
+  const irPara = (destino: Aba) => {
+    setAba(destino);
+    setTela({ nome: "fila" });
+  };
+
+  const contagens = {
+    voce: fila?.precisa_de_voce.length ?? null,
+    ia: fila?.ia_esta_fazendo.length ?? null,
+    encerrados,
+    desativados,
+    removidos,
+  };
+
+  // A cor é do estado da fila que a aba representa; ver «Cor por aba» no
+  // painel.css.
+  const abas: { id: Aba; cor: string; rotulo: string; contagem?: number | null }[] = [
+    { id: "voce", cor: "humano", rotulo: "Atendimento humano", contagem: contagens.voce },
+    { id: "ia", cor: "ia", rotulo: "Atendimento da IA", contagem: contagens.ia },
+    { id: "encerrados", cor: "encerrados", rotulo: "Encerrados", contagem: encerrados },
+    { id: "desativados", cor: "desativados", rotulo: "Desativação temporária", contagem: desativados },
+    { id: "removidos", cor: "removidos", rotulo: "Números removidos", contagem: removidos },
+    { id: "geral", cor: "geral", rotulo: "Visão geral" },
+  ];
+
   const frase = degradado
     ? "Sistema degradado"
     : iaAtiva
       ? "IA ativa"
       : "IA desligada";
 
+  // Filtro das duas filas, 100% no cliente, sobre o que `fila` já carregou.
+  const buscaAtual = aba === "voce" ? buscaVoce : buscaIa;
+  const listaAtual = fila ? (aba === "voce" ? fila.precisa_de_voce : fila.ia_esta_fazendo) : [];
+  const alvoFila = buscaAtual.trim().toLowerCase();
+  const filaFiltrada = alvoFila
+    ? listaAtual.filter((item) =>
+        [item.placa, item.interlocutor, item.tipo_evento].some((c) =>
+          c.toLowerCase().includes(alvoFila),
+        ),
+      )
+    : listaAtual;
+
   return (
     <>
       <header className="topo">
-        <div className="quadro largo">
+        <div className="faixa">
           <div className="marca">
             <Marca />
             <span className="marca-logo">Bahrd</span>
             <span className="marca-risco" aria-hidden="true" />
             <span className="marca-nome">Central IA</span>
           </div>
-          <div className="estado">
-            <span className={`ponto${degradado ? " ponto-degradado" : ""}`} />
-            <span>{frase}</span>
-          </div>
-          {/* O selo segue a FONTE DE DADOS, não o ambiente.
-              Estava fixo no código, e isso o fazia mentir nas duas direções:
-              continuaria dizendo "Amostra" no dia em que o rastreamento real
-              fosse ligado, e sumir dele em produção faria a tela alegar dado
-              real onde não há. O que ele afirma é sobre a origem do dado, e só
-              a origem pode decidir se ele aparece. */}
-          {estado?.fonte_rastreamento === "amostra" && (
-            <span
-              className="selo-fonte"
-              title="Dados de exemplo servidos pela API. Sem conexão com o sistema de rastreamento."
-            >
-              Amostra
+          <div className="topo-selos">
+            <span className={`chip-estado${degradado ? " chip-degradado" : iaAtiva ? "" : " chip-desligada"}`}>
+              <span className={`ponto${degradado ? " ponto-degradado" : ""}`} />
+              {frase}
             </span>
-          )}
 
-          {/* Este existe para o lado contrário: deixar o ambiente que NÃO é
-              produção impossível de confundir. Uma ocorrência de teste tem a
-              mesma cara de uma real, e alguém agindo sobre a errada é um
-              incidente — não um incômodo. Produção não ganha selo nenhum:
-              ausência de aviso é o estado normal. */}
-          {estado && estado.ambiente !== "prd-poc" && (
-            <span
-              className="selo-ambiente"
-              title={`Ambiente de ${estado.ambiente}. Nada aqui é atendimento real.`}
-            >
-              {estado.ambiente.toUpperCase()}
-            </span>
-          )}
+            {/* O selo segue a FONTE DE DADOS, não o ambiente.
+                Estava fixo no código, e isso o fazia mentir nas duas direções:
+                continuaria dizendo "Amostra" no dia em que o rastreamento real
+                fosse ligado, e sumir dele em produção faria a tela alegar dado
+                real onde não há. O que ele afirma é sobre a origem do dado, e
+                só a origem pode decidir se ele aparece. */}
+            {estado?.fonte_rastreamento === "amostra" && (
+              <span
+                className="selo-fonte"
+                title="Dados de exemplo servidos pela API. Sem conexão com o sistema de rastreamento."
+              >
+                Amostra
+              </span>
+            )}
+
+            {/* Este existe para o lado contrário: deixar o ambiente que NÃO é
+                produção impossível de confundir. Uma ocorrência de teste tem a
+                mesma cara de uma real, e alguém agindo sobre a errada é um
+                incidente — não um incômodo. Produção não ganha selo nenhum:
+                ausência de aviso é o estado normal. */}
+            {estado && estado.ambiente !== "prd-poc" && (
+              <span
+                className="selo-ambiente"
+                title={`Ambiente de ${estado.ambiente}. Nada aqui é atendimento real.`}
+              >
+                {estado.ambiente.toUpperCase()}
+              </span>
+            )}
+          </div>
           <div className="topo-dir">
             {testesLigados && (
-              <button
-                className="link-quieto"
-                type="button"
-                onClick={() => setEnviandoTeste(true)}
-              >
-                Enviar Eventos de Teste
+              <button className="botao-topo" type="button" onClick={() => setEnviandoTeste(true)}>
+                Enviar eventos de teste
               </button>
             )}
-            <button className="link-quieto" type="button" onClick={alterna}>
-              {tema === "escuro" ? "Modo dia" : "Modo noite"}
+            <button
+              className="botao-icone"
+              type="button"
+              onClick={alterna}
+              aria-label={tema === "escuro" ? "Mudar para o modo dia" : "Mudar para o modo noite"}
+              title={tema === "escuro" ? "Modo dia" : "Modo noite"}
+            >
+              {tema === "escuro" ? <Sol /> : <Lua />}
             </button>
           </div>
         </div>
@@ -201,62 +253,24 @@ export function App() {
 
       {enviandoTeste && <EventosDeTeste aoFechar={() => setEnviandoTeste(false)} />}
 
+      {/* Cada aba numa linha só, espalhadas pela largura da Visão geral. */}
       <nav className="segmentos" role="tablist" aria-label="Visões">
-        <div className="quadro largo">
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "voce"}
-            type="button"
-            onClick={() => { setAba("voce"); setTela({ nome: "fila" }); }}
-          >
-            Atendimento humano <b>{fila?.precisa_de_voce.length ?? "–"}</b>
-          </button>
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "ia"}
-            type="button"
-            onClick={() => { setAba("ia"); setTela({ nome: "fila" }); }}
-          >
-            Atendimento da IA <b>{fila?.ia_esta_fazendo.length ?? "–"}</b>
-          </button>
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "encerrados"}
-            type="button"
-            onClick={() => { setAba("encerrados"); setTela({ nome: "fila" }); }}
-          >
-            Encerrados <b>{encerrados ?? "–"}</b>
-          </button>
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "desativados"}
-            type="button"
-            onClick={() => { setAba("desativados"); setTela({ nome: "fila" }); }}
-          >
-            Desativação temporária <b>{desativados ?? "–"}</b>
-          </button>
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "removidos"}
-            type="button"
-            onClick={() => { setAba("removidos"); setTela({ nome: "fila" }); }}
-          >
-            Números removidos <b>{removidos ?? "–"}</b>
-          </button>
-          <button
-            className="seg"
-            role="tab"
-            aria-selected={aba === "geral"}
-            type="button"
-            onClick={() => { setAba("geral"); setTela({ nome: "fila" }); }}
-          >
-            Visão geral
-          </button>
+        <div className="faixa faixa-abas">
+          {abas.map((a) => (
+            <button
+              key={a.id}
+              className="seg"
+              data-cor={a.cor}
+              role="tab"
+              aria-selected={aba === a.id}
+              type="button"
+              onClick={() => irPara(a.id)}
+            >
+              {a.id === "geral" && <Grafico />}
+              {a.rotulo}
+              {a.contagem !== undefined && <b>{a.contagem ?? "–"}</b>}
+            </button>
+          ))}
         </div>
       </nav>
 
@@ -285,7 +299,7 @@ export function App() {
       )}
 
       {tela.nome === "fila" && aba === "geral" && (
-        <VisaoGeral aoIrParaEncerrados={() => setAba("encerrados")} />
+        <VisaoGeral contagens={contagens} aoIrPara={irPara} />
       )}
 
       {tela.nome === "fila" && aba === "desativados" && (
@@ -306,23 +320,33 @@ export function App() {
               : `${fila.ia_esta_fazendo.length} ocorrências em atendimento automático agora. Nada aqui precisa de você.`}
           </p>
 
-          <div className="grade-fila">
-            {aba === "voce"
-              ? fila.precisa_de_voce.map((item, i) => (
-                  <LinhaPrecisaDeVoce
-                    key={`${item.ocorrencia_id}-${i}`}
-                    item={item}
-                    aoAbrir={() => setTela({ nome: "ocorrencia", id: item.ocorrencia_id })}
-                  />
-                ))
-              : fila.ia_esta_fazendo.map((item, i) => (
-                  <LinhaIaFazendo
-                    key={`${item.ocorrencia_id}-${i}`}
-                    item={item}
-                    aoAbrir={() => setTela({ nome: "vivo", id: item.ocorrencia_id })}
-                  />
-                ))}
-          </div>
+          <CampoBusca
+            valor={buscaAtual}
+            aoMudar={aba === "voce" ? setBuscaVoce : setBuscaIa}
+            placeholder="Buscar por placa, interlocutor ou evento"
+          />
+
+          {filaFiltrada.length === 0 ? (
+            <p className="nada">Nenhum resultado para «{buscaAtual}»</p>
+          ) : (
+            <div className="grade-fila">
+              {aba === "voce"
+                ? filaFiltrada.map((item, i) => (
+                    <LinhaPrecisaDeVoce
+                      key={`${item.ocorrencia_id}-${i}`}
+                      item={item}
+                      aoAbrir={() => setTela({ nome: "ocorrencia", id: item.ocorrencia_id })}
+                    />
+                  ))
+                : filaFiltrada.map((item, i) => (
+                    <LinhaIaFazendo
+                      key={`${item.ocorrencia_id}-${i}`}
+                      item={item}
+                      aoAbrir={() => setTela({ nome: "vivo", id: item.ocorrencia_id })}
+                    />
+                  ))}
+            </div>
+          )}
 
           {/* Fora da grade: dentro dela o parágrafo viraria uma célula e
               quebraria o alinhamento dos cartões. */}

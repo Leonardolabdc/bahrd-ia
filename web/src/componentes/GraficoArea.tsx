@@ -3,21 +3,46 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Contenção ao longo do dia.
  *
- * Duas decisões de leitura vindas do protótipo, mantidas:
- *  · escala 35–75%, com folga — eixo truncado sem avisar é engano visual;
- *  · rótulo direto só no último ponto, e cinco marcas no eixo x, não vinte.
+ * ⭐ **Com dado de verdade**, calculado em `_contencao_por_hora` (back-end).
+ * Duas regras por causa disso:
+ *  · escala inteira, 0–100%: o dado real vai de 0 a 100, e cortar o eixo sem
+ *    avisar seria engano visual;
+ *  · **hora sem caso é `null` e fica vazia** — a linha se interrompe ali, em vez
+ *    de descer a um "0%" que não aconteceu. Ponto isolado vira só o ponto.
+ *
+ * Mantidas do protótipo: rótulo direto só no último ponto, e marcas de 5 em 5
+ * horas no eixo x.
  */
-const MIN = 35;
-const MAX = 75;
-const ALTURA = 170;
+const MIN = 0;
+const MAX = 100;
+const ALTURA = 230;
 const PAD_TOPO = 14;
 const PAD_BASE = 10;
+//: Faixa à esquerda para os rótulos 25/50/75%, fora da área pintada.
+const PAD_ESQ = 34;
+
+type Ponto = { x: number; y: number; v: number; i: number };
+
+/** Trechos de horas seguidas com caso: cada um vira uma linha (e uma área). */
+function trechos(pontos: (Ponto | null)[]): Ponto[][] {
+  const lista: Ponto[][] = [];
+  let atual: Ponto[] = [];
+  for (const p of pontos) {
+    if (p) atual.push(p);
+    else if (atual.length) {
+      lista.push(atual);
+      atual = [];
+    }
+  }
+  if (atual.length) lista.push(atual);
+  return lista;
+}
 
 export function GraficoArea({
-  valores,
+  valores: todasAsHoras,
   ajuda,
 }: {
-  valores: number[];
+  valores: (number | null)[];
   /** O que a métrica significa. Aparece ao pousar o mouse sobre o gráfico. */
   ajuda?: string;
 }) {
@@ -33,26 +58,39 @@ export function GraficoArea({
     return () => observador.disconnect();
   }, []);
 
-  if (!valores.length) return null;
+  // ⭐ O eixo começa na primeira hora com caso. Começar às 00h deixava a
+  // madrugada sem caso como um vazio largo, e a linha nascia no meio do
+  // quadro. As horas vazias DEPOIS do primeiro caso continuam vazias.
+  const inicio = todasAsHoras.findIndex((v) => v !== null);
+  if (inicio < 0) return null;
+  const valores = todasAsHoras.slice(inicio);
+  const hora = (i: number) => String(inicio + i).padStart(2, "0");
 
-  const y = (v: number) => PAD_TOPO + (1 - (v - MIN) / (MAX - MIN)) * (ALTURA - PAD_TOPO - PAD_BASE);
-  const x = (i: number) => (i / (valores.length - 1)) * (Math.max(largura, 2) - 2) + 1;
+  const base = ALTURA - PAD_BASE;
+  const y = (v: number) => PAD_TOPO + (1 - (v - MIN) / (MAX - MIN)) * (base - PAD_TOPO);
+  const util = Math.max(largura - PAD_ESQ - 2, 2);
+  const x = (i: number) =>
+    PAD_ESQ + (valores.length === 1 ? util / 2 : (i / (valores.length - 1)) * util);
 
-  const pontos = valores.map((v, i) => ({ x: x(i), y: y(v), v, i }));
-  const linha = pontos.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
-  const area = `${linha} L${pontos.at(-1)!.x} ${ALTURA - PAD_BASE} L${pontos[0].x} ${ALTURA - PAD_BASE} Z`;
+  const todos = valores.map((v, i) => (v === null ? null : { x: x(i), y: y(v), v, i }));
+  const pontos = todos.filter((p): p is Ponto => p !== null);
+  const partes = trechos(todos);
   const fim = pontos.at(-1)!;
-  const alvo = foco === null ? null : pontos[foco];
+  const alvo = foco === null ? null : (todos[foco] ?? null);
 
   const aoMover = (ev: React.MouseEvent<SVGSVGElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
     const px = ev.clientX - r.left;
-    let melhor = 0;
-    pontos.forEach((p, i) => {
-      if (Math.abs(p.x - px) < Math.abs(pontos[melhor].x - px)) melhor = i;
-    });
-    setFoco(melhor);
+    let melhor = pontos[0];
+    for (const p of pontos) if (Math.abs(p.x - px) < Math.abs(melhor.x - px)) melhor = p;
+    setFoco(melhor.i);
   };
+
+  // A primeira hora, as de 5 em 5 e a hora atual, sem marcas encostadas.
+  const ultimo = valores.length - 1;
+  const marcas = [...Array(ultimo + 1).keys()].filter(
+    (i) => i === 0 || i === ultimo || ((inicio + i) % 5 === 0 && i >= 2 && ultimo - i >= 2),
+  );
 
   return (
     <>
@@ -65,29 +103,46 @@ export function GraficoArea({
           height={ALTURA}
           viewBox={`0 0 ${Math.max(largura, 1)} ${ALTURA}`}
           role="img"
-          aria-label={`Contenção por hora, de ${valores[0]}% às 00h a ${fim.v}% às ${valores.length - 1}h`}
+          aria-label={`Contenção por hora hoje; a última hora com casos, ${hora(fim.i)}h, teve ${fim.v}%`}
           onMouseMove={aoMover}
           onMouseLeave={() => setFoco(null)}
         >
           {/* grade recessiva: 3 linhas, rotuladas */}
-          {[40, 55, 70].map((v) => (
+          {[25, 50, 75].map((v) => (
             <g key={v}>
-              <line x1={0} x2={largura} y1={y(v)} y2={y(v)} stroke="var(--hairline)" strokeWidth="1" />
-              <text x={2} y={y(v) - 5} fill="var(--ink-3)" fontSize="10.5" fontFamily="var(--mono)">
+              <line x1={PAD_ESQ} x2={largura} y1={y(v)} y2={y(v)} stroke="var(--hairline)" strokeWidth="1" />
+              <text x={0} y={y(v) + 3.5} fill="var(--ink-3)" fontSize="10.5" fontFamily="var(--mono)">
                 {v}%
               </text>
             </g>
           ))}
 
-          <path d={area} fill="var(--dado-fill)" />
-          <path
-            d={linha}
-            fill="none"
-            stroke="var(--dado)"
-            strokeWidth="2"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+          {partes.map((t) => {
+            const linha = t.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
+            return (
+              <g key={t[0].i}>
+                {t.length > 1 && (
+                  <>
+                    <path
+                      d={`${linha} L${t.at(-1)!.x} ${base} L${t[0].x} ${base} Z`}
+                      fill="var(--dado-fill)"
+                    />
+                    <path
+                      d={linha}
+                      fill="none"
+                      stroke="var(--dado)"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  </>
+                )}
+                {t.length === 1 && (
+                  <circle cx={t[0].x} cy={t[0].y} r={4} fill="var(--dado)" stroke="var(--surface)" strokeWidth="2" />
+                )}
+              </g>
+            );
+          })}
 
           <circle cx={fim.x} cy={fim.y} r={5} fill="var(--dado)" stroke="var(--surface)" strokeWidth="2" />
           <text
@@ -120,14 +175,18 @@ export function GraficoArea({
 
         {alvo && (
           <div className="dica ver" style={{ left: alvo.x, top: alvo.y - 10 }}>
-            {String(alvo.i).padStart(2, "0")}h · <b>{alvo.v}%</b>
+            {hora(alvo.i)}h · <b>{alvo.v}%</b>
           </div>
         )}
       </div>
 
       <div className="eixo-x">
-        {[0, 5, 10, 15, valores.length - 1].map((i) => (
-          <span key={i}>{String(i).padStart(2, "0")}h</span>
+        {/* Na posição da hora, não espalhadas por igual: com a hora atual no
+            fim, as marcas não são equidistantes. */}
+        {marcas.map((i) => (
+          <span key={i} style={{ left: x(i) }}>
+            {hora(i)}h
+          </span>
         ))}
       </div>
     </>

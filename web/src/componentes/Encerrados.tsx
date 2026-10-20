@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { CANAL_ROTULO, type Encerrados as Dados } from "../tipos";
 import { Chevron, Confere, Info } from "./Icones";
+import { CampoBusca } from "./CampoBusca";
 
 /**
  * O desfecho em português de gente.
@@ -66,6 +67,7 @@ function legivel(desfecho: string) {
 export function Encerrados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
   const [d, setD] = useState<Dados | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     api
@@ -84,6 +86,15 @@ export function Encerrados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
 
   const total = d.total_ia + d.total_operador;
   const contencao = total ? Math.round((d.total_ia / total) * 100) : 0;
+
+  const alvo = busca.trim().toLowerCase();
+  const filtrados = alvo
+    ? d.itens.filter((e) =>
+        [e.placa, e.interlocutor, e.tipo_evento, legivel(e.desfecho)].some((c) =>
+          c.toLowerCase().includes(alvo),
+        ),
+      )
+    : d.itens;
 
   return (
     <main className="quadro painel-cheio" role="tabpanel">
@@ -110,11 +121,20 @@ export function Encerrados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
         </div>
       </section>
 
-      {/* Mesma anatomia de cartão das outras duas abas. O que muda é o
+      <CampoBusca
+        valor={busca}
+        aoMudar={setBusca}
+        placeholder="Buscar por placa, interlocutor ou evento"
+      />
+
+      {d.itens.length > 0 && filtrados.length === 0 ? (
+        <p className="nada">Nenhum resultado para «{busca}»</p>
+      ) : (
+      /* Mesma anatomia de cartão das outras duas abas. O que muda é o
           conteúdo da faixa de destaque — aqui, quem fechou e com qual
-          desfecho. */}
+          desfecho. */
       <div className="grade-fila">
-        {d.itens.map((e) => (
+        {filtrados.map((e) => (
           <button
             key={e.ocorrencia_id}
             className={`cartao por-${e.encerrada_por}${e.tem_detalhe ? "" : " cartao-inerte"}`}
@@ -155,6 +175,7 @@ export function Encerrados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
           </button>
         ))}
       </div>
+      )}
 
       <p className="nota-papel nota-pe">
         <Info />

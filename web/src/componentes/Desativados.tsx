@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { Desativado } from "../tipos";
 import { Info } from "./Icones";
+import { CampoBusca } from "./CampoBusca";
 
 /**
  * Veículos com alarme suprimido por um período.
@@ -25,6 +26,7 @@ const DESFECHO_EM_PORTUGUES: Record<string, string> = {
 
 export function Desativados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
   const [itens, setItens] = useState<Desativado[] | null>(null);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     const buscar = () => api.desativados().then(setItens).catch(() => setItens([]));
@@ -43,6 +45,11 @@ export function Desativados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
         <p className="chamada">
           Nenhum veículo com alarme suprimido agora.
         </p>
+        <CampoBusca
+          valor={busca}
+          aoMudar={setBusca}
+          placeholder="Buscar por placa, motorista ou evento"
+        />
         <p className="vazio-explica">
           <Info /> Entram aqui os casos que o cliente confirmou como manutenção
           ou transporte. A Central não encerra esses — ela desconsidera os
@@ -54,6 +61,15 @@ export function Desativados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
 
   const expirados = itens.filter((i) => i.expirado).length;
 
+  const alvo = busca.trim().toLowerCase();
+  const filtrados = alvo
+    ? itens.filter((i) =>
+        [i.placa, i.interlocutor, i.tipo_evento, i.desfecho].some((c) =>
+          c.toLowerCase().includes(alvo),
+        ),
+      )
+    : itens;
+
   return (
     <main className="quadro painel-cheio" role="tabpanel">
       <p className="chamada">
@@ -63,48 +79,58 @@ export function Desativados({ aoAbrir }: { aoAbrir: (id: string) => void }) {
         )}
       </p>
 
-      {/* ⚠️ **Cartão clicável desde 03/09/2026.** Era um `<article>` inerte:
-          a aba mostrava placa, evento e prazo, e parava ali. Quem quisesse ver
-          por que aquele veículo foi suprimido, ou o que o cliente disse, não
-          tinha para onde ir — nas outras três abas o cartão abre a ocorrência
-          inteira, e não havia motivo para esta ser a exceção.
+      <CampoBusca
+        valor={busca}
+        aoMudar={setBusca}
+        placeholder="Buscar por placa, motorista ou evento"
+      />
 
-          `<button>` e não `<div onClick>`: entra na navegação por teclado e o
-          leitor de tela anuncia como ação, igual ao de "Encerrados". */}
-      <div className="grade-fila">
-        {itens.map((i) => (
-          <button
-            key={i.ocorrencia_id}
-            className={`cartao ${i.expirado ? "grau-alta" : "grau-baixa"}`}
-            type="button"
-            title={`Ver a conversa que levou à supressão do ${i.placa}`}
-            onClick={() => aoAbrir(i.ocorrencia_id)}
-          >
-            <span className="cartao-topo">
-              <span className="cartao-tipo">{i.tipo_evento}</span>
-              <span className="cartao-hora">{i.desativado_em}</span>
-            </span>
+      {filtrados.length === 0 ? (
+        <p className="nada">Nenhum resultado para «{busca}»</p>
+      ) : (
+        /* ⚠️ **Cartão clicável desde 03/09/2026.** Era um `<article>` inerte:
+            a aba mostrava placa, evento e prazo, e parava ali. Quem quisesse ver
+            por que aquele veículo foi suprimido, ou o que o cliente disse, não
+            tinha para onde ir — nas outras três abas o cartão abre a ocorrência
+            inteira, e não havia motivo para esta ser a exceção.
 
-            <span className="cartao-quem">
-              <span className="placa">{i.placa}</span>
-              <span className="cartao-pessoa">{i.interlocutor}</span>
-            </span>
-
-            <span className="cartao-desfecho">
-              {DESFECHO_EM_PORTUGUES[i.desfecho] ?? i.desfecho.replace(/_/g, " ")}
-            </span>
-
-            <span className="cartao-rodape">
-              {/* O prazo é a informação que esta aba existe para dar: é o que
-                  distingue "suprimido" de "encerrado". Fica por último e em
-                  destaque quando vence. */}
-              <span className={i.expirado ? "alerta" : ""}>
-                {i.expirado ? "prazo vencido" : `até ${i.ate}`}
+            `<button>` e não `<div onClick>`: entra na navegação por teclado e o
+            leitor de tela anuncia como ação, igual ao de "Encerrados". */
+        <div className="grade-fila">
+          {filtrados.map((i) => (
+            <button
+              key={i.ocorrencia_id}
+              className={`cartao ${i.expirado ? "grau-alta" : "grau-baixa"}`}
+              type="button"
+              title={`Ver a conversa que levou à supressão do ${i.placa}`}
+              onClick={() => aoAbrir(i.ocorrencia_id)}
+            >
+              <span className="cartao-topo">
+                <span className="cartao-tipo">{i.tipo_evento}</span>
+                <span className="cartao-hora">{i.desativado_em}</span>
               </span>
-            </span>
-          </button>
-        ))}
-      </div>
+
+              <span className="cartao-quem">
+                <span className="placa">{i.placa}</span>
+                <span className="cartao-pessoa">{i.interlocutor}</span>
+              </span>
+
+              <span className="cartao-desfecho">
+                {DESFECHO_EM_PORTUGUES[i.desfecho] ?? i.desfecho.replace(/_/g, " ")}
+              </span>
+
+              <span className="cartao-rodape">
+                {/* O prazo é a informação que esta aba existe para dar: é o que
+                    distingue "suprimido" de "encerrado". Fica por último e em
+                    destaque quando vence. */}
+                <span className={i.expirado ? "alerta" : ""}>
+                  {i.expirado ? "prazo vencido" : `até ${i.ate}`}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {expirados > 0 && (
         <p className="vazio-explica">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { NumeroRemovido } from "../tipos";
+import { CampoBusca } from "./CampoBusca";
 
 /**
  * Números que pediram para sair dos avisos de um veículo.
@@ -25,6 +26,7 @@ import type { NumeroRemovido } from "../tipos";
 export function NumerosRemovidos() {
   const [itens, setItens] = useState<NumeroRemovido[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     api
@@ -47,6 +49,13 @@ export function NumerosRemovidos() {
       </main>
     );
 
+  const alvo = busca.trim().toLowerCase();
+  const filtrados = alvo
+    ? itens.filter((i) =>
+        [i.telefone, i.placa, i.pedido].some((c) => c.toLowerCase().includes(alvo)),
+      )
+    : itens;
+
   return (
     <main className="quadro painel-cheio" role="tabpanel">
       <p className="chamada">
@@ -55,14 +64,18 @@ export function NumerosRemovidos() {
           : `${itens.length} número${itens.length > 1 ? "s" : ""} fora dos avisos`}
       </p>
 
+      <CampoBusca valor={busca} aoMudar={setBusca} placeholder="Buscar por telefone ou placa" />
+
       {itens.length === 0 ? (
         <p className="vazio-explica">
           Quando alguém responder <b>REMOVER</b> à notificação e confirmar, o
           número aparece aqui e para de receber os avisos daquele veículo.
         </p>
+      ) : filtrados.length === 0 ? (
+        <p className="nada">Nenhum resultado para «{busca}»</p>
       ) : (
         <div className="grade-fila">
-          {itens.map((i) => (
+          {filtrados.map((i) => (
             <article className="cartao grau-baixa" key={`${i.telefone}-${i.placa}`}>
               <span className="cartao-topo">
                 <span className="cartao-tipo">{i.telefone}</span>

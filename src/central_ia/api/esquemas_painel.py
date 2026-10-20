@@ -277,10 +277,27 @@ class Barra(BaseModel):
     valor: int
 
 
+class ResumoDaSessao(BaseModel):
+    """Os números da sessão, crus, para a Visão geral desenhar cartões e anéis.
+
+    ⭐ Visão geral com o desenho em quadros do painel de referência, pedido do
+    Leonardo. As contas são as mesmas dos vitais; aqui só saem como número, sem
+    texto montado, para a tela não ter de ler de volta uma frase.
+    """
+
+    atendidos: int = Field(description="Encerrados pela IA + escalados para uma pessoa.")
+    pela_ia: int
+    pelo_operador: int
+    escalados: int
+    custo_medio_usd: float
+
+
 class Metricas(BaseModel):
     vitais: list[Vital]
-    contencao_por_hora: list[int] = Field(
-        description="00h..19h, em % de eventos elegíveis contidos."
+    resumo: ResumoDaSessao | None = None
+    contencao_por_hora: list[int | None] = Field(
+        description="00h até a hora atual de hoje, em % dos atendidos que a IA "
+        "fechou sozinha. `None` na hora sem caso: não é 0%, é «não houve»."
     )
     volume_por_evento: list[Barra]
     motivos_de_escalonamento: list[Barra]

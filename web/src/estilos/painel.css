@@ -36,6 +36,10 @@
   --media:       #CA8504;
   --baixa:       #12805C;
 
+  /* O vermelho da marca, só para a linha do cabeçalho. Não é o --critica:
+     aquele diz "alguém esperando" e não pode virar enfeite. */
+  --marca:       #E3101A;
+
   --ui:   "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system,
           "Helvetica Neue", Arial, sans-serif;
   --mono: "Cascadia Code", "Cascadia Mono", ui-monospace, "SF Mono",
@@ -88,6 +92,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .quadro { max-width: 780px; margin: 0 auto; padding: 0 24px; }
 .largo { max-width: 940px; }
+/* Cabeçalho e abas na largura da Visão geral, não na das telas estreitas. Em
+   940 px as seis abas quebravam a respiração da faixa à toa. */
+.faixa { max-width: 1680px; margin: 0 auto; padding: 0 28px; }
 /* Só a Visão geral. As outras telas são estreitas porque o operador lê uma
    ocorrência por vez; aqui o supervisor compara números, e comparar exige ver
    junto — rolar para comparar é o mesmo que não comparar. */
@@ -97,10 +104,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* Um bloco só, com **uma** régua embaixo. Antes eram três faixas empilhadas —
    aviso, cabeçalho e abas — cada uma com a sua linha; três réguas em 90 px de
    altura fatiam a tela e não separam nada que precisasse ser separado. */
-.topo { background: var(--surface); border-bottom: 1px solid var(--hairline); }
-.topo .quadro {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding-top: 15px; padding-bottom: 13px;
+/* Sem régua entre a logo e as abas: os dois são um bloco só, e a linha de
+   baixo das abas é a que separa o bloco do conteúdo. */
+.topo { background: var(--surface); }
+.topo .faixa {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding-top: 12px; padding-bottom: 12px;
 }
 .marca { display: flex; align-items: center; gap: 11px; }
 .marca svg { display: block; }
@@ -126,7 +135,17 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .marca-risco { width: 1px; height: 22px; background: var(--hairline); flex: none; }
 .marca-nome { font-size: var(--t-md); font-weight: 600; letter-spacing: -0.005em; }
-.estado { display: flex; align-items: center; gap: 7px; font-size: var(--t-sm); color: var(--ink-2); }
+.topo-selos { display: flex; align-items: center; gap: 10px; }
+/* O estado da IA em pílula: lê-se de longe. */
+.chip-estado {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 11px; border-radius: 999px;
+  background: color-mix(in srgb, var(--baixa) 12%, transparent);
+  color: var(--baixa); font-size: var(--t-sm); font-weight: 600; white-space: nowrap;
+}
+.chip-degradado { background: color-mix(in srgb, var(--critica) 12%, transparent); color: var(--critica); }
+.chip-desligada { background: var(--hairline-2); color: var(--ink-2); }
+.chip-desligada .ponto { background: var(--ink-3); }
 .ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--baixa); flex: none; }
 .ponto-degradado { background: var(--critica); }
 @media (prefers-reduced-motion: no-preference) {
@@ -155,7 +174,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   background: var(--aviso, #b45309); color: #fff;
 }
 
-.topo-dir { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.topo-dir { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.botao-topo {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--hairline);
+  font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); white-space: nowrap;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.botao-topo:hover { border-color: var(--accent); color: var(--accent); }
+/* Só o sol/lua, sem contorno. A área de clique continua com 34 px, e o foco
+   por teclado ainda desenha o anel. */
+.botao-icone {
+  display: inline-grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 8px; color: var(--ink-2); transition: color 120ms ease;
+}
+.botao-icone:hover { color: var(--accent); }
 .usuario { font-size: var(--t-sm); color: var(--ink-2); }
 .link-quieto {
   font-size: var(--t-sm); color: var(--ink-3);
@@ -163,21 +195,126 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .link-quieto:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
-.segmentos { background: var(--surface); border-bottom: 1px solid var(--hairline); }
-.segmentos .quadro { display: flex; gap: 26px; }
+/* A linha vermelha da marca entre a logo e as abas, com a luz se dissipando
+   para baixo, por trás das abas. Sutil de propósito: o vermelho forte da tela
+   continua sendo o do alerta (--critica). */
+.segmentos {
+  position: relative; overflow: hidden; border-bottom: 1px solid var(--hairline);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--marca) 7%, var(--surface)) 0%,
+    var(--surface) 75%
+  );
+}
+.segmentos::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--marca) 18%, var(--marca) 82%, transparent);
+  box-shadow: 0 5px 12px -3px color-mix(in srgb, var(--marca) 50%, transparent);
+  pointer-events: none;
+}
+/* Um brilho branco atravessa a linha da esquerda para a direita. Lento e com
+   pausa longa entre uma passada e outra, para enfeitar sem disputar a atenção
+   de quem está atendendo. Some para quem pediu menos movimento ao sistema. */
+.segmentos::after {
+  content: ""; position: absolute; top: 0; left: 0; height: 2px; width: 360px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18) 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.18) 70%,
+    transparent
+  );
+  transform: translateX(-380px); pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .segmentos::after { animation: cintila 14s ease-in-out infinite; }
+  @keyframes cintila {
+    0%        { transform: translateX(-380px); }
+    55%, 100% { transform: translateX(100vw); }
+  }
+}
+/* Juntas no centro, com espaço igual entre elas; em tela estreita, rolam de
+   lado em vez de quebrar. O centro vem das margens automáticas das pontas, e
+   não de `justify-content: center`: este corta o começo da fileira quando ela
+   não cabe, e a primeira aba ficaria fora de alcance. */
+.faixa-abas {
+  display: flex; gap: 32px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.faixa-abas > .seg:first-child { margin-left: auto; }
+.faixa-abas > .seg:last-child { margin-right: auto; }
+.faixa-abas::-webkit-scrollbar { display: none; }
+/* O número centralizado embaixo do nome, cada aba numa linha só. */
 .seg {
-  padding: 13px 0; margin-bottom: -1px; border-bottom: 2px solid transparent;
-  font-size: var(--t-md); color: var(--ink-3);
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; flex: none;
+  padding: 9px 6px 8px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+  font-size: var(--t-md); color: var(--ink-3); white-space: nowrap;
 }
 .seg:hover { color: var(--ink-2); }
 .seg[aria-selected="true"] { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
 .seg b {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-weight: 600; margin-left: 6px;
+  font-family: var(--ui); font-variant-numeric: tabular-nums;
+  font-size: var(--t-lg); font-weight: 600; line-height: 1.2;
+}
+
+/* ─────────────────────────── Cor por aba ───────────────────────────
+   O número de cada aba (.seg b) carrega a cor do que ela representa — só o
+   número, não a aba inteira: o estado selecionado continua usando a borda
+   neutra (--ink), que é o que já diz "você está aqui". */
+.seg[data-cor="humano"] b      { color: var(--critica); }
+.seg[data-cor="ia"] b          { color: var(--dado-bom); }
+.seg[data-cor="encerrados"] b  { color: var(--ink-2); }
+.seg[data-cor="desativados"] b { color: var(--media); }
+.seg[data-cor="removidos"] b   { color: var(--ink-3); }
+/* «Visão geral» não é estado de caso, é a tela do supervisor: um risco a
+   separa das filas, o ícone de gráfico diz que é painel de números, e a cor é
+   o acento da interface — nunca uma cor de estado, que diria "caso". */
+.seg[data-cor="geral"] {
+  position: relative; flex-direction: row; gap: 7px;
+  color: var(--accent); font-weight: 600;
+}
+.seg[data-cor="geral"]::before {
+  content: ""; position: absolute; left: -16px; top: 50%;
+  width: 1px; height: 26px; transform: translateY(-50%); background: var(--hairline);
+}
+.seg[data-cor="geral"] svg { flex: none; }
+.seg[data-cor="geral"]:hover { color: var(--accent); opacity: 0.85; }
+.seg[data-cor="geral"][aria-selected="true"] {
+  color: var(--accent); border-bottom-color: var(--accent);
 }
 
 .chamada { padding-top: 30px; padding-bottom: 6px; font-size: var(--t-md); color: var(--ink-2); }
 .lista { padding-bottom: 60px; }
+
+/* ============================================================ CAMPO DE BUSCA
+   Um campo por aba, acima da lista de cartões — filtra o que já chegou da
+   API, sem Enter e sem round-trip ao servidor. Fica à esquerda e não ocupa a
+   faixa toda: a tela aqui é de ler cartão por cartão, não de preencher um
+   formulário, e uma barra larga para digitar "ABC" seria peso visual sem
+   função. 480px cabe confortavelmente ao lado dos cartões (330px cada, na
+   `.grade-fila`) sem se confundir com um campo de formulário como os de
+   `EventosDeTeste`. */
+.campo-busca {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; max-width: 480px; margin: 2px 0 20px;
+  padding: 8px 12px;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--hairline); border-radius: 7px;
+  transition: border-color 120ms ease;
+}
+.campo-busca:focus-within { border-color: var(--accent); }
+.campo-busca svg { flex: none; color: var(--ink-3); }
+.campo-busca input {
+  flex: 1; min-width: 0; border: 0; background: none; padding: 0;
+  font: inherit; font-size: var(--t-md); color: var(--ink);
+}
+.campo-busca input:focus { outline: none; }
+.campo-busca input::placeholder { color: var(--ink-3); }
+@media (max-width: 640px) {
+  .campo-busca { max-width: 100%; }
+}
 
 /* ============================================================ GRADE DE FILA */
 /* Três abas, um cartão só. Numa lista o olho lê da esquerda para a direita e
@@ -346,7 +483,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .vivo-status .vivo { width: 8px; height: 8px; }
 .vivo-status .decorrido {
-  margin-left: auto; font-family: var(--mono); font-variant-numeric: tabular-nums;
+  margin-left: auto; font-family: var(--ui); font-variant-numeric: tabular-nums;
   font-size: var(--t-md); color: var(--ink-3); flex: none;
 }
 .transcricao { padding: 22px 0 8px; }
@@ -489,9 +626,20 @@ details[open] summary .chev { transform: rotate(90deg); }
 .grafico { position: relative; margin-top: 14px; }
 .grafico svg { display: block; }
 .eixo-x {
-  display: flex; justify-content: space-between; margin-top: 7px;
+  position: relative; height: 16px; margin-top: 7px;
   font-family: var(--mono); font-size: var(--t-lb); color: var(--ink-3);
 }
+.eixo-x span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.eixo-x span:first-child { transform: none; }
+.eixo-x span:last-child { transform: translateX(-100%); }
+/* Moldura vazia do gráfico: mesma altura do real, para o quadro não "pular"
+   quando o primeiro caso do dia chega e o gráfico de verdade aparece. */
+.grafico-vazio {
+  display: grid; place-items: center; min-height: 230px; margin-top: 14px;
+  border: 1px dashed var(--hairline); border-radius: 8px; padding: 24px;
+  text-align: center;
+}
+.modulo-vazio { font-size: var(--t-sm); color: var(--ink-3); max-width: 42ch; margin: 0 auto; }
 .dica {
   position: absolute; pointer-events: none; opacity: 0;
   transform: translate(-50%, -100%);
@@ -557,6 +705,104 @@ details[open] summary .chev { transform: rotate(90deg); }
   .painel-cheio .vital:not(:first-child) { border-left: 1px solid var(--hairline-2); }
   .painel-cheio .vital:first-child { border-left: 0; }
 }
+
+/* ============================================================ VISÃO GERAL
+   O desenho em quadros brancos sobre o fundo, a fileira de contagens no topo,
+   resumo e anéis lado a lado, e os módulos embaixo. Os dados e as contas são
+   os mesmos de antes — só a apresentação muda. */
+.visao-geral {
+  padding-top: 22px; padding-bottom: 8px;
+  display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr);
+}
+.quadro-vg {
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 18px 22px 20px; min-width: 0;
+}
+.quadro-vg-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.quadro-vg-cab h2 { font-size: var(--t-lg); letter-spacing: -0.01em; }
+.quadro-vg-extra { margin-left: auto; font-size: var(--t-sm); color: var(--ink-3); }
+/* Dentro do quadro, o módulo antigo não precisa do respiro de folha corrida. */
+.quadro-vg .modulo { padding: 0; }
+.quadro-vg .aviso-sessao { padding-top: 14px; }
+
+.grade-vg { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 980px) { .grade-vg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .grade-vg-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.botao-atualizar {
+  padding: 4px 10px; border-radius: 7px; border: 1px solid var(--hairline);
+  font-size: var(--t-sm); color: var(--ink-2);
+}
+.botao-atualizar:hover { border-color: var(--accent); color: var(--accent); }
+
+/* As contagens das abas: uma fileira de cartões, cada um leva à sua aba. */
+.contadores { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+.contador {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 104px; padding: 14px 10px; border-radius: 10px;
+  background: var(--ground); border: 1px solid var(--hairline-2); text-align: center;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.contador:hover { border-color: var(--accent); background: var(--accent-wash); }
+.contador-num {
+  font-family: var(--ui); font-variant-numeric: tabular-nums;
+  font-size: 34px; font-weight: 400; line-height: 1; letter-spacing: -0.01em;
+}
+.contador-rot { font-size: var(--t-sm); color: var(--ink-2); line-height: 1.3; }
+.contador-urgente .contador-num { color: var(--critica); }
+
+/* Resumo de atendimentos: números grandes em fileira. */
+.resumo-numeros {
+  display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); padding: 10px 0 4px;
+}
+@media (min-width: 640px) { .resumo-numeros { grid-template-columns: repeat(4, 1fr); } }
+.resumo-numeros > * {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 6px; border-radius: 10px; text-align: center;
+}
+.resumo-numeros > button:hover { background: var(--accent-wash); }
+.resumo-num {
+  font-family: var(--ui); font-variant-numeric: tabular-nums;
+  font-size: 32px; font-weight: 400; line-height: 1.05; letter-spacing: -0.01em;
+}
+.resumo-num small { font-size: 13px; color: var(--ink-3); letter-spacing: 0; }
+.resumo-bom { color: var(--dado-bom); }
+.resumo-rot { font-size: var(--t-sm); color: var(--ink-2); }
+/* "1º contato" e "Falsos fechamentos": dado que já existia e não tinha lugar
+   no novo desenho. Entram como uma linha pequena, abaixo da grade principal —
+   visível, sem disputar atenção com os quatro números grandes. */
+.resumo-extra {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--hairline-2);
+  font-size: var(--t-sm); color: var(--ink-2);
+}
+.resumo-extra b { color: var(--ink); font-weight: 600; }
+
+/* Desempenho da IA: anéis à esquerda, barras de progresso à direita. */
+.desempenho { display: grid; gap: 22px; align-items: center; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .desempenho { grid-template-columns: auto 1fr; } }
+.aneis { display: flex; gap: 18px; justify-content: center; }
+.anel { position: relative; margin: 0; width: 104px; text-align: center; }
+.anel svg { display: block; width: 104px; height: 104px; }
+.anel-trilho { fill: none; stroke: var(--hairline-2); stroke-width: 9; }
+.anel-valor { fill: none; stroke: var(--dado); stroke-width: 9; stroke-linecap: round; }
+.anel-bom { stroke: var(--dado-bom); }
+.anel-centro {
+  position: absolute; top: 0; left: 0; width: 104px; height: 104px;
+  display: grid; place-items: center;
+  font-family: var(--ui); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600;
+}
+.anel figcaption { margin-top: 6px; font-size: var(--t-sm); color: var(--ink-2); }
+.progressos { display: grid; gap: 14px; }
+.progresso-cab { display: flex; gap: 10px; font-size: var(--t-sm); color: var(--ink-2); }
+.progresso-cab b {
+  margin-left: auto; font-family: var(--ui); font-variant-numeric: tabular-nums;
+  font-weight: 600; color: var(--ink);
+}
+.progresso-trilho {
+  height: 8px; margin-top: 6px; border-radius: 4px; background: var(--hairline-2); overflow: hidden;
+}
+.progresso-fill { height: 100%; border-radius: 4px; background: var(--dado); }
 
 .tabela { width: 100%; font-size: var(--t-sm); }
 .tabela th, .tabela td {
