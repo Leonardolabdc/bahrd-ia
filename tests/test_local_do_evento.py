@@ -19,7 +19,7 @@ from central_ia.integrations.rastreamento.bahrd_webhook import parse_evento_webh
 def _evento(**campos) -> EventoRastreamento:
     base = dict(
         evento_externo_id="x",
-        rotulo_link="Remoção de bateria",
+        rotulo_plataforma="Remoção de bateria",
         codigo_evento="REMOCAO_BATERIA",
         veiculo="ABC-1234",
         momento=datetime(2026, 8, 24, 12, 0, tzinfo=UTC),
@@ -62,7 +62,7 @@ def test_latitude_sem_longitude_nao_vira_meia_coordenada() -> None:
     assert local_do_evento(_evento(latitude=-25.45)) == LOCAL_DESCONHECIDO
 
 
-def test_webhook_aceita_endereco_quando_a_link_mandar() -> None:
+def test_webhook_aceita_endereco_quando_a_bahrd_mandar() -> None:
     """Hoje a Bahrd não manda; o dia em que mandar não deve exigir deploy."""
     evento = parse_evento_webhook(
         {

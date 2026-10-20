@@ -40,14 +40,14 @@ def test_traduz_o_exemplo_do_gestor() -> None:
 def test_rotulo_e_o_veiculo_e_tipo_evento_e_o_evento() -> None:
     """A armadilha do doc 08, presa por teste.
 
-    No payload `rotulo` é a placa; no modelo canônico `rotulo_link` é o nome do
+    No payload `rotulo` é a placa; no modelo canônico `rotulo_plataforma` é o nome do
     evento. Inverter os dois faz a placa cair fora de escopo em silêncio.
     """
     evento = parse_evento_webhook(PAYLOAD)
 
     assert evento.veiculo == "Veículo ABC-1234"
-    assert evento.rotulo_link == "Movimento com ignição desligada"
-    assert "ABC-1234" not in evento.rotulo_link
+    assert evento.rotulo_plataforma == "Movimento com ignição desligada"
+    assert "ABC-1234" not in evento.rotulo_plataforma
 
 
 def test_reconhece_o_evento_do_catalogo() -> None:
@@ -58,7 +58,7 @@ def test_reconhece_o_evento_do_catalogo() -> None:
 
 
 def test_evento_fora_do_catalogo_nao_entra_em_escopo() -> None:
-    """Fora de escopo nunca vira atendimento automático — regra do `link.py`."""
+    """Fora de escopo nunca vira atendimento automático — regra do `bahrd.py`."""
     evento = parse_evento_webhook({**PAYLOAD, "tipo_evento": "Coisa que inventaram ontem"})
 
     assert evento.codigo_evento is None

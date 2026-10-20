@@ -15,7 +15,7 @@ Duas coisas estavam vazando, e nenhuma das duas era intencional:
   `.env` tinha, os testes que exercitam a rota inteira **postavam de verdade**
   na Graph API — 13 chamadas num único `pytest`, todas devolvendo 400.
 
-O arquivo `test_rota_eventos_link.py` já dizia, desde antes, que "os testes não
+O arquivo `test_rota_eventos_bahrd.py` já dizia, desde antes, que "os testes não
 dependem do `.env`: sem isso a suíte passaria ou falharia conforme a máquina de
 quem roda, que é o pior tipo de teste". Era verdade para a lógica de negócio e
 mentira para tudo que fala com fora. Este arquivo faz a frase valer.

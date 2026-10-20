@@ -514,7 +514,7 @@ def test_a_ia_diz_o_nome_inteiro_da_empresa() -> None:
     from central_ia.agent import atendimento_real
 
     #: "Bahrd" sem "Monitoramento" logo depois.
-    sozinho = _re.compile(r"\bLink\b(?!\s+Monitoramento)")
+    sozinho = _re.compile(r"\bBahrd\b(?!\s+Monitoramento)")
 
     achados: list[str] = []
     for caminho in RAIZ_PROMPTS.rglob("*.md"):

@@ -73,7 +73,7 @@ def tracer(monkeypatch) -> TracerFalso:
 
 
 QUEM_TESTE = Identificacao(ocorrencia="OC-2026-09-03-AAAA-WA", turno=1, origem="teste")
-QUEM_REAL = Identificacao(ocorrencia="OC-2026-09-03-BBBB-WA", turno=1, origem="link")
+QUEM_REAL = Identificacao(ocorrencia="OC-2026-09-03-BBBB-WA", turno=1, origem="rastreador")
 
 
 # ─────────────────── a marca de origem no turno da IA ───────────────────
@@ -117,10 +117,10 @@ def test_o_nome_do_trace_agrupa_os_testes(tracer: TracerFalso) -> None:
 
 
 def test_evento_real_nao_ganha_prefixo(tracer: TracerFalso) -> None:
-    """⚠️ `link` é o padrão e não entra no nome.
+    """⚠️ `rastreador` é o padrão e não entra no nome.
 
     Prefixar tudo faria o rótulo crescer sem separar nada, e a POC inteira
-    apareceria como `link.atendimento.*`.
+    apareceria como `rastreador.atendimento.*`.
     """
     with tracing.span_do_turno("PANICO", "TEXTO", QUEM_REAL):
         pass

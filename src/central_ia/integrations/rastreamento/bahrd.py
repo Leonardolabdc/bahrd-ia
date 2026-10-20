@@ -51,7 +51,7 @@ class EventoRastreamento(BaseModel):
 
     evento_externo_id: str = Field(description="Chave de idempotência derivada — ver _derivar_id.")
 
-    rotulo_link: str = Field(description="Nome do evento como a plataforma o escreve.")
+    rotulo_plataforma: str = Field(description="Nome do evento como a plataforma o escreve.")
     codigo_evento: str | None = Field(
         default=None,
         description="Código do nosso catálogo. `None` significa fora de escopo — "
@@ -223,7 +223,7 @@ def parse_linha_relatorio(linha: dict[str, str | None]) -> EventoRastreamento:
 
     return EventoRastreamento(
         evento_externo_id=_derivar_id(imei, rotulo, objeto, momento),
-        rotulo_link=rotulo,
+        rotulo_plataforma=rotulo,
         codigo_evento=tipo.codigo if tipo else None,
         objeto_geografico=objeto,
         imei=imei,

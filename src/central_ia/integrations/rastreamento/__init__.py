@@ -11,7 +11,7 @@ from central_ia.ports.rastreamento import FonteRastreamento
 
 def construir_fonte(cfg: Settings) -> FonteRastreamento:
     """Única linha que decide a origem dos dados de rastreamento."""
-    if cfg.fonte_rastreamento == "link":
+    if cfg.fonte_rastreamento == "rastreador":
         from central_ia.integrations.rastreamento.bahrd_api import FonteBahrd
 
         return FonteBahrd(cfg)

@@ -461,7 +461,7 @@ janela FECHADA  →  template UTILITY cobrado
 
 Isso é uma **rede de segurança de custo**: se a API reiniciar e perder o
 rastreio da janela, ela pode disparar um template desnecessário — e a Meta não
-cobra por ele. A checagem de `janela_aberta()` na rota `/eventos/link` evita o
+cobra por ele. A checagem de `janela_aberta()` na rota `/eventos/rastreador` evita o
 envio de qualquer forma; a rede existe para o caso de ela falhar.
 
 > ⚠️ **Vale só para `UTILITY`.** Template `MARKETING` é cobrado sempre, janela

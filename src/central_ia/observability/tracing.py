@@ -313,7 +313,7 @@ class Identificacao:
     #: por um e ler o horário.
     turno: int | None = None
 
-    #: `link` (evento real) ou `teste` (disparado pela tela da Central).
+    #: `rastreador` (evento real) ou `teste` (disparado pela tela da Central).
     #:
     #: ⛔ **Sem isto o Langfuse soma teste com atendimento real**, e a conta de
     #: custo da POC vira ficção. Pior: quem for avaliar por que a IA respondeu
@@ -434,7 +434,7 @@ def _nome_do_trace(prefixo: str, tipo_evento: str, quem: Identificacao) -> str:
     # em vez de espalhá-los entre os atendimentos reais. Quem for avaliar
     # qualidade lê os de verdade sem tropeçar nos nossos.
     base = f"{prefixo}.{tipo_evento}"
-    if quem.origem and quem.origem != "link":
+    if quem.origem and quem.origem != "rastreador":
         base = f"{quem.origem}.{base}"
 
     if _conteudo and quem.nome:
@@ -452,7 +452,7 @@ def marcar_notificacao(tipo_evento: str, quem: Identificacao) -> None:
     """Batiza o span da rota de eventos com a ocorrência que ele acabou de abrir.
 
     **Por que existe.** Um atendimento nascia partido em dois traces que não se
-    conheciam: `POST /eventos/link`, sem nome e sem sessão, e
+    conheciam: `POST /eventos/rastreador`, sem nome e sem sessão, e
     `atendimento.TIPO.Nome`, com a sessão da ocorrência. Quem abrisse a sessão
     no Langfuse via a conversa e **não** via o momento em que a notificação
     saiu — que é justamente o começo da história.

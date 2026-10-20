@@ -191,7 +191,7 @@ Quatro itens de configuração, e nenhum é código. O estado conferido em
   para não passar despercebido, e está versionado no `.env.example` desde
   `d62f5b1`: quem lê o repositório consegue assinar um POST válido.
   ⚠️ **Até 03/09/2026 isso era pior do que parecia.** A lista de destinos
-  autorizados de `/eventos/link` só valia quando não havia segredo configurado,
+  autorizados de `/eventos/rastreador` só valia quando não havia segredo configurado,
   pelo raciocínio de que a assinatura já provava quem chamava. Com o
   placeholder no lugar, a conta fechava ao contrário: qualquer pessoa com
   leitura do repositório assinava um POST e fazia o número oficial verificado
@@ -215,7 +215,7 @@ Estado em 01/09/2026, num ambiente ainda de desenvolvimento (`APP_ENV=dev`):
 | Item | Como está |
 |---|---|
 | `BAHRD_WEBHOOK_HMAC_SECRET` | ⚠️ ainda o placeholder `dev-hmac-nao-usar-em-producao`, versionado e público no repositório |
-| Destinos de `/eventos/link` | ✅ desde 03/09/2026 a lista vale sempre fora de produção; antes o placeholder acima a desligava |
+| Destinos de `/eventos/rastreador` | ✅ desde 03/09/2026 a lista vale sempre fora de produção; antes o placeholder acima a desligava |
 | `LANGFUSE_ENVIAR_CONTEUDO` | ⚠️ `true`, e com `APP_ENV=dev` o conteúdo sai mesmo |
 | `PANICO_AUTONOMO` | `true`, decisão consciente |
 | Túnel | ⚠️ expondo `/` |

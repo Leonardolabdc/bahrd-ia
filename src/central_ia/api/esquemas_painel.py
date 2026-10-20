@@ -70,7 +70,7 @@ class ItemFila(BaseModel):
     interlocutor: str
     nota: str | None = None
 
-    #: `link` (evento real) ou `teste` (disparado pela tela do painel).
+    #: `rastreador` (evento real) ou `teste` (disparado pela tela do painel).
     #:
     #: ⛔ **Sem isto a tela de eventos de teste vira fonte de incidente.** Um
     #: pânico disparado para experimentar fica na mesma fila, com a mesma cara,

@@ -58,7 +58,7 @@ CURITIBA = (-25.4504094, -49.256198)
 def _evento(**campos: object) -> EventoRastreamento:
     base: dict[str, object] = {
         "evento_externo_id": "x",
-        "rotulo_link": "Remoção de bateria",
+        "rotulo_plataforma": "Remoção de bateria",
         "codigo_evento": "REMOCAO_BATERIA",
         "veiculo": "ABC1D23",
         "momento": datetime(2026, 9, 10, 12, 0, tzinfo=UTC),

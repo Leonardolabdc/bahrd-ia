@@ -7,7 +7,7 @@ Duas implementações:
 
 * **amostra** — dados fixos, para construir e demonstrar sem depender de
   ninguém. É o que roda hoje.
-* **link** — a plataforma da Bahrd, quando houver acesso de leitura. O contrato
+* **rastreador** — a plataforma da Bahrd, quando houver acesso de leitura. O contrato
   abaixo foi desenhado a partir do que o Relatório de Eventos já entrega
   (`docs/exemplos/Relatorio de Eventos.xls`), então a tradução é direta.
 

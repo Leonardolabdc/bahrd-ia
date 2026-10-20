@@ -57,11 +57,11 @@ def sem_disparar(monkeypatch) -> list[dict]:
     """
     montados: list[dict] = []
 
-    async def fingir(cfg, payload, origem="link"):
+    async def fingir(cfg, payload, origem="rastreador"):
         montados.append(payload)
         return ResultadoDoEvento(200, {"atendido": True, "evento_id": "ev-123"})
 
-    monkeypatch.setattr(eventos_de_teste, "processar_evento_link", fingir)
+    monkeypatch.setattr(eventos_de_teste, "processar_evento_rastreador", fingir)
     return montados
 
 
@@ -270,10 +270,10 @@ def test_o_recibo_explica_a_recusa_em_portugues(cliente: TestClient, monkeypatch
     nada" era indistinguível de "o WhatsApp está lento". Quem testa sem saber
     por que falhou volta a perguntar ao dev, que é o que a tela evita.
     """
-    async def duplicado(cfg, payload, origem="link"):
+    async def duplicado(cfg, payload, origem="rastreador"):
         return ResultadoDoEvento(200, {"atendido": False, "motivo": "duplicado"})
 
-    monkeypatch.setattr(eventos_de_teste, "processar_evento_link", duplicado)
+    monkeypatch.setattr(eventos_de_teste, "processar_evento_rastreador", duplicado)
     corpo = cliente.post(
         "/painel/testes/evento", json={"tipo": "PANICO", "telefone": DESTINO}
     ).json()
@@ -287,13 +287,13 @@ def test_motivo_desconhecido_nao_vira_silencio(cliente: TestClient, monkeypatch)
     """⛔ Um motivo novo no fluxo não pode virar recibo em branco.
 
     O dicionário de traduções vai ficar velho: alguém acrescenta uma recusa em
-    `processar_evento_link` e esquece daqui. O texto padrão diz que a falha é
+    `processar_evento_rastreador` e esquece daqui. O texto padrão diz que a falha é
     nossa em vez de deixar a Central achando que fez algo errado.
     """
-    async def novidade(cfg, payload, origem="link"):
+    async def novidade(cfg, payload, origem="rastreador"):
         return ResultadoDoEvento(200, {"atendido": False, "motivo": "motivo_novo"})
 
-    monkeypatch.setattr(eventos_de_teste, "processar_evento_link", novidade)
+    monkeypatch.setattr(eventos_de_teste, "processar_evento_rastreador", novidade)
     corpo = cliente.post(
         "/painel/testes/evento", json={"tipo": "PANICO", "telefone": DESTINO}
     ).json()
@@ -316,12 +316,12 @@ def test_o_recibo_leva_a_ocorrencia(cliente: TestClient, monkeypatch) -> None:
     class SessaoFalsa:
         ocorrencia_id = "OC-2026-09-03-AAAA-WA"
 
-    async def atendeu(cfg, payload, origem="link"):
+    async def atendeu(cfg, payload, origem="rastreador"):
         return ResultadoDoEvento(
             200, {"atendido": True, "evento_id": "ev-1"}, sessao=SessaoFalsa()
         )
 
-    monkeypatch.setattr(eventos_de_teste, "processar_evento_link", atendeu)
+    monkeypatch.setattr(eventos_de_teste, "processar_evento_rastreador", atendeu)
     corpo = cliente.post(
         "/painel/testes/evento", json={"tipo": "PANICO", "telefone": DESTINO}
     ).json()

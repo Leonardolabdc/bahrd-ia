@@ -10,7 +10,7 @@ import pytest
 from central_ia.domain import eventos
 
 
-def test_escopo_e_exatamente_o_catalogo_da_link() -> None:
+def test_escopo_e_exatamente_o_catalogo_da_bahrd() -> None:
     """Trava explícita de escopo.
 
     Se alguém adicionar um tipo sem passar pela decisão de produto, o teste
@@ -31,7 +31,7 @@ def test_escopo_e_exatamente_o_catalogo_da_link() -> None:
     ]
 
 
-def test_rotulos_sao_os_do_sistema_da_link() -> None:
+def test_rotulos_sao_os_do_sistema_da_bahrd() -> None:
     """O webhook chega com o rótulo deles; a busca por rótulo tem de funcionar."""
     assert eventos.por_rotulo("Erro na bateria backup") is eventos.ERRO_BATERIA_BACKUP
     assert eventos.por_rotulo("Voltou à Cerca de Polígono") is eventos.VOLTOU_CERCA_POLIGONO
@@ -82,9 +82,9 @@ def test_eventos_de_velocidade_deduplicam_entre_si() -> None:
     assert not eventos.mesmo_grupo_de_deduplicacao("VELOCIDADE_EXCEDIDA", "REMOCAO_BATERIA")
 
 
-def test_pendencias_com_a_link_estao_registradas() -> None:
+def test_pendencias_com_a_bahrd_estao_registradas() -> None:
     """As perguntas em aberto ficam no código, não se perdem num documento."""
-    pendentes = {rotulo for rotulo, _ in eventos.pendencias_com_a_link()}
+    pendentes = {rotulo for rotulo, _ in eventos.pendencias_com_a_bahrd()}
     assert "Entrada 2 acionada" in pendentes
     assert "Entrou na cerca" in pendentes
     assert "Voltou à Cerca de Polígono" in pendentes

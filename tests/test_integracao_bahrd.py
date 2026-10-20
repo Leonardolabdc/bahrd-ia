@@ -63,7 +63,7 @@ LINHA_11 = {
 def test_campos_principais_da_linha_real() -> None:
     evento = bahrd.parse_linha_relatorio(LINHA_9)
 
-    assert evento.rotulo_link == "Entrou na cerca"
+    assert evento.rotulo_plataforma == "Entrou na cerca"
     assert evento.codigo_evento == "ENTROU_NA_CERCA"
     assert evento.objeto_geografico == "PATIO.MATRIZ.PONTO DE INTERESSE"
     assert evento.imei == "860200000000000"
@@ -143,7 +143,10 @@ def test_duplicata_da_plataforma_colapsa() -> None:
 
     unicos = bahrd.deduplicar(eventos)
     assert len(unicos) == 2
-    assert [e.rotulo_link for e in unicos] == ["Entrou na cerca", "Voltou à Cerca de Polígono"]
+    assert [e.rotulo_plataforma for e in unicos] == [
+        "Entrou na cerca",
+        "Voltou à Cerca de Polígono",
+    ]
 
 
 def test_id_e_estavel_entre_reprocessamentos() -> None:
@@ -162,7 +165,7 @@ def test_evento_fora_do_catalogo_nao_entra_em_escopo() -> None:
 
     assert evento.codigo_evento is None
     assert evento.em_escopo is False
-    assert evento.rotulo_link == "Sensor de fadiga acionado ALGUMA COISA"
+    assert evento.rotulo_plataforma == "Sensor de fadiga acionado ALGUMA COISA"
     assert evento.objeto_geografico is None
 
 

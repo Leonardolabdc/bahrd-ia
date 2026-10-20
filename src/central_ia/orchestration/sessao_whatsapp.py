@@ -181,7 +181,7 @@ class Sessao:
     canal: str
     dados: dict[str, str] = field(default_factory=dict)
 
-    #: De onde este caso veio: `link` (evento real) ou `teste` (a tela do painel).
+    #: De onde este caso veio: `rastreador` (evento real) ou `teste` (a tela do painel).
     #:
     #: ⛔ **Sem isto a tela de teste vira fonte de incidente.** Um pânico
     #: disparado para experimentar fica na mesma fila, com a mesma cara, do
@@ -192,7 +192,7 @@ class Sessao:
     #: Nasce de quem provou identidade com o token do painel, nunca do corpo do
     #: evento: pôr uma marca de confiança dentro do payload assinado seria
     #: convidar a falsificação da marca.
-    origem: str = "link"
+    origem: str = "rastreador"
 
     #: Qual cérebro atende esta conversa. `None` usa o padrão do `.env`.
     #:
@@ -648,7 +648,7 @@ class Sessao:
             tipo=tipo,
             canal=d["canal"],
             dados=dict(d.get("dados", {})),
-            origem=d.get("origem", "link"),
+            origem=d.get("origem", "rastreador"),
             modelo=d.get("modelo"),
             latitude=d.get("latitude"),
             longitude=d.get("longitude"),
@@ -810,7 +810,7 @@ class Sessoes:
         canal: str,
         dados: dict[str, str],
         com_operador: bool = True,
-        origem: str = "link",
+        origem: str = "rastreador",
         modelo: str | None = None,
     ) -> Sessao:
         ocorrencia_id = (

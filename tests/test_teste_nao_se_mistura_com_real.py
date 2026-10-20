@@ -34,7 +34,7 @@ def limpar():
 
 def test_o_padrao_e_evento_real() -> None:
     """Quem não disse nada veio da Bahrd. O caminho de produção não muda."""
-    assert SESSOES.abrir("+5541999999999", BATERIA, "TEXTO", {}).origem == "link"
+    assert SESSOES.abrir("+5541999999999", BATERIA, "TEXTO", {}).origem == "rastreador"
 
 
 def test_o_disparo_de_teste_fica_marcado() -> None:

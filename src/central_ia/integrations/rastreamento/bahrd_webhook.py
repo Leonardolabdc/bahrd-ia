@@ -1,6 +1,6 @@
 """Tradução do **payload JSON** da Bahrd para o modelo canônico.
 
-Segunda entrada, não substituto: `link.py` lê o export em XLS (histórico), este
+Segunda entrada, não substituto: `bahrd.py` lê o export em XLS (histórico), este
 lê o que a plataforma manda no webhook. **O modelo canônico é o mesmo** — muda o
 tradutor, não o significado.
 
@@ -21,7 +21,7 @@ Formato acordado com a Central, documentado em
 
 Quatro decisões que o formato de origem obriga:
 
-1. **`rotulo` é o VEÍCULO, não o evento.** No modelo canônico `rotulo_link` é o
+1. **`rotulo` é o VEÍCULO, não o evento.** No modelo canônico `rotulo_plataforma` é o
    nome do evento. Mapear por semelhança de nome inverte os dois, e o erro é
    silencioso: a placa vira tipo de evento e cai fora de escopo.
 2. **Não vem IMEI.** O XLS traz, o webhook não. A identidade do veículo passa a
@@ -34,7 +34,7 @@ Quatro decisões que o formato de origem obriga:
    de uso invente o seu formato.
 
 Horários chegam **sem fuso, em horário de Brasília** (confirmado). Convertidos
-para UTC na entrada, pela mesma razão do `link.py`: trilha de auditoria não pode
+para UTC na entrada, pela mesma razão do `bahrd.py`: trilha de auditoria não pode
 depender do fuso de quem escreveu.
 """
 
@@ -205,7 +205,7 @@ def _derivar_id(veiculo: str, rotulo: str, momento: datetime) -> str:
     """Chave de idempotência, já que a plataforma não emite identificador.
 
     Sem IMEI, a identidade do veículo é o texto de `rotulo`. **É mais frágil que
-    a do `link.py`**: dois eventos do mesmo veículo, do mesmo tipo, no mesmo
+    a do `bahrd.py`**: dois eventos do mesmo veículo, do mesmo tipo, no mesmo
     segundo, colapsam num só. Aceitável porque a alternativa — deixar passar
     duplicata — é pior, e porque a plataforma da Bahrd já gravou a mesma entrada
     duas vezes no relatório de 12/08.
@@ -236,13 +236,13 @@ def parse_evento_webhook(payload: dict[str, Any]) -> EventoRastreamento:
     momento = _momento(str(payload["data_hora_evento"]))
 
     # Fora do catálogo é `None` — e fora de escopo nunca vira atendimento
-    # automático. A regra é do `link.py`; repeti-la aqui é deliberado.
+    # automático. A regra é do `bahrd.py`; repeti-la aqui é deliberado.
     tipo = eventos.por_rotulo(rotulo_evento)
 
     return EventoRastreamento(
         # Aproveita o `id` da plataforma se um dia ele existir; deriva enquanto não.
         evento_externo_id=str(payload.get("id") or _derivar_id(veiculo, rotulo_evento, momento)),
-        rotulo_link=rotulo_evento,
+        rotulo_plataforma=rotulo_evento,
         codigo_evento=tipo.codigo if tipo else None,
         imei=str(payload["imei"]).strip() if payload.get("imei") else None,
         veiculo=veiculo,

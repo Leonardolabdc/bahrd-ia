@@ -1,6 +1,6 @@
 """Entrada de evento real da plataforma da Bahrd.
 
-    sistema da Bahrd → POST /eventos/link → política → triagem → IA → WhatsApp
+    sistema da Bahrd → POST /eventos/rastreador → política → triagem → IA → WhatsApp
 
 É o outro lado do `whatsapp.py`. Lá a conversa começa porque **uma pessoa
 escreveu**; aqui começa porque **um caminhão fez alguma coisa** — e é este o
@@ -398,12 +398,12 @@ def _autorizado(cfg: Settings, request: Request, corpo: bytes) -> bool:
     passar despercebido.
     """
     if cfg.bahrd_webhook_hmac_secret is None:
-        log.warning("eventos_link_sem_assinatura", motivo="BAHRD_WEBHOOK_HMAC_SECRET ausente")
+        log.warning("eventos_rastreador_sem_assinatura", motivo="BAHRD_WEBHOOK_HMAC_SECRET ausente")
         return True
 
     enviada = request.headers.get(CABECALHO_ASSINATURA, "")
     if not enviada:
-        log.warning("eventos_link_sem_cabecalho_de_assinatura")
+        log.warning("eventos_rastreador_sem_cabecalho_de_assinatura")
         return False
 
     return assinatura_confere(
@@ -412,20 +412,20 @@ def _autorizado(cfg: Settings, request: Request, corpo: bytes) -> bool:
 
 
 @router.post(
-    "/link",
+    "/rastreador",
     summary="Recebe um evento de rastreamento da plataforma da Bahrd",
     description=(
         "O sistema da Bahrd dispara um POST aqui quando o evento acontece. "
         "Formato acordado em `a documentação interna do projeto`."
     ),
 )
-async def entrada_link(request: Request) -> Response:
+async def entrada_rastreador(request: Request) -> Response:
     cfg = settings()
     corpo = await request.body()
 
     # ── 1. Assinatura, antes de olhar o conteúdo ────────────────────────────
     if not _autorizado(cfg, request, corpo):
-        log.warning("eventos_link_assinatura_invalida")
+        log.warning("eventos_rastreador_assinatura_invalida")
         return Response(status_code=status.HTTP_403_FORBIDDEN)
 
     # `UnicodeDecodeError` também: `json.loads` sobre bytes tenta decodificar
@@ -436,13 +436,13 @@ async def entrada_link(request: Request) -> Response:
     try:
         payload = json.loads(corpo or b"{}")
     except (json.JSONDecodeError, UnicodeDecodeError) as erro:
-        log.warning("eventos_link_corpo_ilegivel", erro=str(erro))
+        log.warning("eventos_rastreador_corpo_ilegivel", erro=str(erro))
         return _resposta(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             erro="corpo não é JSON válido em UTF-8",
         )
 
-    resultado = await processar_evento_link(cfg, payload)
+    resultado = await processar_evento_rastreador(cfg, payload)
     return _resposta(resultado.http, **resultado.corpo)
 
 
@@ -488,12 +488,12 @@ def _recusa(motivo: str) -> ResultadoDoEvento:
     )
 
 
-async def processar_evento_link(
-    cfg: Settings, payload: dict, origem: str = "link"
+async def processar_evento_rastreador(
+    cfg: Settings, payload: dict, origem: str = "rastreador"
 ) -> ResultadoDoEvento:
     """Traduz, decide e atende. **A única implementação do caminho real.**
 
-    Extraída de `entrada_link` em 03/09/2026, sem mudança de comportamento, para
+    Extraída de `entrada_rastreador` em 03/09/2026, sem mudança de comportamento, para
     a tela de eventos de teste do painel poder chamar exatamente isto.
 
     ⚠️ **O motivo de existir é o que ela NÃO deixa acontecer.** Chamar `_atender`
@@ -508,7 +508,7 @@ async def processar_evento_link(
 
     `origem` marca de onde o caso veio, e nasce de **quem chamou**, nunca do
     corpo: pôr uma marca de confiança dentro de um payload assinado convidaria
-    a falsificação da marca. Vale `link` para o webhook e `teste` para a tela
+    a falsificação da marca. Vale `rastreador` para o webhook e `teste` para a tela
     do painel, que já provou identidade pelo token.
     """
     # ── 2. Tradução ─────────────────────────────────────────────────────────
@@ -517,26 +517,26 @@ async def processar_evento_link(
     except PayloadInvalido as erro:
         # 422 e não 500: o problema é o conteúdo, e a Bahrd precisa saber disso
         # para corrigir na origem em vez de reenviar o mesmo payload.
-        log.warning("eventos_link_payload_invalido", erro=str(erro))
+        log.warning("eventos_rastreador_payload_invalido", erro=str(erro))
         return ResultadoDoEvento(
             status.HTTP_422_UNPROCESSABLE_CONTENT, {"erro": str(erro)}
         )
 
     log.info(
-        "evento_link_recebido",
+        "evento_rastreador_recebido",
         evento_id=evento.evento_externo_id,
-        tipo=evento.codigo_evento or evento.rotulo_link,
+        tipo=evento.codigo_evento or evento.rotulo_plataforma,
         veiculo=evento.veiculo,
         em_escopo=evento.em_escopo,
     )
 
     # ── 3. Fora do catálogo nunca vira atendimento automático ───────────────
     if not evento.em_escopo:
-        log.warning("evento_link_fora_de_escopo", rotulo=evento.rotulo_link)
+        log.warning("evento_rastreador_fora_de_escopo", rotulo=evento.rotulo_plataforma)
         return _recusa("fora_do_catalogo")
 
     if not evento.telefone_contato:
-        log.warning("evento_link_sem_contato", veiculo=evento.veiculo)
+        log.warning("evento_rastreador_sem_contato", veiculo=evento.veiculo)
         return _recusa("sem_telefone")
 
     # ── 3b. Fora de produção, só escreve para quem foi autorizado ───────────
@@ -568,7 +568,7 @@ async def processar_evento_link(
     # lista lá obrigaria a chamar o dev para cadastrar cada celular novo, que é o
     # que a tela existe para evitar.
     if (
-        origem == "link"
+        origem == "rastreador"
         and not cfg.em_producao
         and not numero_autorizado(evento.telefone_contato, cfg.numeros_de_teste)
     ):
@@ -577,7 +577,7 @@ async def processar_evento_link(
         # investigação em cinco segundos de leitura. Só sai fora de produção,
         # que é a única situação em que este ramo roda.
         log.warning(
-            "evento_link_destino_nao_autorizado",
+            "evento_rastreador_destino_nao_autorizado",
             veiculo=evento.veiculo,
             grafias=sorted(variantes_do_numero(evento.telefone_contato)),
             autorizados=len(cfg.numeros_de_teste),
@@ -587,7 +587,7 @@ async def processar_evento_link(
     # ── 3c. O mesmo evento de novo não vira uma segunda ocorrência ──────────
     if _ja_atendido(evento.evento_externo_id):
         log.info(
-            "evento_link_duplicado",
+            "evento_rastreador_duplicado",
             evento_id=evento.evento_externo_id,
             veiculo=evento.veiculo,
         )
@@ -602,7 +602,7 @@ async def processar_evento_link(
     try:
         sessao = await _atender(cfg, evento, origem)
     except Exception as erro:  # noqa: BLE001 — 500 aqui faz a Bahrd parar de entregar
-        log.exception("evento_link_erro_inesperado", erro=str(erro))
+        log.exception("evento_rastreador_erro_inesperado", erro=str(erro))
         return _recusa("erro_interno")
 
     atendido = sessao is not None
@@ -691,7 +691,7 @@ def _resposta(codigo: int, **corpo: object) -> Response:
     )
 
 
-async def _atender(cfg: Settings, evento, origem: str = "link") -> Sessao | None:
+async def _atender(cfg: Settings, evento, origem: str = "rastreador") -> Sessao | None:
     """Abre a ocorrência e conduz — mesmo caminho do `_abrir` do WhatsApp.
 
     Devolve a sessão aberta, ou `None` quando o evento não virou atendimento.
@@ -706,7 +706,7 @@ async def _atender(cfg: Settings, evento, origem: str = "link") -> Sessao | None
     """
     tipo = eventos.por_codigo(evento.codigo_evento or "")
     if tipo is None or tipo.playbook is None:
-        log.warning("evento_link_sem_playbook", tipo=evento.codigo_evento)
+        log.warning("evento_rastreador_sem_playbook", tipo=evento.codigo_evento)
         return None
 
     # ⛔ **Antes de qualquer coisa: este número pediu para sair desta placa?**
@@ -789,7 +789,7 @@ async def _atender(cfg: Settings, evento, origem: str = "link") -> Sessao | None
         else f"<b>{tipo.rotulo}</b> · veículo {evento.veiculo}.",
     )
     log.info(
-        "evento_link_ocorrencia_aberta",
+        "evento_rastreador_ocorrencia_aberta",
         ocorrencia=sessao.ocorrencia_id,
         tipo=tipo.codigo,
         evento_id=evento.evento_externo_id,
@@ -969,7 +969,7 @@ async def _abrir_com_template(cfg: Settings, sessao, evento) -> bool:
     ]
 
     if not tentativas:
-        log.warning("evento_link_sem_template", tipo=sessao.tipo.codigo)
+        log.warning("evento_rastreador_sem_template", tipo=sessao.tipo.codigo)
         return False
 
     # ⚠️ **O template é um conceito da Meta, e só dela.** O Twilio em sandbox

@@ -76,7 +76,7 @@ ModoVoz = Literal["voz_simulada", "voz_livekit_sip"]
 OrigemSegredo = Literal["env", "oci_vault"]
 ProvedorLLM = Literal["anthropic", "openrouter"]
 CanalWhatsApp = Literal["twilio", "meta"]
-FonteDeRastreamento = Literal["amostra", "link"]
+FonteDeRastreamento = Literal["amostra", "rastreador"]
 
 
 #: Nomes de variável que o código deixou de ler, e para onde foram.
@@ -345,7 +345,7 @@ class Settings(BaseSettings):
     # completo de um acionamento acidental.
     #
     # ⛔ **`False` em produção é um pânico real atendido por robô, sem nenhuma
-    # avaliação prévia.** O dia em que a `fonte_rastreamento` virar `link`, esta
+    # avaliação prévia.** O dia em que a `fonte_rastreamento` virar `rastreador`, esta
     # chave sai do `.env` e o padrão volta a valer sozinho.
     triagem_previa_ativa: bool = True
 

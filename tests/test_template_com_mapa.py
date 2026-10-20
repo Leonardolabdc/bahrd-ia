@@ -70,7 +70,7 @@ class _ClienteFalso:
 def _evento(**campos) -> EventoRastreamento:
     base = dict(
         evento_externo_id="x",
-        rotulo_link="Remoção de bateria",
+        rotulo_plataforma="Remoção de bateria",
         codigo_evento="REMOCAO_BATERIA",
         veiculo="ABC-1234",
         momento=datetime(2026, 8, 24, 12, 0, tzinfo=UTC),

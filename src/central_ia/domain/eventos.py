@@ -21,7 +21,7 @@ determinístico e versionado; o motor de políticas (Sprint 1) lê da tabela
 `politica_evento`, semeada por `migrations/oracle/004_politica_evento_v1_1.sql`
 com exatamente estes valores.
 
-⚠️ Campos `confirmar_com_a_link` marcam o que foi **inferido** e precisa de
+⚠️ Campos `confirmar_com_a_bahrd` marcam o que foi **inferido** e precisa de
 confirmação. Estão em código, e não num documento, para não se perderem.
 """
 
@@ -228,7 +228,7 @@ class TipoEvento:
     contatos: tuple[str, ...] = field(default=())
 
     #: Pergunta em aberto para a Bahrd. Enquanto existir, o evento não é elegível.
-    confirmar_com_a_link: str | None = None
+    confirmar_com_a_bahrd: str | None = None
 
     #: Eventos que descrevem o MESMO fato operacional e não podem gerar dois
     #: contatos com a mesma pessoa no mesmo turno.
@@ -424,7 +424,7 @@ VELOCIDADE_EXCEDIDA = TipoEvento(
         "repreendido por robô deixa de atender a central, e no dia do alerta "
         "grave isso custa caro."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "Qual a diferença real entre 'Velocidade excedida', 'Ultrapassou limite "
         "de velocidade' e 'Velocidade excedida dentro da cerca polígono'? "
         "Origem diferente (rastreador × plataforma), limiar diferente, ou são "
@@ -445,7 +445,7 @@ ULTRAPASSOU_LIMITE_VELOCIDADE = TipoEvento(
     desfechos_permitidos=VELOCIDADE_EXCEDIDA.desfechos_permitidos,
     contatos=("MOTORISTA",),
     grupo_deduplicacao="VELOCIDADE",
-    confirmar_com_a_link=VELOCIDADE_EXCEDIDA.confirmar_com_a_link,
+    confirmar_com_a_bahrd=VELOCIDADE_EXCEDIDA.confirmar_com_a_bahrd,
 )
 
 VELOCIDADE_EXCEDIDA_CERCA_POLIGONO = TipoEvento(
@@ -466,10 +466,10 @@ VELOCIDADE_EXCEDIDA_CERCA_POLIGONO = TipoEvento(
         "delimitada costuma ser pátio, cliente ou zona urbana, onde o limite "
         "existe por segurança de terceiros, não por norma de rodovia."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "Confirmar se a criticidade MEDIA está certa — depende de as cercas "
         "polígono serem áreas de risco ou áreas autorizadas. "
-        + (VELOCIDADE_EXCEDIDA.confirmar_com_a_link or "")
+        + (VELOCIDADE_EXCEDIDA.confirmar_com_a_bahrd or "")
     ),
 )
 
@@ -565,7 +565,7 @@ ERRO_BATERIA_BACKUP = TipoEvento(
         "conversa a ter — o destino natural é uma ordem de manutenção do "
         "equipamento, não um contato com o motorista."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "Hoje este evento gera contato com alguém, ou vira chamado de "
         "manutenção? Se for manutenção, ele sai da fila de atendimento e vira "
         "integração — mais barato que qualquer playbook."
@@ -584,7 +584,7 @@ ENTROU_NA_CERCA = TipoEvento(
         "área autorizada (pátio do cliente, base) é rotina e talvez nem devesse "
         "gerar alerta; entrar numa área de risco é grave."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "As cercas são de área AUTORIZADA ou de área de RISCO? Existe essa "
         "distinção no cadastro, ou o mesmo evento cobre as duas? Sem isso não "
         "há como escrever um playbook que não erre metade dos casos."
@@ -604,7 +604,7 @@ VOLTOU_CERCA_POLIGONO = TipoEvento(
         "automaticamente a ocorrência de saída que o originou (doc 01 §4.3 — "
         "evitar que o falso positivo aconteça)."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "Este evento sempre corresponde a uma saída anterior? Se sim, ele deve "
         "ENCERRAR a ocorrência aberta, não criar uma nova — e some da fila."
     ),
@@ -624,7 +624,7 @@ ENTRADA_2_ACIONADA = TipoEvento(
         "mapa por cliente/veículo, a criticidade é assumida ALTA — falhar para "
         "o lado seguro é o único jeito de não transformar um pânico em rotina."
     ),
-    confirmar_com_a_link=(
+    confirmar_com_a_bahrd=(
         "Existe mapa de qual sensor está ligado na entrada 2, por cliente ou "
         "por veículo? Se o significado variar entre veículos, a política precisa "
         "ser por veículo, não por tipo de evento."
@@ -691,10 +691,10 @@ def mesmo_grupo_de_deduplicacao(codigo_a: str, codigo_b: str) -> bool:
     return bool(a and b and a.grupo_deduplicacao and a.grupo_deduplicacao == b.grupo_deduplicacao)
 
 
-def pendencias_com_a_link() -> tuple[tuple[str, str], ...]:
+def pendencias_com_a_bahrd() -> tuple[tuple[str, str], ...]:
     """Perguntas em aberto, para o checklist e para a próxima conversa com a Bahrd."""
     return tuple(
-        (t.rotulo, t.confirmar_com_a_link) for t in CATALOGO if t.confirmar_com_a_link
+        (t.rotulo, t.confirmar_com_a_bahrd) for t in CATALOGO if t.confirmar_com_a_bahrd
     )
 
 # ═════════════════ desativação temporária ═════════════════

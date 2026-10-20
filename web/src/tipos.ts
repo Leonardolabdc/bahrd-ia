@@ -45,7 +45,7 @@ export interface ItemFila {
   interlocutor: string;
   nota: string | null;
   /**
-   * `link` (evento real) ou `teste` (disparado pela tela da Central).
+   * `rastreador` (evento real) ou `teste` (disparado pela tela da Central).
    *
    * ⛔ Vira selo na linha da fila. Sem ele, um pânico disparado para
    * experimentar tem a mesma cara do pânico de um motorista, e quem está de

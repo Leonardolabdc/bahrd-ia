@@ -1,6 +1,6 @@
 """A Central dispara evento de teste sem depender do Postman e sem depender do dev.
 
-    tela do painel → POST /painel/testes/evento → processar_evento_link → WhatsApp
+    tela do painel → POST /painel/testes/evento → processar_evento_rastreador → WhatsApp
 
 Existe porque quem valida o atendimento é a Central, e até aqui validar exigia
 montar JSON à mão, saber o formato de data aceito, acertar o rótulo do evento
@@ -60,7 +60,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from central_ia.api.rotas.eventos import processar_evento_link
+from central_ia.api.rotas.eventos import processar_evento_rastreador
 from central_ia.api.seguranca import exigir_token_do_painel
 from central_ia.config import Settings, settings
 from central_ia.domain import eventos
@@ -296,7 +296,7 @@ class PedidoDeTeste(BaseModel):
 
 #: Cada `motivo` que o fluxo devolve, dito em português e com o que fazer.
 #:
-#: ⚠️ **É metade do valor desta tela.** Oito desfechos de `processar_evento_link`
+#: ⚠️ **É metade do valor desta tela.** Oito desfechos de `processar_evento_rastreador`
 #: só existiam no log, e do lado de fora "não aconteceu nada" era indistinguível
 #: de "o WhatsApp está lento". Quem testa sem saber por que falhou volta a
 #: perguntar ao dev, que é exatamente o que a tela existe para evitar.
@@ -320,7 +320,7 @@ MOTIVO_EM_PORTUGUES: dict[str, str] = {
     ),
     "erro_interno": (
         "Algo quebrou do nosso lado depois de aceitar o evento. O log do "
-        "container tem a exceção, procure por evento_link_erro_inesperado."
+        "container tem a exceção, procure por evento_rastreador_erro_inesperado."
     ),
     "sem_playbook": (
         "O evento está no catálogo mas não tem playbook, então a IA não teria "
@@ -367,7 +367,7 @@ class ReciboDeTeste(BaseModel):
     response_model=ReciboDeTeste,
     summary="Dispara um evento de teste pelo caminho real",
     description=(
-        "Monta o payload internamente e chama `processar_evento_link`, a mesma "
+        "Monta o payload internamente e chama `processar_evento_rastreador`, a mesma "
         "função que o webhook da Bahrd usa. Não é simulação: manda WhatsApp de "
         "verdade para o número escolhido."
     ),
@@ -470,7 +470,7 @@ async def disparar(pedido: PedidoDeTeste) -> ReciboDeTeste:
     # seria falsificável, e o que ela protege é justamente a leitura do painel:
     # um pânico de teste não pode ter a mesma cara de um pânico de motorista na
     # fila de quem está de plantão.
-    resultado = await processar_evento_link(cfg, payload, origem="teste")
+    resultado = await processar_evento_rastreador(cfg, payload, origem="teste")
     _disparos.append(datetime.now(UTC))
 
     motivo = resultado.motivo

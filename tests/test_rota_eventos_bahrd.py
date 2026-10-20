@@ -92,7 +92,7 @@ def trancado_sem_lista(monkeypatch) -> TestClient:
 
 def _post(cliente: TestClient, payload: dict | None = None, **kwargs):
     corpo = payload if payload is not None else PAYLOAD
-    return cliente.post("/eventos/link", json=corpo, **kwargs)
+    return cliente.post("/eventos/rastreador", json=corpo, **kwargs)
 
 
 def _assinado(cliente: TestClient, payload: dict | None = None):
@@ -100,7 +100,7 @@ def _assinado(cliente: TestClient, payload: dict | None = None):
     corpo = json.dumps(payload if payload is not None else PAYLOAD).encode()
     mac = hmac.new(SEGREDO.encode(), corpo, hashlib.sha256).hexdigest()
     return cliente.post(
-        "/eventos/link",
+        "/eventos/rastreador",
         content=corpo,
         headers={"Content-Type": "application/json", "X-Assinatura": f"sha256={mac}"},
     )
@@ -127,7 +127,7 @@ def test_campo_obrigatorio_ausente_devolve_422(aberto: TestClient) -> None:
 
 def test_corpo_que_nao_e_json_devolve_422(aberto: TestClient) -> None:
     resposta = aberto.post(
-        "/eventos/link",
+        "/eventos/rastreador",
         content=b"isto nao e json",
         headers={"Content-Type": "application/json"},
     )
@@ -257,7 +257,7 @@ def test_em_producao_a_lista_nao_vale(monkeypatch) -> None:
 
 def test_com_segredo_e_assinatura_errada_recusa(trancado: TestClient) -> None:
     resposta = trancado.post(
-        "/eventos/link",
+        "/eventos/rastreador",
         content=json.dumps(PAYLOAD).encode(),
         headers={"Content-Type": "application/json", "X-Assinatura": "sha256=" + "0" * 64},
     )
@@ -317,7 +317,7 @@ def test_a_rota_esta_registrada() -> None:
     incluídos ficam como `_IncludedRouter`, **sem atributo `path`** — varrer
     `routes` devolve vazio e o teste passaria a mentir.
     """
-    assert "/eventos/link" in criar_app().openapi()["paths"]
+    assert "/eventos/rastreador" in criar_app().openapi()["paths"]
 
 
 def test_corpo_em_latin1_devolve_422_e_nao_500(aberto: TestClient) -> None:
@@ -331,7 +331,7 @@ def test_corpo_em_latin1_devolve_422_e_nao_500(aberto: TestClient) -> None:
     """
     corpo = json.dumps(PAYLOAD, ensure_ascii=False).encode("latin-1")
     resposta = aberto.post(
-        "/eventos/link",
+        "/eventos/rastreador",
         content=corpo,
         headers={"Content-Type": "application/json"},
     )
@@ -355,7 +355,7 @@ def test_sem_assinatura_so_escreve_para_numero_autorizado(aberto, monkeypatch) -
     cliente = TestClient(criar_app())
 
     resposta = cliente.post(
-        "/eventos/link", json={**PAYLOAD, "contato_telefone": "5511988887777"}
+        "/eventos/rastreador", json={**PAYLOAD, "contato_telefone": "5511988887777"}
     )
 
     assert resposta.json()["motivo"] == "destino_nao_autorizado"
@@ -382,7 +382,7 @@ def test_a_assinatura_nao_tira_a_trava_do_destino(trancado: TestClient) -> None:
     corpo = json.dumps({**PAYLOAD, "contato_telefone": "5511988887777"}).encode()
     mac = hmac.new(SEGREDO.encode(), corpo, hashlib.sha256).hexdigest()
     resposta = trancado.post(
-        "/eventos/link",
+        "/eventos/rastreador",
         content=corpo,
         headers={"Content-Type": "application/json", "X-Assinatura": f"sha256={mac}"},
     )

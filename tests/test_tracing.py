@@ -440,7 +440,7 @@ def test_os_dois_destinos_exportam_em_lote() -> None:
         # Jaeger, onde mostram onde o tempo foi dentro do ASGI.
         "POST /whatsapp/meta http send",
         "POST /whatsapp/meta http receive",
-        "POST /eventos/link http send",
+        "POST /eventos/rastreador http send",
     ],
 )
 def test_ruido_de_infra_nao_vai_para_o_langfuse(nome: str) -> None:
@@ -461,7 +461,7 @@ def test_ruido_de_infra_nao_vai_para_o_langfuse(nome: str) -> None:
         # nome da rota é prefixo dos spans ASGI que o teste acima descarta: a
         # rota em si passa, o `http send` dela não.
         "POST /whatsapp/meta",
-        "POST /eventos/link",
+        "POST /eventos/rastreador",
         # A ida ao modelo, instrumentada pelo httpx. É onde a latência do
         # OpenRouter aparece.
         "POST",
@@ -570,7 +570,7 @@ def test_marcar_e_inerte_com_tracing_desligado() -> None:
 def test_notificacao_e_conversa_caem_na_mesma_sessao(monkeypatch: pytest.MonkeyPatch) -> None:
     """**O conserto do atendimento partido em dois.**
 
-    O disparo era `POST /eventos/link`, sem nome e sem sessão; a conversa era
+    O disparo era `POST /eventos/rastreador`, sem nome e sem sessão; a conversa era
     `atendimento.TIPO.Nome`, com a sessão da ocorrência. Quem abrisse a sessão
     no Langfuse via a conversa e não via o momento em que a notificação saiu —
     o começo da história ficava de fora.
