@@ -1,3 +1,7 @@
+# Override local do docker compose (ex.: porta ocupada por outro serviço na
+# máquina de quem está desenvolvendo) — nunca é o mesmo em duas máquinas.
+docker-compose.override.yml
+
 # Segredos — nunca versionar (regra desde o primeiro commit, doc 03 §13)
 .env
 .env.local
