@@ -7,8 +7,47 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+Etapa 3: o painel ganha cara de produto, e o repositório fica coerente com o
+que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
+
+### Adicionado
+- **Visão geral em quadros.** Contadores de cada aba (cada um abre a sua),
+  resumo da sessão, anéis de contenção e escalados, barras de volume e de
+  motivos, e o gráfico de contenção ao longo do dia de volta. O 1º contato e
+  os falsos fechamentos continuam no resumo.
+- **Contenção por hora com dado real.** A rota de métricas calcula, hora a
+  hora, os fechados pela IA sobre o total atendido hoje. Hora sem caso fica
+  vazia, nunca vira 0%. Sem nenhum caso real no dia, a curva de amostra
+  continua de pé, como já acontecia com o vital de Encerradas.
+- **Busca em todas as abas de cards**, filtrando na hora por placa, nome,
+  evento ou telefone, conforme a aba.
+- README: seções **Arquitetura e stack** e **Limitações conhecidas**.
+
+### Alterado
+- **Cabeçalho e abas na largura da Visão geral**, estado da IA em pílula,
+  linha vermelha da marca e botão de tema só com o ícone de sol e lua.
+- ⚠️ **O webhook do rastreador mudou de caminho: agora é
+  `POST /eventos/rastreador`.** Quem chama por fora precisa trocar a URL. O
+  valor `FONTE_RASTREAMENTO` aceita `amostra` ou `rastreador`. Era resquício
+  do nome do sistema de origem do protótipo, que este projeto não usa.
+- As dependências do painel passam a ter versão exata no `package.json`,
+  iguais às que o lock já instalava.
+
+### Corrigido
+- **A IA chamava o cliente de "Bruno".** Os prompts usavam esse nome como
+  exemplo, tantas vezes que ele pesava mais do que o nome real no histórico.
+  Viraram o marcador `{nome}`.
+- O README dizia que o webhook não tinha assinatura HMAC (tem, só falta o
+  segredo), que o modelo era o Claude (o padrão é o Gemini 2.5 Flash Lite) e
+  que reiniciar a API apagava a conversa em andamento (ela fica no Redis).
+- Um teste de tom comparava o texto contra o nome antigo e passava sem
+  verificar nada.
+
 ### A fazer
-- Religar a assinatura HMAC do webhook (lacuna 4)
+- Gravar ocorrência e conversa no Oracle e no MySQL. Os dois estão no ar, mas
+  nada grava neles ainda, então o expurgo de 90 dias roda sobre tabelas vazias
+- Combinar o segredo HMAC do webhook com quem envia o evento: a conferência
+  já está implementada, falta a chave (lacuna 4)
 - Decidir `PANICO_AUTONOMO` — é decisão de operação, não de código (lacuna 5)
 - Conta de aplicação com privilégio restrito no MySQL de produção (hoje usa a
   conta administrativa `bahrd`, mesmo padrão que o Oracle já segue)
