@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from "react";
 import { LADO_DA_MARCA, PONTO } from "./Marca";
 import { RUAS_HORIZONTAIS, RUAS_VERTICAIS } from "./ArteDaEntrada";
 
@@ -12,17 +20,23 @@ import { RUAS_HORIZONTAIS, RUAS_VERTICAIS } from "./ArteDaEntrada";
  * muda de tamanho (a janela, a fonte que carregou, a mensagem de erro que
  * empurrou o formulário). Ela anda pelas ruas principais de `ArteDaEntrada`,
  * que são frações do mapa, e termina **na borda direita do mapa, na altura
- * do ponto da marca**: é dali que as ondas de rádio saem para a marca.
+ * do ponto da marca**: é ali, na linha que separa o mapa do formulário, que o
+ * sinal encosta e cintila para cima e para baixo.
  *
- * O SVG cobre a tela de entrada inteira, e não só o mapa, porque as ondas
- * ficam no vão entre a borda do mapa e a marca, já na coluna do formulário.
- * Não pega clique nem foco (`pointer-events: none` no CSS).
+ * **A estrada e o rastro.** A rota inteira fica sempre desenhada, bem apagada,
+ * como estrada. O que acende é só o rastro atrás do veículo: forte colado
+ * nele e sumindo para trás. Ver `pintarRastro`.
+ *
+ * O SVG cobre a tela de entrada inteira, e não só o mapa, para usar o mesmo
+ * sistema de coordenadas da cintilada da divisa, que é HTML. Não pega clique
+ * nem foco (`pointer-events: none` no CSS).
  *
  * **Os tempos moram no CSS** (blocos `rota-*` e `entrada-*` de `painel.css`),
  * todos no mesmo ciclo de 18 s. As frações de `PINOS` e `ETIQUETAS` aparecem
- * lá também, convertidas em momento do ciclo: a rota se desenha em linha reta
- * de 0 a 55%, então a fração `f` do comprimento é alcançada em `f × 55%`.
- * Mudou uma fração aqui, muda o keyframe correspondente lá.
+ * lá também, convertidas em momento do ciclo: o veículo anda em velocidade
+ * constante de 0 a 55%, então a fração `f` do comprimento é alcançada em
+ * `f × 55%`. Mudou uma fração aqui, muda o keyframe correspondente lá. O
+ * rastro não tem keyframe: ele lê o relógio da animação do veículo.
  *
  * Todos os valores das etiquetas são inventados: não há cliente, veículo nem
  * coordenada de verdade nesta tela.
@@ -34,11 +48,25 @@ type Caixa = { x: number; y: number; largura: number; altura: number };
 /** Onde ficam os pinos, em fração do comprimento da rota. */
 const PINOS = [0.24, 0.47, 0.68] as const;
 
-/** Distância das ondas a partir da borda do mapa, em fração do vão até a marca. */
-const ONDAS = [0.12, 0.26, 0.4] as const;
+/** Em que momento do ciclo o veículo chega à borda do mapa (`entrada-veiculo`). */
+const CHEGADA_NO_CICLO = 0.55;
 
-/** Meia abertura de cada onda, em graus. */
-const ABERTURA_DAS_ONDAS = 38;
+/** Em quantos pedaços o rastro é dividido, todos do mesmo comprimento. */
+const PEDACOS_DO_RASTRO = 260;
+
+/** O comprimento do rastro, em fração da rota. */
+const CAUDA = 0.38;
+
+/** A opacidade do rastro colado no veículo, e a curva com que ela cai. */
+const OPACIDADE_NA_PONTA = 0.9;
+const CURVA_DA_CAUDA = 1.6;
+
+/** Até onde a cintilada da divisa vai, em fração da distância até a borda. */
+const ALCANCE_DA_CINTILADA = 0.85;
+
+/** A largura da faixa que leva a cintilada, centrada na linha: folga para o
+ *  `drop-shadow` dos brilhos não ser cortado dos lados. */
+const LARGURA_DA_DIVISA = 40;
 
 type Etiqueta = {
   id: string;
@@ -72,8 +100,6 @@ type Geometria = {
   mapa: Caixa;
   /** Onde a rota termina: a borda direita do mapa, na altura do ponto da marca. */
   chegada: Ponto;
-  /** O ponto da marca, onde as ondas miram. */
-  alvo: Ponto;
 };
 
 type Marcos = {
@@ -136,12 +162,93 @@ function tracado(g: Geometria): string {
   );
 }
 
-/** Arco de onda de rádio com centro na chegada, abrindo para a marca. */
-function onda(centro: Ponto, raio: number): string {
-  const a = (ABERTURA_DAS_ONDAS * Math.PI) / 180;
-  const x = centro.x + raio * Math.cos(a);
-  const dy = raio * Math.sin(a);
-  return `M${fixo(x)} ${fixo(centro.y - dy)}A${fixo(raio)} ${fixo(raio)} 0 0 1 ${fixo(x)} ${fixo(centro.y + dy)}`;
+type Pedaco = {
+  /** O grupo do pedaço: o `stroke-opacity` dele vale para o brilho e o traço. */
+  el: SVGGElement;
+  /** O meio do pedaço, em fração da rota. */
+  meio: number;
+  /** Metade do comprimento do pedaço, em fração da rota. */
+  meia: number;
+  /** A opacidade escrita por último, para não mexer no DOM à toa. */
+  atual: number;
+};
+
+const SVG = "http://www.w3.org/2000/svg";
+
+/**
+ * Corta a rota em `PEDACOS_DO_RASTRO` pedaços do mesmo comprimento, cada um
+ * com a própria opacidade. É o que deixa o degradê do rastro contínuo: camadas
+ * empilhadas ou um traço com várias opacidades mostram degraus.
+ *
+ * Cada pedaço segue a curva (pontos tirados com `getPointAtLength`) e tem
+ * ponta reta, porque a redonda sobrepõe o vizinho e a transparência soma na
+ * emenda. Para as pontas retas de dois vizinhos se encaixarem nas esquinas,
+ * cada pedaço começa e termina com um passo minúsculo na direção da própria
+ * rota: a ponta reta fica perpendicular à rota ali, a mesma nos dois lados.
+ *
+ * Os elementos são criados aqui, fora do React: são centenas, mudam de
+ * opacidade a cada quadro, e um re-render por quadro custaria caro.
+ */
+function montarRastro(grupo: SVGGElement, caminho: SVGPathElement): Pedaco[] {
+  grupo.replaceChildren();
+  const total = caminho.getTotalLength();
+  if (!total) return [];
+  const passo = total / PEDACOS_DO_RASTRO;
+  const tangente = Math.min(0.3, passo / 4);
+  const em = (s: number) => {
+    const q = caminho.getPointAtLength(limita(s, 0, total));
+    return `${q.x.toFixed(2)} ${q.y.toFixed(2)}`;
+  };
+  const fragmento = document.createDocumentFragment();
+  const pedacos: Pedaco[] = [];
+  for (let k = 0; k < PEDACOS_DO_RASTRO; k++) {
+    const inicio = k * passo;
+    const fim = (k + 1) * passo;
+    const d =
+      `M${em(inicio)}L${em(inicio + tangente)}L${em(inicio + passo / 2)}` +
+      `L${em(fim - tangente)}L${em(fim)}`;
+    const el = document.createElementNS(SVG, "g");
+    el.setAttribute("stroke-opacity", "0");
+    for (const classe of ["rota-rastro-brilho", "rota-rastro-traco"]) {
+      const p = document.createElementNS(SVG, "path");
+      p.setAttribute("class", classe);
+      p.setAttribute("d", d);
+      el.appendChild(p);
+    }
+    fragmento.appendChild(el);
+    pedacos.push({ el, meio: (inicio + passo / 2) / total, meia: passo / 2 / total, atual: 0 });
+  }
+  grupo.appendChild(fragmento);
+  return pedacos;
+}
+
+/**
+ * Acende cada pedaço pela distância até a ponta do rastro: 0,9 colado no
+ * veículo, caindo em (1 − d/L)^1,6 até zero a `CAUDA` de distância.
+ *
+ * `ponta` é a fração da rota onde o veículo está, e passa de 1 depois que ele
+ * chega à borda: a cauda continua andando e entra na borda até sumir, sem
+ * deixar pedaço aceso parado no fim da rota. Na volta do ciclo, `ponta` cai
+ * para 0 e tudo apaga.
+ */
+function pintarRastro(pedacos: Pedaco[], ponta: number) {
+  for (const p of pedacos) {
+    const atras = ponta - p.meio;
+    let o = 0;
+    // O pedaço debaixo do veículo já acende; os da frente, não.
+    if (atras > -p.meia && atras < CAUDA) {
+      o = OPACIDADE_NA_PONTA * (1 - Math.max(atras, 0) / CAUDA) ** CURVA_DA_CAUDA;
+    }
+    o = Math.round(o * 1000) / 1000;
+    if (o !== p.atual) {
+      p.atual = o;
+      p.el.setAttribute("stroke-opacity", String(o));
+    }
+  }
+}
+
+function apagarRastro(pedacos: Pedaco[]) {
+  pintarRastro(pedacos, -1);
 }
 
 type Lado = "acima" | "abaixo" | "direita" | "esquerda";
@@ -238,8 +345,6 @@ function medir(
     altura: arredonda(r.height),
     mapa: caixaDoMapa,
     chegada: { x: caixaDoMapa.x + caixaDoMapa.largura, y: arredonda(y) },
-    // A borda esquerda do ponto, onde a onda mais longe ainda não encosta.
-    alvo: { x: arredonda(a.left - r.left + (PONTO.cx - PONTO.r) * escala), y: arredonda(yDoPonto) },
   };
 }
 
@@ -306,6 +411,9 @@ export function RotaDaEntrada({
   const [marcos, setMarcos] = useState<Marcos | null>(null);
   const svg = useRef<SVGSVGElement>(null);
   const medidor = useRef<SVGPathElement>(null);
+  const rastro = useRef<SVGGElement>(null);
+  const pedacos = useRef<Pedaco[]>([]);
+  const veiculo = useRef<SVGPathElement>(null);
 
   // `useEffect`, e não `useLayoutEffect`: este componente vem antes da coluna
   // do formulário na árvore, e no efeito de layout dele as refs da marca e do
@@ -363,103 +471,201 @@ export function RotaDaEntrada({
     });
   }, [d, geo]);
 
+  // Os pedaços do rastro, refeitos sempre que a rota muda. Apagados até o
+  // próximo quadro do rastro acender os certos.
+  useLayoutEffect(() => {
+    const grupo = rastro.current;
+    const caminho = medidor.current;
+    if (!grupo) return;
+    if (caminho && d) {
+      pedacos.current = montarRastro(grupo, caminho);
+    } else {
+      grupo.replaceChildren();
+      pedacos.current = [];
+    }
+  }, [d]);
+
+  // O rastro anda no relógio da animação de CSS do veículo
+  // (`entrada-veiculo`), e não num relógio próprio: assim ele fica colado no
+  // ponto mesmo depois que `useCicloDaEntrada` realinha as animações. A cada
+  // quadro, lê o progresso do ciclo (0 a 1) e muda só atributos, sem passar
+  // pelo React.
+  //
+  // O laço para quando não há o que mostrar: a aba oculta, quem pediu menos
+  // movimento, a tela estreita (a rota some até 900 px) e, claro, quando a
+  // tela de entrada sai, na desmontagem.
+  useEffect(() => {
+    const semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const estreita = window.matchMedia("(max-width: 900px)");
+    let quadro = 0;
+    let animacao: Animation | null = null;
+
+    const progresso = (): number | null => {
+      const el = veiculo.current;
+      if (!el || typeof el.getAnimations !== "function") return null;
+      if (!animacao || animacao.playState === "idle") {
+        const todas = el.getAnimations();
+        const temNome = typeof CSSAnimation !== "undefined";
+        animacao =
+          todas.find(
+            (a) => temNome && a instanceof CSSAnimation && a.animationName === "entrada-veiculo",
+          ) ??
+          todas[0] ??
+          null;
+      }
+      const p = animacao?.effect?.getComputedTiming().progress;
+      return typeof p === "number" ? p : null;
+    };
+
+    const desenhar = () => {
+      quadro = requestAnimationFrame(desenhar);
+      const p = progresso();
+      if (p === null) {
+        animacao = null;
+        apagarRastro(pedacos.current);
+        return;
+      }
+      pintarRastro(pedacos.current, p / CHEGADA_NO_CICLO);
+    };
+
+    const ligar = () => {
+      cancelAnimationFrame(quadro);
+      quadro = 0;
+      animacao = null;
+      if (document.hidden || semMovimento.matches || estreita.matches) {
+        apagarRastro(pedacos.current);
+        return;
+      }
+      quadro = requestAnimationFrame(desenhar);
+    };
+
+    ligar();
+    document.addEventListener("visibilitychange", ligar);
+    semMovimento.addEventListener("change", ligar);
+    estreita.addEventListener("change", ligar);
+    return () => {
+      cancelAnimationFrame(quadro);
+      document.removeEventListener("visibilitychange", ligar);
+      semMovimento.removeEventListener("change", ligar);
+      estreita.removeEventListener("change", ligar);
+    };
+  }, []);
+
   // Os elementos existem desde a primeira pintura, mesmo antes da medida, e
   // nunca são recriados: uma animação de CSS recomeça quando o elemento nasce,
   // e um pino recriado a cada redimensionamento sairia do compasso.
   const fora: Ponto = { x: -100, y: -100 };
   const largura = geo?.largura ?? 0;
   const altura = geo?.altura ?? 0;
-  const vao = geo ? geo.alvo.x - geo.chegada.x : 0;
+
+  // A cintilada da divisa: uma faixa estreita em cima da linha entre o mapa e
+  // a coluna, da altura do mapa, que corta os brilhos na borda da tela. As
+  // distâncias vão em variáveis de CSS, e o `transform` do keyframe as lê.
+  // O brilho de 2 px fica centrado na borda do mapa: um pixel no mapa e um na
+  // linha. Todo na linha, no tema claro ele seria branco sobre quase branco.
+  const divisa: CSSProperties = geo
+    ? ({
+        left: `${geo.chegada.x - LARGURA_DA_DIVISA / 2}px`,
+        top: `${geo.mapa.y}px`,
+        height: `${geo.mapa.altura}px`,
+        "--contato": `${geo.chegada.y - geo.mapa.y}px`,
+        "--subida": `${fixo(ALCANCE_DA_CINTILADA * (geo.chegada.y - geo.mapa.y))}px`,
+        "--descida": `${fixo(ALCANCE_DA_CINTILADA * (geo.mapa.y + geo.mapa.altura - geo.chegada.y))}px`,
+      } as CSSProperties)
+    : {};
 
   return (
-    <svg
-      ref={svg}
-      className={`rota${geo && marcos ? "" : " rota-sem-medida"}`}
-      width={largura}
-      height={altura}
-      viewBox={`0 0 ${largura} ${altura}`}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path ref={medidor} className="rota-medida" d={d} />
+    <>
+      <svg
+        ref={svg}
+        className={`rota${geo && marcos ? "" : " rota-sem-medida"}`}
+        width={largura}
+        height={altura}
+        viewBox={`0 0 ${largura} ${altura}`}
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path ref={medidor} className="rota-medida" d={d} />
 
-      <g className="rota-some">
-        <g className="rota-linha">
-          <path className="rota-brilho-largo" d={d} pathLength={100} />
-          <path className="rota-brilho" d={d} pathLength={100} />
-          <path className="rota-traco" d={d} pathLength={100} />
+        {/* A estrada: a rota inteira, apagada, sempre lá. */}
+        <path className="rota-estrada" d={d} />
+
+        {/* O rastro: os pedaços nascem em `montarRastro`, fora do React. */}
+        <g ref={rastro} className="rota-rastro" />
+
+        <g className="rota-some">
+          {PINOS.map((_, i) => {
+            const p = marcos?.pinos[i] ?? fora;
+            return (
+              <g key={i} transform={`translate(${fixo(p.x)} ${fixo(p.y)})`}>
+                <g className={`rota-pino rota-pino-${i + 1}`}>
+                  {i === 2 && (
+                    <g className="rota-radar">
+                      <circle className="rota-radar-anel" r={26} />
+                      <path className="rota-radar-feixe" d="M0 0L26 0A26 26 0 0 0 13 -22.5Z" />
+                    </g>
+                  )}
+                  <circle className="rota-pulso" r={9} />
+                  <circle className="rota-pino-miolo" r={5} />
+                </g>
+              </g>
+            );
+          })}
+
+          {ETIQUETAS.map((e, i) => {
+            const m = marcos?.etiquetas[i];
+            const caixa = m?.caixa ?? { ...fora, largura: 0, altura: ALTURA_DA_ETIQUETA };
+            const ponto = m?.ponto ?? fora;
+            const ancora = m?.ancora ?? fora;
+            return (
+              <g
+                key={e.id}
+                className={`rota-etiqueta rota-etiqueta-${e.id}`}
+                visibility={m && !m.cabe ? "hidden" : undefined}
+              >
+                <line
+                  className="rota-etiqueta-fio"
+                  x1={fixo(ponto.x)}
+                  y1={fixo(ponto.y)}
+                  x2={fixo(ancora.x)}
+                  y2={fixo(ancora.y)}
+                />
+                <g transform={`translate(${fixo(caixa.x)} ${fixo(caixa.y)})`}>
+                  <rect
+                    className="rota-etiqueta-caixa"
+                    width={fixo(caixa.largura)}
+                    height={caixa.altura}
+                    rx={4}
+                  />
+                  <text className="rota-etiqueta-texto" x={RESPIRO_DA_ETIQUETA} y={13.6}>
+                    <tspan className="rota-etiqueta-chave">{e.chave}</tspan> {e.valor}
+                  </text>
+                </g>
+              </g>
+            );
+          })}
         </g>
 
-        {PINOS.map((_, i) => {
-          const p = marcos?.pinos[i] ?? fora;
-          return (
-            <g key={i} transform={`translate(${fixo(p.x)} ${fixo(p.y)})`}>
-              <g className={`rota-pino rota-pino-${i + 1}`}>
-                {i === 2 && (
-                  <g className="rota-radar">
-                    <circle className="rota-radar-anel" r={26} />
-                    <path className="rota-radar-feixe" d="M0 0L26 0A26 26 0 0 0 13 -22.5Z" />
-                  </g>
-                )}
-                <circle className="rota-pulso" r={9} />
-                <circle className="rota-pino-miolo" r={5} />
-              </g>
-            </g>
-          );
-        })}
+        {/* O veículo: um traço de comprimento zero com ponta redonda, que anda
+            pelo caminho em velocidade constante. É o relógio do rastro. */}
+        <g className="rota-veiculo">
+          <path className="rota-veiculo-brilho" d={d} pathLength={100} />
+          <path ref={veiculo} className="rota-veiculo-miolo" d={d} pathLength={100} />
+        </g>
+      </svg>
 
-        {ETIQUETAS.map((e, i) => {
-          const m = marcos?.etiquetas[i];
-          const caixa = m?.caixa ?? { ...fora, largura: 0, altura: ALTURA_DA_ETIQUETA };
-          const ponto = m?.ponto ?? fora;
-          const ancora = m?.ancora ?? fora;
-          return (
-            <g
-              key={e.id}
-              className={`rota-etiqueta rota-etiqueta-${e.id}`}
-              visibility={m && !m.cabe ? "hidden" : undefined}
-            >
-              <line
-                className="rota-etiqueta-fio"
-                x1={fixo(ponto.x)}
-                y1={fixo(ponto.y)}
-                x2={fixo(ancora.x)}
-                y2={fixo(ancora.y)}
-              />
-              <g transform={`translate(${fixo(caixa.x)} ${fixo(caixa.y)})`}>
-                <rect
-                  className="rota-etiqueta-caixa"
-                  width={fixo(caixa.largura)}
-                  height={caixa.altura}
-                  rx={4}
-                />
-                <text className="rota-etiqueta-texto" x={RESPIRO_DA_ETIQUETA} y={13.6}>
-                  <tspan className="rota-etiqueta-chave">{e.chave}</tspan> {e.valor}
-                </text>
-              </g>
-            </g>
-          );
-        })}
-
-        {ONDAS.map((f, i) => {
-          const raio = Math.max(vao * f, 2);
-          const centro = geo?.chegada ?? fora;
-          const dOnda = vao > 12 ? onda(centro, raio) : "";
-          return (
-            <g key={f} className={`rota-onda rota-onda-${i + 1}`}>
-              <path className="rota-onda-brilho" d={dOnda} />
-              <path className="rota-onda-traco" d={dOnda} />
-            </g>
-          );
-        })}
-      </g>
-
-      {/* O veículo: um traço de comprimento zero com ponta redonda, que anda
-          pelo mesmo caminho e no mesmo tempo em que a linha se desenha. */}
-      <g className="rota-veiculo">
-        <path className="rota-veiculo-brilho" d={d} pathLength={100} />
-        <path className="rota-veiculo-miolo" d={d} pathLength={100} />
-      </g>
-    </svg>
+      {/* A cintilada na linha entre o mapa e a coluna: dois brilhos saem do
+          ponto onde o veículo encosta, um subindo e outro descendo. Em HTML,
+          e não no SVG: um filtro de SVG em unidades de % não desenha numa
+          linha vertical de largura zero, e o `drop-shadow` do CSS desenha. */}
+      <div
+        className={`rota-divisa${geo ? "" : " rota-sem-medida"}`}
+        style={divisa}
+        aria-hidden="true"
+      >
+        <span className="rota-divisa-brilho rota-divisa-sobe" />
+        <span className="rota-divisa-brilho rota-divisa-desce" />
+      </div>
+    </>
   );
 }

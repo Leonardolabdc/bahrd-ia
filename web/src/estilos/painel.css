@@ -1536,19 +1536,25 @@ kbd {
    `useCicloDaEntrada` põe todas no mesmo relógio; por isso o prefixo
    `entrada-` em todo keyframe.
 
-     0 a 55%    a rota se desenha e o veículo percorre o caminho
-     55 a 60%   as ondas de rádio aparecem, uma de cada vez
+     0 a 55%    o veículo percorre a rota, com o rastro aceso atrás dele
+     55%        o veículo encosta na divisa entre o mapa e a coluna
+     55 a 75%   dois brilhos saem dali pela divisa, um sobe e outro desce;
+                o rastro termina de entrar na borda e some (~76%)
      61 a 66%   a marca acende de dentro para fora: ponto, arco pequeno,
                 arco grande
      77%        o brilho da marca baixa, uma vez
      84%        o brilho volta
-     80 a 96%   a rota some aos poucos
+     80 a 96%   pinos e etiquetas somem aos poucos
      97%        a marca apaga e o ciclo recomeça
 
+   O rastro é o único movimento que não é CSS: o `RotaDaEntrada` o pinta a
+   cada quadro, lendo o relógio da animação do veículo.
+
    Sem movimento (`prefers-reduced-motion: reduce`) vale o estado de fora das
-   media queries: rota desenhada, pinos e etiquetas parados, marca normal, sem
-   brilho, sem ondas e sem o veículo. As animações só existem dentro de
-   `prefers-reduced-motion: no-preference`, como no resto do painel. */
+   media queries: a estrada desenhada, pinos e etiquetas parados, marca
+   normal, sem brilho, sem rastro, sem cintilada e sem o veículo. As animações
+   só existem dentro de `prefers-reduced-motion: no-preference`, como no resto
+   do painel. */
 .login-conferindo { min-height: 100vh; display: grid; place-items: center; }
 
 .entrada {
@@ -1590,8 +1596,8 @@ kbd {
 .arte-praca { fill: var(--arte-praca); }
 
 /* ---------------------------------------------------------------- a rota */
-/* Por cima da tela inteira, e não só do mapa: as ondas ficam no vão entre a
-   borda do mapa e a marca, já na coluna do formulário. Sem clique. */
+/* Por cima da tela inteira, e não só do mapa, no mesmo sistema de
+   coordenadas da cintilada da divisa. Sem clique. */
 .rota {
   position: absolute; top: 0; left: 0; z-index: 2;
   overflow: visible; pointer-events: none;
@@ -1599,13 +1605,21 @@ kbd {
 .rota-sem-medida { visibility: hidden; }
 .rota-medida { fill: none; stroke: none; }
 
-/* O brilho da linha são três traços empilhados, do mais largo e apagado ao
-   miolo. Sem `filter`: a linha se redesenha a cada quadro, e um desfoque do
-   tamanho da tela a cada quadro custa caro no notebook do plantão. */
-.rota-linha path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.rota-brilho-largo { stroke: color-mix(in srgb, var(--marca) 16%, transparent); stroke-width: 14; }
-.rota-brilho { stroke: color-mix(in srgb, var(--marca) 42%, transparent); stroke-width: 6; }
-.rota-traco { stroke: var(--marca); stroke-width: 2.5; }
+/* A estrada: a rota inteira, bem apagada, sempre desenhada. */
+.rota-estrada {
+  fill: none; stroke: var(--marca); stroke-width: 2.5; stroke-opacity: 0.16;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* O rastro: centenas de pedaços, cada um com o próprio `stroke-opacity`
+   (atributo no grupo do pedaço, posto pelo `RotaDaEntrada` a cada quadro),
+   que vale para o brilho e o traço juntos: o alfa da cor do brilho se
+   multiplica por ele. Ponta reta, e não redonda: a redonda sobrepõe o
+   vizinho e a transparência soma na emenda, virando um colar de contas.
+   Sem `filter`: o rastro muda a cada quadro, e um desfoque do tamanho do
+   mapa a cada quadro custa caro no notebook do plantão. */
+.rota-rastro path { fill: none; stroke-linecap: butt; stroke-linejoin: round; }
+.rota-rastro-brilho { stroke: color-mix(in srgb, var(--marca) 30%, transparent); stroke-width: 8; }
+.rota-rastro-traco { stroke: var(--marca); stroke-width: 2.5; }
 
 /* Pino, pulso e radar giram e crescem em volta do próprio centro. Tudo neles
    é desenhado simétrico em torno do (0, 0) do grupo que os posiciona, então a
@@ -1627,11 +1641,9 @@ kbd {
 }
 .rota-etiqueta-chave { fill: var(--arte-texto-2); font-weight: 700; letter-spacing: 0.08em; }
 
-/* Ondas e veículo só existem em movimento: parados, não diriam nada. */
-.rota-onda, .rota-veiculo { display: none; }
-.rota-onda path, .rota-veiculo path { fill: none; stroke-linecap: round; }
-.rota-onda-brilho { stroke: color-mix(in srgb, var(--marca) 25%, transparent); stroke-width: 7; }
-.rota-onda-traco { stroke: var(--marca); stroke-width: 2.2; }
+/* O veículo só existe em movimento: parado, não diria nada. */
+.rota-veiculo { display: none; }
+.rota-veiculo path { fill: none; stroke-linecap: round; }
 /* O veículo é um traço de comprimento quase zero com ponta redonda: vira um
    ponto, e anda pelo caminho mexendo só no `stroke-dashoffset`. Com o
    `pathLength="100"` do SVG, os números aqui são porcentagem do caminho. */
@@ -1639,6 +1651,29 @@ kbd {
 .rota-veiculo-brilho {
   stroke: color-mix(in srgb, var(--marca) 55%, transparent);
   stroke-width: 18; stroke-dasharray: 0.001 1000;
+}
+
+/* A cintilada na divisa: uma faixa de 40 px centrada na linha entre o mapa e
+   a coluna, da altura do mapa, posta pelo `RotaDaEntrada` (left, top e
+   height). Ela corta os brilhos na borda da tela; os 40 px de largura são a
+   folga do `drop-shadow`. Cada brilho é um traço de 2 × 180 px, transparente
+   nas pontas e branco no meio, que nasce centrado no ponto de contato
+   (--contato) e desliza até --subida ou --descida, 85% do caminho até a
+   borda. Em HTML, com o `drop-shadow` do CSS: um filtro de SVG em unidades de
+   % não desenha numa linha de largura zero. Parada, não aparece. */
+.rota-divisa {
+  position: absolute; z-index: 2; width: 40px;
+  overflow: hidden; pointer-events: none;
+}
+.rota-divisa-brilho {
+  position: absolute; left: 19px; top: calc(var(--contato, 0px) - 90px);
+  width: 2px; height: 180px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 100%
+  );
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45));
+  opacity: 0;
 }
 
 /* ------------------------------------------------------ a marca que acende */
@@ -1650,7 +1685,15 @@ kbd {
 /* As camadas acesas, uma por parte, no vermelho da marca. O brilho e a
    opacidade ficam aqui, no elemento HTML, e não dentro do SVG: com os dois no
    mesmo elemento SVG o Chrome não desenhava o brilho. */
-.logo-parte { color: var(--marca); opacity: 0; }
+.logo-parte {
+  color: var(--marca); opacity: 0;
+  /* Aceso e apagado com a mesma lista de funções, para o `filter`
+     interpolar de um para o outro em vez de saltar. */
+  --logo-aceso: brightness(1.15) saturate(1.05)
+    drop-shadow(0 0 3px rgba(255, 50, 50, 0.5)) drop-shadow(0 0 8px rgba(255, 40, 40, 0.28));
+  --logo-apagado: brightness(1) saturate(1)
+    drop-shadow(0 0 0 rgba(255, 50, 50, 0)) drop-shadow(0 0 0 rgba(255, 40, 40, 0));
+}
 
 /* ---------------------------------------------------------------- a coluna */
 .entrada-lado {
@@ -1659,6 +1702,9 @@ kbd {
   min-height: 100vh; min-height: 100dvh;
   padding: 18px 40px 22px 64px;
   background: var(--surface);
+  /* A divisa com o mapa: discreta, mas é nela que o veículo encosta e que a
+     cintilada corre. */
+  border-left: 1px solid var(--hairline);
 }
 .entrada-topo { display: flex; justify-content: flex-end; }
 .entrada-conteudo { width: 100%; max-width: 356px; margin: auto 0; padding: 24px 0 36px; }
@@ -1726,12 +1772,13 @@ kbd {
 }
 
 /* Até 900 px: o mapa vira uma faixa de 220 px no topo, e a rota some, com
-   pinos, ondas, etiquetas e veículo, para não brigar com o formulário. */
+   pinos, etiquetas, veículo, rastro e cintilada, para não brigar com o
+   formulário. A divisa lateral não existe mais: a coluna fica embaixo. */
 @media (max-width: 900px) {
   .entrada { grid-template-columns: minmax(0, 1fr); grid-template-rows: 220px auto; }
   .arte { min-height: 0; height: 220px; }
-  .rota { display: none; }
-  .entrada-lado { min-height: 0; padding: 12px 24px 22px; }
+  .rota, .rota-divisa { display: none; }
+  .entrada-lado { min-height: 0; padding: 12px 24px 22px; border-left: 0; }
   .entrada-conteudo { max-width: 400px; margin: 0 auto; padding: 8px 0 32px; }
   .entrada-pe { text-align: center; }
   .entrada-marca { margin-bottom: 26px; }
@@ -1755,25 +1802,17 @@ kbd {
   .login-giro { animation: login-gira 700ms linear infinite; }
   @keyframes login-gira { to { transform: rotate(360deg); } }
 
-  /* 0 a 55%: a linha se desenha em velocidade constante. É o `linear` que
-     deixa as frações de `RotaDaEntrada.tsx` virarem momentos do ciclo. */
-  .rota-linha path {
-    stroke-dasharray: 100 100;
-    animation: entrada-desenha var(--ciclo) linear infinite both;
-  }
-  @keyframes entrada-desenha {
-    0%        { stroke-dashoffset: 100; }
-    55%, 100% { stroke-dashoffset: 0; }
-  }
-  /* 80 a 96%: a rota some aos poucos, com pinos, etiquetas e ondas. */
+  /* 80 a 96%: pinos e etiquetas somem aos poucos. A estrada fica. */
   .rota-some { animation: entrada-rota-some var(--ciclo) ease-in-out infinite both; }
   @keyframes entrada-rota-some {
     0%, 80%   { opacity: 1; }
     96%, 100% { opacity: 0; }
   }
 
-  /* O veículo vai na ponta da linha, e some quando chega à borda do mapa: dali
-     em diante quem segue são as ondas. */
+  /* O veículo anda em velocidade constante de 0 a 55%: é o `linear` que deixa
+     as frações de `RotaDaEntrada.tsx` virarem momentos do ciclo, e é o
+     relógio desta animação que o rastro lê. Ao encostar na divisa ele entra
+     na borda e some logo, sem ficar parado no fim da rota. */
   .rota-veiculo { display: inline; animation: entrada-veiculo-some var(--ciclo) linear infinite both; }
   .rota-veiculo path { animation: entrada-veiculo var(--ciclo) linear infinite both; }
   @keyframes entrada-veiculo {
@@ -1783,7 +1822,7 @@ kbd {
   @keyframes entrada-veiculo-some {
     0%        { opacity: 0; }
     1%, 55%   { opacity: 1; }
-    58%, 100% { opacity: 0; }
+    56%, 100% { opacity: 0; }
   }
 
   /* Cada pino aparece quando a ponta da linha passa por ele: a 24, 47 e 68%
@@ -1824,75 +1863,45 @@ kbd {
   @keyframes entrada-etiqueta-ign    { 0%, 30.8%  { opacity: 0; } 32.2%, 100%  { opacity: 1; } }
   @keyframes entrada-etiqueta-bat    { 0%, 40.7%  { opacity: 0; } 42.1%, 100%  { opacity: 1; } }
 
-  /* 55 a 60%: as três ondas, da borda do mapa para a marca. */
-  .rota-onda { display: inline; }
-  .rota-onda-1 { animation: entrada-onda-1 var(--ciclo) ease-out infinite both; }
-  .rota-onda-2 { animation: entrada-onda-2 var(--ciclo) ease-out infinite both; }
-  .rota-onda-3 { animation: entrada-onda-3 var(--ciclo) ease-out infinite both; }
-  @keyframes entrada-onda-1 { 0%, 55%   { opacity: 0; } 56.5%, 100% { opacity: 1; } }
-  @keyframes entrada-onda-2 { 0%, 56.5% { opacity: 0; } 58%, 100%   { opacity: 1; } }
-  @keyframes entrada-onda-3 { 0%, 58%   { opacity: 0; } 60%, 100%   { opacity: 1; } }
+  /* 55 a 75%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
+     veículo encostou, devagar e fracos (no máximo 0,55), e somem antes de
+     chegar à borda. */
+  .rota-divisa-sobe  { animation: entrada-divisa-sobe var(--ciclo) ease-out infinite both; }
+  .rota-divisa-desce { animation: entrada-divisa-desce var(--ciclo) ease-out infinite both; }
+  @keyframes entrada-divisa-sobe {
+    0%, 55%    { opacity: 0; transform: translateY(0); }
+    58.5%, 65% { opacity: 0.55; }
+    75%, 100%  { opacity: 0; transform: translateY(calc(-1 * var(--subida, 0px))); }
+  }
+  @keyframes entrada-divisa-desce {
+    0%, 55%    { opacity: 0; transform: translateY(0); }
+    58.5%, 65% { opacity: 0.55; }
+    75%, 100%  { opacity: 0; transform: translateY(var(--descida, 0px)); }
+  }
 
-  /* 61 a 66%: a marca acende de dentro para fora. 77%: o brilho baixa; 84%:
-     volta; 97%: apaga. O vermelho do brilho é o --marca (#E3101A) escrito em
-     rgba, com as duas sombras sempre presentes, para o `filter` interpolar
-     entre listas do mesmo formato. */
+  /* 61 a 66%: a marca acende de dentro para fora, cada parte numa rampa de
+     2,2% do ciclo (~0,4 s) até 0,85, e não até o cheio. 77%: o brilho baixa
+     até 0,4; 84%: volta; 97%: apaga. Os filtros são os de `.logo-parte`. */
   .logo-parte-ponto        { animation: entrada-logo-ponto var(--ciclo) ease-in-out infinite both; }
   .logo-parte-arco-pequeno { animation: entrada-logo-arco-pequeno var(--ciclo) ease-in-out infinite both; }
   .logo-parte-arco-grande  { animation: entrada-logo-arco-grande var(--ciclo) ease-in-out infinite both; }
   @keyframes entrada-logo-ponto {
-    0%, 61% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
-    62.5%, 71%, 84%, 95.5% {
-      opacity: 1;
-      filter: drop-shadow(0 0 3px rgba(227, 16, 26, 0.9)) drop-shadow(0 0 12px rgba(227, 16, 26, 0.55));
-    }
-    77% {
-      opacity: 1;
-      filter: drop-shadow(0 0 1px rgba(227, 16, 26, 0.45)) drop-shadow(0 0 4px rgba(227, 16, 26, 0.15));
-    }
-    97%, 100% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
+    0%, 61%                { opacity: 0;    filter: var(--logo-apagado); }
+    63.2%, 71%, 84%, 95.5% { opacity: 0.85; filter: var(--logo-aceso); }
+    77%                    { opacity: 0.4;  filter: var(--logo-aceso); }
+    97%, 100%              { opacity: 0;    filter: var(--logo-apagado); }
   }
   @keyframes entrada-logo-arco-pequeno {
-    0%, 62.5% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
-    64%, 71%, 84%, 95.5% {
-      opacity: 1;
-      filter: drop-shadow(0 0 3px rgba(227, 16, 26, 0.9)) drop-shadow(0 0 12px rgba(227, 16, 26, 0.55));
-    }
-    77% {
-      opacity: 1;
-      filter: drop-shadow(0 0 1px rgba(227, 16, 26, 0.45)) drop-shadow(0 0 4px rgba(227, 16, 26, 0.15));
-    }
-    97%, 100% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
+    0%, 62.5%              { opacity: 0;    filter: var(--logo-apagado); }
+    64.7%, 71%, 84%, 95.5% { opacity: 0.85; filter: var(--logo-aceso); }
+    77%                    { opacity: 0.4;  filter: var(--logo-aceso); }
+    97%, 100%              { opacity: 0;    filter: var(--logo-apagado); }
   }
   @keyframes entrada-logo-arco-grande {
-    0%, 64.5% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
-    66%, 71%, 84%, 95.5% {
-      opacity: 1;
-      filter: drop-shadow(0 0 3px rgba(227, 16, 26, 0.9)) drop-shadow(0 0 12px rgba(227, 16, 26, 0.55));
-    }
-    77% {
-      opacity: 1;
-      filter: drop-shadow(0 0 1px rgba(227, 16, 26, 0.45)) drop-shadow(0 0 4px rgba(227, 16, 26, 0.15));
-    }
-    97%, 100% {
-      opacity: 0;
-      filter: drop-shadow(0 0 0 rgba(227, 16, 26, 0)) drop-shadow(0 0 0 rgba(227, 16, 26, 0));
-    }
+    0%, 64%                { opacity: 0;    filter: var(--logo-apagado); }
+    66.2%, 71%, 84%, 95.5% { opacity: 0.85; filter: var(--logo-aceso); }
+    77%                    { opacity: 0.4;  filter: var(--logo-aceso); }
+    97%, 100%              { opacity: 0;    filter: var(--logo-apagado); }
   }
 }
 
