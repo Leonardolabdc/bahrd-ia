@@ -3,7 +3,7 @@ import { api, ErroDaApi } from "../api";
 import { config } from "../config";
 import type { SessaoDoPainel } from "../tipos";
 import { ArteDaEntrada } from "./ArteDaEntrada";
-import { Lua, Olho, OlhoRiscado, Sol } from "./Icones";
+import { Olho, OlhoRiscado } from "./Icones";
 import { LogoQueAcende } from "./LogoQueAcende";
 import { RotaDaEntrada, useCicloDaEntrada } from "./RotaDaEntrada";
 
@@ -20,9 +20,10 @@ import { RotaDaEntrada, useCicloDaEntrada } from "./RotaDaEntrada";
  *
  * A arte é enfeite e nada mais: `aria-hidden`, sem foco, sem clique. Até
  * 900 px o mapa vira uma faixa no topo e a rota some. Para quem pediu menos
- * movimento ao sistema, a tela fica parada. Os tokens de cor e o botão de sol
- * e lua são os do painel, e o mapa continua escuro nos dois temas, de
- * propósito (ver «ENTRADA» em `painel.css`).
+ * movimento ao sistema, a tela fica parada. Os tokens de cor são os do painel,
+ * e o mapa continua escuro nos dois temas, de propósito (ver «ENTRADA» em
+ * `painel.css`). Aqui não há botão de tema: a entrada segue o tema escolhido
+ * no painel, ou o do sistema operacional, se nunca houve escolha.
  *
  * **O que ela não tem, de propósito:** "esqueci a senha" e cadastro. Os
  * usuários vêm da configuração do servidor (`PAINEL_USUARIOS`); quem perdeu a
@@ -50,13 +51,9 @@ function mensagemDe(erro: unknown): string {
 }
 
 export function Login({
-  tema,
-  aoAlternarTema,
   aoEntrar,
   aviso,
 }: {
-  tema: "claro" | "escuro";
-  aoAlternarTema: () => void;
   aoEntrar: (sessao: SessaoDoPainel) => void;
   /** Por que a pessoa voltou para cá: sessão expirada, servidor sem login… */
   aviso?: string;
@@ -144,18 +141,6 @@ export function Login({
       <RotaDaEntrada raiz={raiz} mapa={mapa} marca={marca} conteudo={conteudo} />
 
       <main className="entrada-lado">
-        <div className="entrada-topo">
-          <button
-            className="botao-icone"
-            type="button"
-            onClick={aoAlternarTema}
-            aria-label={tema === "escuro" ? "Mudar para o modo dia" : "Mudar para o modo noite"}
-            title={tema === "escuro" ? "Modo dia" : "Modo noite"}
-          >
-            {tema === "escuro" ? <Sol /> : <Lua />}
-          </button>
-        </div>
-
         <div className="entrada-conteudo" ref={conteudo}>
           {/* A mesma marca do cabeçalho, grande, onde a rota chega. Fora de
               produção, o selo do ambiente vem colado no nome: pequeno, mas

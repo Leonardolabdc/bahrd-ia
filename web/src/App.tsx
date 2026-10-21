@@ -495,8 +495,6 @@ export function App() {
   if (fase.nome === "login") {
     return (
       <Login
-        tema={tema}
-        aoAlternarTema={alterna}
         aviso={fase.aviso}
         aoEntrar={(sessao) => setFase({ nome: "painel", sessao })}
       />

@@ -1734,7 +1734,6 @@ kbd {
      cintilada corre. */
   border-left: 1px solid var(--hairline);
 }
-.entrada-topo { display: flex; justify-content: flex-end; }
 .entrada-conteudo { width: 100%; max-width: 450px; margin: auto 0; padding: 24px 0 60px; }
 
 /* A marca do cabeçalho, em tamanho grande: o glifo, "Bahrd", o risco e o nome. */
