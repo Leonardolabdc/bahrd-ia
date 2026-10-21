@@ -94,6 +94,13 @@ class _RedisFalso:
         self._conferir()
         return self.dados.get(chave)
 
+    async def getex(self, chave: str, *, ex: int | None = None) -> str | None:
+        """`GET` que também põe o prazo, como o `GETEX ... EX` do Redis 6.2+."""
+        self._conferir()
+        if chave in self.dados and ex is not None:
+            self.ttls[chave] = ex
+        return self.dados.get(chave)
+
     async def set(self, chave: str, valor: str, *, ex: int | None = None, nx: bool = False):
         self._conferir()
         if nx and chave in self.dados:
@@ -243,7 +250,8 @@ def test_login_certo_devolve_cookie_httponly_e_strict(cliente: TestClient) -> No
     assert "HttpOnly" in cookie
     assert "SameSite=strict" in cookie
     assert "Path=/" in cookie
-    assert f"Max-Age={12 * 3600}" in cookie
+    # O cookie é teto, não prazo: quem vence a sessão é o TTL do Redis.
+    assert f"Max-Age={sessoes_do_painel.PRAZO_DO_COOKIE_S}" in cookie
     # A API local é HTTP: cookie `Secure` lá não seria guardado.
     assert "Secure" not in cookie
 
@@ -275,7 +283,7 @@ def test_senha_errada_e_usuario_inexistente_respondem_igual(cliente: TestClient)
     inexistente = _entrar(cliente, "carla", "senha-errada-000")
 
     assert errada.status_code == inexistente.status_code == 401
-    assert errada.json() == inexistente.json() == {"detail": "Usuário ou senha inválidos."}
+    assert errada.json() == inexistente.json() == {"detail": "Usuário ou senha incorretos."}
     assert "set-cookie" not in errada.headers
     assert "set-cookie" not in inexistente.headers
 
@@ -412,7 +420,43 @@ def test_prazo_da_sessao_vem_da_configuracao(
 
     (chave,) = redis.chaves_do_painel()
     assert redis.ttls[chave] == 2 * 3600
-    assert f"Max-Age={2 * 3600}" in resposta.headers["set-cookie"]
+    # A configuração muda o prazo no Redis, não o teto do cookie.
+    assert f"Max-Age={sessoes_do_painel.PRAZO_DO_COOKIE_S}" in resposta.headers["set-cookie"]
+
+    # E a renovação devolve o prazo configurado, não as 12 h do padrão.
+    redis.ttls[chave] = 30
+    assert c.get("/painel/fila").status_code == 200
+    assert redis.ttls[chave] == 2 * 3600
+
+
+def test_cada_uso_renova_o_prazo_da_sessao(cliente: TestClient, redis: _RedisFalso) -> None:
+    """Doze horas **sem uso**, não doze horas desde o login: quem está no meio
+    de um plantão não pode cair no meio de um atendimento."""
+    _entrar(cliente, "beto", SENHA_OPERADOR)
+    (chave,) = redis.chaves_do_painel()
+
+    for rota in ("/painel/fila", "/painel/sessao", "/painel/encerrados"):
+        # Como se o tempo tivesse passado: faltam 30 s para vencer.
+        redis.ttls[chave] = 30
+        assert cliente.get(rota).status_code == 200, rota
+        assert redis.ttls[chave] == 12 * 3600, rota
+
+
+def test_requisicao_recusada_nao_renova_nada(cliente: TestClient, redis: _RedisFalso) -> None:
+    """Sem cookie, ou com token inventado, não há sessão para renovar, e nada
+    nasce no Redis."""
+    cliente.cookies.set(seguranca.COOKIE_SESSAO, "inventado-por-alguem")
+
+    assert cliente.get("/painel/fila").status_code == 401
+    assert redis.chaves_do_painel() == []
+    assert redis.ttls == {}
+
+
+def test_o_prazo_do_cookie_cobre_o_maior_prazo_de_sessao() -> None:
+    """Se o cookie vencesse antes do TTL, a sessão cairia mesmo em uso."""
+    maximo = Settings.model_fields["painel_sessao_horas"].metadata
+    teto_horas = next(m.le for m in maximo if getattr(m, "le", None) is not None)
+    assert sessoes_do_painel.PRAZO_DO_COOKIE_S >= teto_horas * 3600
 
 
 def test_token_inventado_e_401(cliente: TestClient) -> None:
@@ -489,11 +533,52 @@ def sem_disparar(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
 PEDIDO_DE_TESTE = {"tipo": "PANICO", "telefone": "+5541999999999"}
 
 
+ROTAS_DO_OPERADOR = (
+    "/painel/fila",
+    "/painel/estado",
+    "/painel/encerrados",
+    "/painel/desativados",
+    "/painel/numeros-removidos",
+)
+#: A Visão geral: números agregados de supervisão.
+ROTAS_DA_VISAO_GERAL = ("/painel/metricas", "/painel/reincidencia")
+
+
 def test_operador_ve_a_fila(cliente: TestClient) -> None:
     _entrar(cliente, "beto", SENHA_OPERADOR)
 
-    for rota in ("/painel/fila", "/painel/estado", "/painel/encerrados", "/painel/metricas"):
+    for rota in ROTAS_DO_OPERADOR:
         assert cliente.get(rota).status_code == 200, rota
+
+
+def test_operador_nao_ve_a_visao_geral(cliente: TestClient) -> None:
+    """O próprio painel dizia "em produção fica restrita ao supervisor". Agora
+    vale, e no servidor: esconder a aba não basta."""
+    _entrar(cliente, "beto", SENHA_OPERADOR)
+
+    for rota in ROTAS_DA_VISAO_GERAL:
+        resposta = cliente.get(rota)
+        assert resposta.status_code == 403, rota
+        assert resposta.json()["detail"] == "Esta função é só do perfil admin."
+
+
+def test_admin_ve_a_visao_geral(cliente: TestClient) -> None:
+    _entrar(cliente, "ana", SENHA_ADMIN)
+
+    for rota in (*ROTAS_DO_OPERADOR, *ROTAS_DA_VISAO_GERAL):
+        assert cliente.get(rota).status_code == 200, rota
+
+
+def test_visao_geral_sem_sessao_pede_login(cliente: TestClient) -> None:
+    """401 antes do 403: sem sessão, a resposta é "entre", não "não pode"."""
+    for rota in ROTAS_DA_VISAO_GERAL:
+        assert cliente.get(rota).status_code == 401, rota
+
+
+def test_visao_geral_e_de_admin_no_router() -> None:
+    for caminho in ROTAS_DA_VISAO_GERAL:
+        (rota,) = [r for r in painel.router.routes if r.path == caminho]
+        assert "exigir_admin" in [d.dependency.__name__ for d in rota.dependencies], caminho
 
 
 def test_operador_nao_usa_o_que_e_de_admin(cliente: TestClient, sem_disparar) -> None:
@@ -609,6 +694,8 @@ def test_desenvolvimento_sem_usuario_continua_aberto(
     c = _cliente(monkeypatch, PAINEL_TESTES_ATIVO="true")
 
     assert c.get("/painel/fila").status_code == 200
+    for rota in ROTAS_DA_VISAO_GERAL:
+        assert c.get(rota).status_code == 200, f"{rota}: sem login, a Visão geral abre"
     assert c.get("/painel/testes/catalogo").status_code == 200, "perfil tratado como admin"
     assert c.get("/painel/sessao").json() == {
         "usuario": None,

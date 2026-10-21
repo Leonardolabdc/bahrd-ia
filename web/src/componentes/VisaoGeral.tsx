@@ -263,7 +263,8 @@ function fracao(parte: number, total: number): number | null {
   return total > 0 ? parte / total : null;
 }
 
-/** Tela 4 — supervisão. Em produção fica restrita ao perfil de supervisor. */
+/** Tela 4 — supervisão. Só o perfil admin: para o operador a aba não aparece, e a
+ *  API responde 403 em `/painel/metricas` e `/painel/reincidencia`. */
 export function VisaoGeral({
   contagens,
   aoIrPara,
@@ -448,7 +449,7 @@ export function VisaoGeral({
 
       <p className="nota-papel nota-pe">
         <Info />
-        Tela de supervisão — em produção fica restrita ao perfil de supervisor.
+        Tela de supervisão: só o perfil admin vê estes números.
       </p>
     </main>
   );

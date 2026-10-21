@@ -161,8 +161,10 @@ class Settings(BaseSettings):
     #: ataque de dicionário offline contra quem escolheu senha fraca.
     painel_usuarios: SegredoOpcional = None
 
-    #: Quanto dura uma sessão do painel, em horas, contadas do login. Doze
-    #: cobre um plantão; depois disso, entra de novo.
+    #: Quanto dura uma sessão do painel **sem uso**, em horas. Cada requisição
+    #: autenticada renova o prazo, então quem está trabalhando não cai; doze
+    #: horas paradas, entra de novo. O teto de sete dias é o mesmo do cookie
+    #: (`sessoes_do_painel.PRAZO_DO_COOKIE_S`).
     painel_sessao_horas: int = Field(default=12, ge=1, le=24 * 7)
 
     _usuarios_do_painel: dict[str, UsuarioDoPainel] = PrivateAttr(default_factory=dict)

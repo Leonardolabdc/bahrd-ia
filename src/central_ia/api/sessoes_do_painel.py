@@ -11,8 +11,22 @@ para atacar.
 WhatsApp, e `persistence/sessoes_redis.py` varre `sessao:*` no boot para
 retomá-las. Uma sessão de login com esse prefixo seria lida como conversa.
 
-**Expira sozinha.** O TTL do Redis é o prazo da sessão (`PAINEL_SESSAO_HORAS`,
-contado do login). Não há faxina para rodar nem para esquecer.
+**Expira sozinha, e só sem uso.** O TTL do Redis é o prazo da sessão
+(`PAINEL_SESSAO_HORAS`), e cada requisição autenticada o põe de volta no
+máximo (`ler_e_renovar`, um `GETEX` só). Doze horas, então, são doze horas
+**sem uso**, e não doze horas desde o login: quem está no meio de um plantão
+não é posto para fora no meio de um atendimento. Não há faxina para rodar nem
+para esquecer.
+
+⚠️ O painel aberto recarrega a fila a cada 15 s, e isso também é uso: uma aba
+esquecida aberta mantém a sessão viva. Quem sai do plantão sai pelo menu do
+nome, que apaga a sessão na hora.
+
+**O cookie não é o prazo.** Renovar o `Max-Age` do cookie exigiria um
+`Set-Cookie` em toda resposta. Em vez disso o cookie sai com um teto longo e
+fixo (`PRAZO_DO_COOKIE_S`, sete dias, o mesmo máximo que `PAINEL_SESSAO_HORAS`
+aceita), e quem decide se a sessão vale é o TTL daqui. Um cookie que sobrevive
+à sessão não abre nada: o token dele já não está no Redis.
 """
 
 from __future__ import annotations
@@ -49,7 +63,13 @@ def _chave_das_tentativas(ip: str, usuario: str) -> str:
     return f"{PREFIXO_TENTATIVAS}{_sha256(f'{ip}|{usuario}')}"
 
 
+#: Prazo do cookie no navegador. Fixo e longo de propósito: ver o docstring
+#: do módulo. É também o teto de `PAINEL_SESSAO_HORAS` em `config.py`.
+PRAZO_DO_COOKIE_S = 7 * 24 * 3600
+
+
 def duracao_s(cfg: Settings) -> int:
+    """Quanto a sessão dura **sem uso**, em segundos."""
     return cfg.painel_sessao_horas * 3600
 
 
@@ -67,9 +87,15 @@ async def criar(cfg: Settings, *, usuario: str, perfil: str) -> str:
     return token
 
 
-async def ler(cfg: Settings, token: str) -> dict[str, str] | None:
-    """Os dados da sessão, ou `None` se não existe ou já expirou."""
-    bruto = await redis_bus.cliente(cfg).get(chave_da_sessao(token))
+async def ler_e_renovar(cfg: Settings, token: str) -> dict[str, str] | None:
+    """Os dados da sessão, ou `None` se não existe ou já expirou.
+
+    Lê e devolve o prazo ao máximo no mesmo comando (`GETEX`, Redis 6.2+; a
+    imagem é a 7). Em dois comandos, uma sessão que vencesse entre o `GET` e o
+    `EXPIRE` seria lida como válida e não renovada, e a próxima requisição
+    cairia sem motivo aparente.
+    """
+    bruto = await redis_bus.cliente(cfg).getex(chave_da_sessao(token), ex=duracao_s(cfg))
     if not bruto:
         return None
     try:

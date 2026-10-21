@@ -10,7 +10,8 @@ import { Marca } from "./componentes/Marca";
 import { EventosDeTeste } from "./componentes/EventosDeTeste";
 import { Ocorrencia } from "./componentes/Ocorrencia";
 import { VisaoGeral } from "./componentes/VisaoGeral";
-import { Grafico, Lua, Sair, Sol } from "./componentes/Icones";
+import { Grafico, Lua, Sol } from "./componentes/Icones";
+import { MenuDoUsuario } from "./componentes/MenuDoUsuario";
 import { CampoBusca } from "./componentes/CampoBusca";
 import { Login } from "./componentes/Login";
 import type { EstadoIA, Fila, Prontidao, SessaoDoPainel } from "./tipos";
@@ -158,13 +159,15 @@ function Painel({
       if (ev.key === "3") { setAba("encerrados"); setTela({ nome: "fila" }); }
       if (ev.key === "4") { setAba("desativados"); setTela({ nome: "fila" }); }
       if (ev.key === "5") { setAba("removidos"); setTela({ nome: "fila" }); }
-      if (ev.key === "6") { setAba("geral"); setTela({ nome: "fila" }); }
+      // A Visão geral é só do admin: para o operador o atalho não existe,
+      // como a aba. O servidor responderia 403 de qualquer jeito.
+      if (ev.key === "6" && ehAdmin) { setAba("geral"); setTela({ nome: "fila" }); }
       if (ev.key.toLowerCase() === "n") alterna();
       if (ev.key === "Escape") setTela({ nome: "fila" });
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
-  }, [alterna, enviandoTeste]);
+  }, [alterna, enviandoTeste, ehAdmin]);
 
   const degradado = prontidao !== null && prontidao.status !== "pronto";
   const iaAtiva = estado?.ia_ativa ?? true;
@@ -190,7 +193,9 @@ function Painel({
     { id: "encerrados", cor: "encerrados", rotulo: "Encerrados", contagem: encerrados },
     { id: "desativados", cor: "desativados", rotulo: "Desativação temporária", contagem: desativados },
     { id: "removidos", cor: "removidos", rotulo: "Números removidos", contagem: removidos },
-    { id: "geral", cor: "geral", rotulo: "Visão geral" },
+    // Números agregados de supervisão: só o admin. Para o operador a aba nem
+    // aparece, e `/painel/metricas` responde 403.
+    ...(ehAdmin ? [{ id: "geral" as const, cor: "geral", rotulo: "Visão geral" }] : []),
   ];
 
   const frase = degradado
@@ -272,24 +277,12 @@ function Painel({
               {tema === "escuro" ? <Sol /> : <Lua />}
             </button>
 
-            {/* Quem está aqui, e com que perfil. Só com login ligado: sem ele
-                (desenvolvimento sem PAINEL_USUARIOS) não há nome para mostrar
-                nem sessão de onde sair. */}
+            {/* Quem está aqui, e com que perfil: o nome abre o menu com o
+                «Sair». Só com login ligado: sem ele (desenvolvimento sem
+                PAINEL_USUARIOS) não há nome para mostrar nem sessão de onde
+                sair. */}
             {sessao.login_ativo && sessao.usuario && (
-              <>
-                <span className="topo-usuario">
-                  <span className="usuario-nome" title={`Conectado como ${sessao.usuario}`}>
-                    {sessao.usuario}
-                  </span>
-                  <span className={`selo-perfil selo-perfil-${sessao.perfil}`}>
-                    {ehAdmin ? "Admin" : "Operador"}
-                  </span>
-                </span>
-                <button className="botao-topo botao-sair" type="button" onClick={aoSair}>
-                  <Sair />
-                  Sair
-                </button>
-              </>
+              <MenuDoUsuario usuario={sessao.usuario} perfil={sessao.perfil} aoSair={aoSair} />
             )}
           </div>
         </div>
@@ -342,7 +335,7 @@ function Painel({
         />
       )}
 
-      {tela.nome === "fila" && aba === "geral" && (
+      {tela.nome === "fila" && aba === "geral" && ehAdmin && (
         <VisaoGeral contagens={contagens} aoIrPara={irPara} />
       )}
 
@@ -413,8 +406,14 @@ function Painel({
         <div className="quadro largo">
           <span>Painel do operador · POC de IA da Central Bahrd</span>
           <span style={{ marginLeft: "auto" }}>
-            <kbd>1</kbd> humano · <kbd>2</kbd> IA · <kbd>3</kbd> encerrados · <kbd>4</kbd> visão
-            geral · <kbd>N</kbd> noite · <kbd>Esc</kbd> voltar
+            <kbd>1</kbd> humano · <kbd>2</kbd> IA · <kbd>3</kbd> encerrados · <kbd>4</kbd>{" "}
+            desativação · <kbd>5</kbd> removidos ·{" "}
+            {ehAdmin && (
+              <>
+                <kbd>6</kbd> visão geral ·{" "}
+              </>
+            )}
+            <kbd>N</kbd> noite · <kbd>Esc</kbd> voltar
           </span>
         </div>
       </footer>

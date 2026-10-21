@@ -175,7 +175,9 @@ Log de outra execução, 33s: [docs/evidencias/rollback-2026-09-15.log](docs/evi
 
 > **O painel pede login.** Dois perfis, admin e operador, com usuários
 > definidos na configuração do servidor (`PAINEL_USUARIOS`), sem cadastro pela
-> tela, e a conferência acontece na API em cada requisição. Fechou a
+> tela, e a conferência acontece na API em cada requisição. O operador atende
+> as filas; a Visão geral e as telas de teste são do admin. A sessão vence
+> depois de 12 h sem uso. Fechou a
 > [lacuna 12 da auditoria](docs/auditoria-prototipo.md). O segredo da borda que
 > protege `/painel/*` continua valendo junto: é injetado pelo Caddy no caminho
 > servidor-a-servidor e **nunca chega ao navegador**. Em produção, sem usuário

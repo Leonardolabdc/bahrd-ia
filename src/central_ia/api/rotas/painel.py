@@ -644,6 +644,8 @@ async def obter_desativados() -> list[Desativado]:
 
 @router.get(
     "/reincidencia",
+    # Só admin: é a Visão geral, e a Visão geral é de supervisão.
+    dependencies=[Depends(exigir_admin)],
     response_model=list[EquipamentoReincidente],
     summary="Equipamentos que repetem o mesmo evento — candidatos a inspeção",
     description=(
@@ -714,12 +716,15 @@ def _contencao_por_hora(fechadas: Encerrados) -> list[int | None]:
 
 @router.get(
     "/metricas",
+    # Só admin. O operador recebe 403, e a aba nem aparece para ele.
+    dependencies=[Depends(exigir_admin)],
     response_model=Metricas,
     summary="Métricas de supervisão (contenção, latência, volume, escalonamentos)",
 )
 async def obter_metricas() -> Metricas:
-    """Em produção esta rota fica restrita ao perfil de supervisor — o operador
-    não vê números agregados enquanto atende."""
+    """Os números da Visão geral. Só o perfil admin: o operador não vê números
+    agregados enquanto atende. Com o login desligado (desenvolvimento sem
+    `PAINEL_USUARIOS`) o perfil é admin, e a rota abre como antes."""
     m = amostra.metricas()
 
     # A mesma função que a aba Encerrados usa — as duas telas contam a mesma

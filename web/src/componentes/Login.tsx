@@ -2,20 +2,32 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { api, ErroDaApi } from "../api";
 import { config } from "../config";
 import type { SessaoDoPainel } from "../tipos";
+import { ArteDaEntrada } from "./ArteDaEntrada";
 import { Lua, Olho, OlhoRiscado, Sol } from "./Icones";
-import { Marca } from "./Marca";
+import { LogoQueAcende } from "./LogoQueAcende";
+import { RotaDaEntrada, useCicloDaEntrada } from "./RotaDaEntrada";
 
 /**
- * A tela de login da Central IA.
+ * A tela de entrada da Central IA.
  *
- * É a primeira coisa que alguém vê do produto, então ela é o mesmo produto: a
- * marca do cabeçalho, a linha vermelha com o brilho, os mesmos tokens de cor e
- * o mesmo botão de sol e lua. Nada de identidade própria de "tela de login".
+ * Duas colunas. À esquerda, ocupando o resto da largura, um mapa de
+ * rastreamento em vetor (`ArteDaEntrada`), por onde anda uma rota no vermelho
+ * da marca (`RotaDaEntrada`) que termina na borda do mapa, na altura da marca
+ * do Bahrd. À direita, numa coluna de 480 px, a marca grande que acende quando
+ * o sinal chega (`LogoQueAcende`) e o formulário. Um sinal sai de um veículo,
+ * atravessa a cidade e chega à Central: é o que o sistema faz o dia inteiro.
+ *
+ * A arte é enfeite e nada mais: `aria-hidden`, sem foco, sem clique. Até
+ * 900 px o mapa vira uma faixa no topo e a rota some. Para quem pediu menos
+ * movimento ao sistema, a tela fica parada. Os tokens de cor e o botão de sol
+ * e lua são os do painel, e o mapa continua escuro nos dois temas, de
+ * propósito (ver «ENTRADA» em `painel.css`).
  *
  * **O que ela não tem, de propósito:** "esqueci a senha" e cadastro. Os
  * usuários vêm da configuração do servidor (`PAINEL_USUARIOS`); quem perdeu a
- * senha pede uma nova a quem administra o sistema. Um link que não leva a
- * lugar nenhum seria pior que link nenhum.
+ * senha pede uma nova a quem administra o sistema. Um botão que não leva a
+ * lugar nenhum seria pior que botão nenhum. Primeiro acesso também não: sem
+ * usuário configurado, o servidor nem liga o login.
  *
  * Os atalhos de teclado do painel (1 a 6, N, Esc) não existem aqui: o painel
  * nem está montado enquanto esta tela aparece, então digitar "n" no usuário
@@ -57,6 +69,12 @@ export function Login({
   const [ambiente, setAmbiente] = useState<string | null>(null);
   const campoUsuario = useRef<HTMLInputElement>(null);
   const campoSenha = useRef<HTMLInputElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
+  const mapa = useRef<HTMLDivElement>(null);
+  const marca = useRef<HTMLSpanElement>(null);
+  const conteudo = useRef<HTMLDivElement>(null);
+
+  useCicloDaEntrada(raiz);
 
   useEffect(() => {
     campoUsuario.current?.focus();
@@ -120,149 +138,143 @@ export function Login({
   const foraDeProducao = ambiente !== null && ambiente !== "prd-poc";
 
   return (
-    <div className="login">
-      <header className="topo">
-        <div className="faixa">
-          <div className="marca">
-            <Marca />
-            <span className="marca-logo">Bahrd</span>
-            <span className="marca-risco" aria-hidden="true" />
-            <span className="marca-nome">Central IA</span>
-          </div>
-          <div className="topo-dir">
-            <button
-              className="botao-icone"
-              type="button"
-              onClick={aoAlternarTema}
-              aria-label={tema === "escuro" ? "Mudar para o modo dia" : "Mudar para o modo noite"}
-              title={tema === "escuro" ? "Modo dia" : "Modo noite"}
-            >
-              {tema === "escuro" ? <Sol /> : <Lua />}
-            </button>
-          </div>
+    <div className="entrada" ref={raiz}>
+      <ArteDaEntrada ref={mapa} />
+      <RotaDaEntrada raiz={raiz} mapa={mapa} marca={marca} conteudo={conteudo} />
+
+      <main className="entrada-lado">
+        <div className="entrada-topo">
+          <button
+            className="botao-icone"
+            type="button"
+            onClick={aoAlternarTema}
+            aria-label={tema === "escuro" ? "Mudar para o modo dia" : "Mudar para o modo noite"}
+            title={tema === "escuro" ? "Modo dia" : "Modo noite"}
+          >
+            {tema === "escuro" ? <Sol /> : <Lua />}
+          </button>
         </div>
-      </header>
 
-      {/* A mesma linha vermelha do painel, com o mesmo brilho, vinda da mesma
-          regra de CSS. Aqui ela separa a marca do formulário, como lá separa
-          a marca das abas. */}
-      <div className="segmentos login-linha" aria-hidden="true" />
-
-      <main className="login-corpo">
-        <form className="login-cartao" onSubmit={enviar} noValidate aria-labelledby="login-titulo">
-          <div className="login-cab">
-            <h1 id="login-titulo" className="login-titulo">
-              Entrar no painel
-            </h1>
-            <p className="login-sub">
-              Use o usuário e a senha que a administração do sistema passou para você.
-            </p>
+        <div className="entrada-conteudo" ref={conteudo}>
+          {/* A mesma marca do cabeçalho, grande, onde a rota chega. */}
+          <div className="entrada-marca">
+            <LogoQueAcende ref={marca} />
+            <span className="entrada-marca-logo">Bahrd</span>
+            <span className="marca-risco entrada-marca-risco" aria-hidden="true" />
+            <span className="entrada-marca-nome">Central IA</span>
           </div>
 
-          {foraDeProducao && (
-            <p
-              className="login-ambiente"
-              title={`Ambiente de ${ambiente}. Nada aqui é atendimento real.`}
-            >
-              <span className="selo-ambiente">{ambiente.toUpperCase()}</span>
-              {NOME_DO_AMBIENTE[ambiente] ?? `Ambiente ${ambiente}`}
-            </p>
-          )}
+          <form className="login-form" onSubmit={enviar} noValidate aria-labelledby="login-titulo">
+            <div className="login-cab">
+              <h1 id="login-titulo" className="login-titulo">
+                Entrar
+              </h1>
+              <p className="login-sub">
+                Use o usuário e a senha que o administrador do painel passou para você.
+              </p>
+            </div>
 
-          <div className="campo login-campo">
-            <label className="campo-nome" htmlFor="login-usuario">
-              Usuário
-            </label>
-            <input
-              ref={campoUsuario}
-              id="login-usuario"
-              name="username"
-              type="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
-              aria-invalid={erro !== null}
-              aria-describedby={erro ? "login-erro" : undefined}
-              readOnly={enviando}
-            />
-          </div>
+            {foraDeProducao && (
+              <p
+                className="login-ambiente"
+                title={`Ambiente de ${ambiente}. Nada aqui é atendimento real.`}
+              >
+                <span className="selo-ambiente">{ambiente.toUpperCase()}</span>
+                {NOME_DO_AMBIENTE[ambiente] ?? `Ambiente ${ambiente}`}
+              </p>
+            )}
 
-          <div className="campo login-campo">
-            <label className="campo-nome" htmlFor="login-senha">
-              Senha
-            </label>
-            <div className="login-senha">
+            <div className="campo login-campo">
+              <label className="campo-nome" htmlFor="login-usuario">
+                Usuário
+              </label>
               <input
-                ref={campoSenha}
-                id="login-senha"
-                name="password"
-                type={mostrarSenha ? "text" : "password"}
-                autoComplete="current-password"
+                ref={campoUsuario}
+                id="login-usuario"
+                name="username"
+                type="text"
+                autoComplete="username"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                onKeyDown={conferirCapsLock}
-                onKeyUp={conferirCapsLock}
-                onBlur={() => setCapsLock(false)}
+                value={usuario}
+                onChange={(e) => setUsuario(e.target.value)}
                 aria-invalid={erro !== null}
-                aria-describedby={
-                  [erro ? "login-erro" : "", capsLock ? "login-caps" : ""].join(" ").trim() ||
-                  undefined
-                }
+                aria-describedby={erro ? "login-erro" : undefined}
                 readOnly={enviando}
               />
-              <button
-                type="button"
-                className="login-olho"
-                onClick={() => {
-                  setMostrarSenha((m) => !m);
-                  campoSenha.current?.focus();
-                }}
-                aria-label={mostrarSenha ? "Ocultar a senha" : "Mostrar a senha"}
-                aria-pressed={mostrarSenha}
-                aria-controls="login-senha"
-                title={mostrarSenha ? "Ocultar a senha" : "Mostrar a senha"}
-              >
-                {mostrarSenha ? <OlhoRiscado /> : <Olho />}
-              </button>
             </div>
-            {capsLock && (
-              <span id="login-caps" className="login-caps">
-                Caps Lock ligado
-              </span>
+
+            <div className="campo login-campo">
+              <label className="campo-nome" htmlFor="login-senha">
+                Senha
+              </label>
+              <div className="login-senha">
+                <input
+                  ref={campoSenha}
+                  id="login-senha"
+                  name="password"
+                  type={mostrarSenha ? "text" : "password"}
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  onKeyDown={conferirCapsLock}
+                  onKeyUp={conferirCapsLock}
+                  onBlur={() => setCapsLock(false)}
+                  aria-invalid={erro !== null}
+                  aria-describedby={
+                    [erro ? "login-erro" : "", capsLock ? "login-caps" : ""].join(" ").trim() ||
+                    undefined
+                  }
+                  readOnly={enviando}
+                />
+                <button
+                  type="button"
+                  className="login-olho"
+                  onClick={() => {
+                    setMostrarSenha((m) => !m);
+                    campoSenha.current?.focus();
+                  }}
+                  aria-label={mostrarSenha ? "Ocultar a senha" : "Mostrar a senha"}
+                  aria-pressed={mostrarSenha}
+                  aria-controls="login-senha"
+                  title={mostrarSenha ? "Ocultar a senha" : "Mostrar a senha"}
+                >
+                  {mostrarSenha ? <OlhoRiscado /> : <Olho />}
+                </button>
+              </div>
+              {capsLock && (
+                <span id="login-caps" className="login-caps">
+                  Caps Lock ligado
+                </span>
+              )}
+            </div>
+
+            {/* `role="alert"` para o leitor de tela anunciar sem a pessoa ter de
+                procurar. O texto é o `detail` da API, já em português. */}
+            {erro && (
+              <p id="login-erro" className="login-erro" role="alert">
+                {erro}
+              </p>
             )}
-          </div>
 
-          {/* `role="alert"` para o leitor de tela anunciar sem a pessoa ter de
-              procurar. O texto é o `detail` da API, já em português. */}
-          {erro && (
-            <p id="login-erro" className="login-erro" role="alert">
-              {erro}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className="btn btn-primario login-entrar"
-            disabled={enviando}
-            aria-busy={enviando}
-          >
-            {enviando && <span className="login-giro" aria-hidden="true" />}
-            {enviando ? "Entrando…" : "Entrar"}
-          </button>
-        </form>
-      </main>
-
-      <footer className="pe">
-        <div className="quadro largo">
-          <span>Painel do operador · POC de IA da Central Bahrd</span>
+            <button
+              type="submit"
+              className="btn btn-primario login-entrar"
+              disabled={enviando}
+              aria-busy={enviando}
+            >
+              {enviando && <span className="login-giro" aria-hidden="true" />}
+              {enviando ? "Entrando…" : "Entrar"}
+            </button>
+          </form>
         </div>
-      </footer>
+
+        <footer className="entrada-pe">Painel do operador · POC de IA da Central Bahrd</footer>
+      </main>
     </div>
   );
 }

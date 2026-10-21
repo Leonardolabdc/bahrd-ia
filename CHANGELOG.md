@@ -27,6 +27,12 @@ que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
   sessão em cookie `HttpOnly` guardada no Redis pelo hash do token, limite de
   tentativas, e só admin dispara evento de teste, troca o modelo ou simula.
   Em produção sem usuário, o painel fecha. Fecha a lacuna 12.
+- **Tela de entrada com desenho próprio.** Um mapa de rastreamento em vetor
+  à esquerda, com uma rota no vermelho da marca que termina na borda do mapa,
+  na altura da marca do Bahrd, e a marca acendendo em sequência (ponto, arco
+  pequeno, arco grande) num ciclo de 18 s. Parada para quem pediu menos
+  movimento ao sistema; em tela de até 900 px o mapa vira uma faixa no topo.
+- **Menu no nome do usuário**, no cabeçalho, com o perfil e o «Sair».
 
 ### Alterado
 - **Cabeçalho e abas na largura da Visão geral**, estado da IA em pílula,
@@ -37,6 +43,13 @@ que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
   do nome do sistema de origem do protótipo, que este projeto não usa.
 - As dependências do painel passam a ter versão exata no `package.json`,
   iguais às que o lock já instalava.
+- **A sessão do painel vale 12 h sem uso**, e não mais 12 h desde o login:
+  cada requisição autenticada renova o prazo no Redis. O cookie sai com um
+  teto fixo de sete dias; quem decide é o Redis.
+- **A Visão geral é só do admin.** `GET /painel/metricas` e
+  `GET /painel/reincidencia` respondem 403 ao operador, e a aba e o atalho
+  dela somem para ele. Com o login desligado, nada muda.
+- Login recusado agora diz «Usuário ou senha incorretos.»
 
 ### Corrigido
 - **A IA chamava o cliente de "Bruno".** Os prompts usavam esse nome como

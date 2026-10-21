@@ -13,11 +13,16 @@ navegador. É a credencial entre a borda e a API, não de uma pessoa.
 auditoria: antes, quem abria o site entrava. Agora cada pessoa entra com
 usuário e senha, definidos na configuração (`PAINEL_USUARIOS`, sem cadastro
 pela tela), e recebe um cookie `HttpOnly` com um token de sessão que o Redis
-guarda pelo hash (ver `api/sessoes_do_painel.py`). Dois perfis:
+guarda pelo hash (ver `api/sessoes_do_painel.py`). A sessão vale
+`PAINEL_SESSAO_HORAS` **sem uso**: cada requisição que passa por
+`exigir_sessao` renova o prazo. Dois perfis:
 
-* `operador` — a fila, as ocorrências, os encerrados, a Visão geral.
-* `admin` — tudo isso, mais o que muda o sistema ou manda mensagem de verdade:
-  a tela de eventos de teste, a troca de modelo e a simulação.
+* `operador` — a fila, as ocorrências, os encerrados, os desativados e os
+  números removidos: o que se usa para atender.
+* `admin` — tudo isso, mais a Visão geral (números agregados de supervisão:
+  `/painel/metricas` e `/painel/reincidencia`) e o que muda o sistema ou manda
+  mensagem de verdade: a tela de eventos de teste, a troca de modelo e a
+  simulação.
 
 A conferência é **no servidor**, em cada requisição. A tela esconde o que o
 operador não pode usar, mas quem decide é a dependência: esconder botão não é
@@ -161,6 +166,9 @@ async def exigir_sessao(request: Request) -> QuemEsta:
     O perfil vem da **configuração atual**, não do que foi gravado no login.
     Assim, tirar alguém de `PAINEL_USUARIOS` (ou rebaixar de admin para
     operador) e reiniciar a API vale na hora, sem esperar a sessão expirar.
+
+    Cada passagem por aqui renova o prazo da sessão no Redis: o prazo conta
+    a partir do último uso, não do login.
     """
     cfg = settings()
     usuarios = usuarios_ou_503(cfg)
@@ -174,11 +182,11 @@ async def exigir_sessao(request: Request) -> QuemEsta:
         raise _sem_sessao()
 
     try:
-        dados = await sessoes_do_painel.ler(cfg, token)
+        dados = await sessoes_do_painel.ler_e_renovar(cfg, token)
         usuario = usuarios.get(str(dados.get("usuario", ""))) if dados else None
         if dados is not None and usuario is None:
-            # Sessão de alguém que saiu da configuração: some agora, não daqui
-            # a doze horas.
+            # Sessão de alguém que saiu da configuração: some agora, e não
+            # depois de doze horas sem uso.
             await sessoes_do_painel.apagar(cfg, token)
     except (RedisError, OSError) as erro:
         raise redis_fora(erro) from erro
@@ -189,7 +197,8 @@ async def exigir_sessao(request: Request) -> QuemEsta:
 
 
 async def exigir_admin(quem: Annotated[QuemEsta, Depends(exigir_sessao)]) -> QuemEsta:
-    """403 para o operador. Disparar evento, trocar modelo e simular são de admin.
+    """403 para o operador. Visão geral, disparar evento, trocar modelo e
+    simular são de admin.
 
     `Depends(exigir_sessao)` aqui não confere a sessão duas vezes: o FastAPI
     guarda o resultado de cada dependência durante a requisição.

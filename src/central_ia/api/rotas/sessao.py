@@ -10,13 +10,18 @@ O token da borda (`X-Painel-Token`) continua valendo aqui também.
 
 As respostas:
 
-* `POST /painel/sessao` — 204 com o cookie; 401 "Usuário ou senha inválidos"
+* `POST /painel/sessao` — 204 com o cookie; 401 "Usuário ou senha incorretos"
   para usuário inexistente **e** para senha errada, com o mesmo custo de tempo;
   429 depois de cinco falhas em quinze minutos para o mesmo IP e usuário; 409
   fora de produção sem usuário configurado (não há login para fazer); 503 em
   produção sem usuário configurado, ou com o Redis fora.
 * `DELETE /painel/sessao` — 204 sempre: apaga a sessão, se houver, e o cookie.
-* `GET /painel/sessao` — `{usuario, perfil, login_ativo}`, ou 401.
+* `GET /painel/sessao` — `{usuario, perfil, login_ativo}`, ou 401. Como toda
+  rota que confere a sessão, renova o prazo dela.
+
+O prazo da sessão é o TTL no Redis, renovado a cada uso; o `Max-Age` do cookie
+é um teto longo e fixo, e não o prazo. O porquê está em
+`api/sessoes_do_painel.py`.
 """
 
 from __future__ import annotations
@@ -51,7 +56,7 @@ router = APIRouter(
 
 #: A mesma frase para usuário inexistente e senha errada. Dizer qual dos dois
 #: falhou entregaria, a quem testa nomes, a lista de quem existe.
-CREDENCIAIS_INVALIDAS = "Usuário ou senha inválidos."
+CREDENCIAIS_INVALIDAS = "Usuário ou senha incorretos."
 MUITAS_TENTATIVAS = "Muitas tentativas. Tente de novo em alguns minutos."
 LOGIN_DESLIGADO = (
     "O login está desligado neste ambiente: PAINEL_USUARIOS está vazio e o "
@@ -161,7 +166,9 @@ async def entrar(pedido: PedidoDeLogin, request: Request) -> Response:
     resposta.set_cookie(
         COOKIE_SESSAO,
         token,
-        max_age=sessoes_do_painel.duracao_s(cfg),
+        # Teto, não prazo: quem vence a sessão é o TTL do Redis, renovado a
+        # cada uso. Ver `sessoes_do_painel.PRAZO_DO_COOKIE_S`.
+        max_age=sessoes_do_painel.PRAZO_DO_COOKIE_S,
         path="/",
         httponly=True,
         samesite="strict",
