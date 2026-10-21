@@ -1698,11 +1698,15 @@ kbd {
   width: 2px; height: 180px;
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 100%
+    rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0) 100%
   );
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45));
   opacity: 0;
 }
+/* Cada brilho estica a partir do próprio centro: o ponto mais forte segue o
+   movimento, e o traço se espalha para os dois lados enquanto anda. É o que o
+   faz se dissipar numa faixa larga da linha em vez de só deslizar. */
+.rota-divisa-brilho { transform-origin: 50% 50%; }
 
 /* ------------------------------------------------------ a marca que acende */
 .logo-acende { position: relative; display: block; flex: none; width: 58px; height: 58px; color: var(--ink); }
@@ -1860,14 +1864,13 @@ kbd {
   .rota-radar-giro { animation: entrada-radar 6s linear infinite; }
   @keyframes entrada-radar { to { transform: rotate(360deg); } }
 
-  /* 55 a 78%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
-     veículo encostou e percorrem a linha inteira, um até a borda de cima e
-     outro até a de baixo: rápidos na saída e cada vez mais devagar (o
-     `cubic-bezier` do trecho de 55 a 78%). São duas animações em cada brilho,
-     porque o movimento e a opacidade têm curvas diferentes: a opacidade sobe
-     a 0,55 logo na saída e cai sem parar, em linha reta, até 0 no instante
-     em que o brilho chega à borda. Cada um anda a própria distância
-     (--subida e --descida), que não são iguais. */
+  /* 55 a 80%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
+     veículo encostou, um subindo e outro descendo, rápidos na saída e cada
+     vez mais devagar (o `cubic-bezier`). Enquanto andam, esticam até 2,6
+     vezes o comprimento e vão apagando: o traço se dissipa numa faixa larga
+     da linha e some antes da borda, a 85% da distância até ela. São duas
+     animações em cada brilho, porque o movimento e a opacidade têm curvas
+     diferentes. Cada um anda a própria distância (--subida e --descida). */
   .rota-divisa-sobe {
     animation:
       entrada-divisa-sobe var(--ciclo) linear infinite both,
@@ -1879,17 +1882,28 @@ kbd {
       entrada-divisa-brilho var(--ciclo) linear infinite both;
   }
   @keyframes entrada-divisa-sobe {
-    0%, 55%   { transform: translateY(0); animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1); }
-    78%, 100% { transform: translateY(calc(-1 * var(--subida, 0px))); }
+    0%, 55% {
+      transform: translateY(0) scaleY(1);
+      animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1);
+    }
+    80%, 100% { transform: translateY(calc(-0.85 * var(--subida, 0px))) scaleY(2.6); }
   }
   @keyframes entrada-divisa-desce {
-    0%, 55%   { transform: translateY(0); animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1); }
-    78%, 100% { transform: translateY(var(--descida, 0px)); }
+    0%, 55% {
+      transform: translateY(0) scaleY(1);
+      animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1);
+    }
+    80%, 100% { transform: translateY(calc(0.85 * var(--descida, 0px))) scaleY(2.6); }
   }
+  /* Acende rápido e apaga devagar, numa curva que vai amaciando: o fim do
+     rastro já espalhado some sem um corte. */
   @keyframes entrada-divisa-brilho {
     0%, 55%   { opacity: 0; }
-    56%       { opacity: 0.55; }
-    78%, 100% { opacity: 0; }
+    56.5%     { opacity: 0.55; }
+    62%       { opacity: 0.45; }
+    68%       { opacity: 0.28; }
+    74%       { opacity: 0.12; }
+    80%, 100% { opacity: 0; }
   }
 
   /* 61 a 66%: a marca acende de dentro para fora, cada parte numa rampa de
