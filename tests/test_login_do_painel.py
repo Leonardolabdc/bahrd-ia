@@ -442,6 +442,28 @@ def test_cada_uso_renova_o_prazo_da_sessao(cliente: TestClient, redis: _RedisFal
         assert redis.ttls[chave] == 12 * 3600, rota
 
 
+def test_atualizacao_automatica_confere_mas_nao_renova(
+    cliente: TestClient, redis: _RedisFalso
+) -> None:
+    """O recarregamento periódico do painel não é uso: sem esta regra, uma aba
+    esquecida aberta manteria a sessão viva para sempre."""
+    _entrar(cliente, "beto", SENHA_OPERADOR)
+    (chave,) = redis.chaves_do_painel()
+    automatica = {seguranca.CABECALHO_ATUALIZACAO: "automatica"}
+
+    redis.ttls[chave] = 30
+    assert cliente.get("/painel/fila", headers=automatica).status_code == 200
+    assert redis.ttls[chave] == 30, "a chamada automática não pode renovar o prazo"
+
+    # A próxima ação de quem está no painel, essa sim, renova.
+    assert cliente.get("/painel/fila").status_code == 200
+    assert redis.ttls[chave] == 12 * 3600
+
+    # E quando vence, a automática também cai: a aba esquecida fecha sozinha.
+    del redis.dados[chave]
+    assert cliente.get("/painel/fila", headers=automatica).status_code == 401
+
+
 def test_requisicao_recusada_nao_renova_nada(cliente: TestClient, redis: _RedisFalso) -> None:
     """Sem cookie, ou com token inventado, não há sessão para renovar, e nada
     nasce no Redis."""

@@ -12,15 +12,16 @@ WhatsApp, e `persistence/sessoes_redis.py` varre `sessao:*` no boot para
 retomá-las. Uma sessão de login com esse prefixo seria lida como conversa.
 
 **Expira sozinha, e só sem uso.** O TTL do Redis é o prazo da sessão
-(`PAINEL_SESSAO_HORAS`), e cada requisição autenticada o põe de volta no
-máximo (`ler_e_renovar`, um `GETEX` só). Doze horas, então, são doze horas
-**sem uso**, e não doze horas desde o login: quem está no meio de um plantão
-não é posto para fora no meio de um atendimento. Não há faxina para rodar nem
-para esquecer.
+(`PAINEL_SESSAO_HORAS`), e cada ação de quem está no painel o põe de volta no
+máximo (`ler`, com `renovar=True`, um `GETEX` só). Doze horas, então, são doze
+horas **sem uso**, e não doze horas desde o login: quem está no meio de um
+plantão não é posto para fora no meio de um atendimento. Não há faxina para
+rodar nem para esquecer.
 
-⚠️ O painel aberto recarrega a fila a cada 15 s, e isso também é uso: uma aba
-esquecida aberta mantém a sessão viva. Quem sai do plantão sai pelo menu do
-nome, que apaga a sessão na hora.
+**A atualização automática não conta como uso.** O painel recarrega a fila
+sozinho a cada poucos segundos e marca essas chamadas com o cabeçalho
+`X-Painel-Atualizacao: automatica`. Elas conferem a sessão sem renovar o prazo;
+sem isso, uma aba esquecida aberta manteria a sessão viva para sempre.
 
 **O cookie não é o prazo.** Renovar o `Max-Age` do cookie exigiria um
 `Set-Cookie` em toda resposta. Em vez disso o cookie sai com um teto longo e
@@ -87,15 +88,17 @@ async def criar(cfg: Settings, *, usuario: str, perfil: str) -> str:
     return token
 
 
-async def ler_e_renovar(cfg: Settings, token: str) -> dict[str, str] | None:
+async def ler(cfg: Settings, token: str, *, renovar: bool) -> dict[str, str] | None:
     """Os dados da sessão, ou `None` se não existe ou já expirou.
 
-    Lê e devolve o prazo ao máximo no mesmo comando (`GETEX`, Redis 6.2+; a
-    imagem é a 7). Em dois comandos, uma sessão que vencesse entre o `GET` e o
-    `EXPIRE` seria lida como válida e não renovada, e a próxima requisição
-    cairia sem motivo aparente.
+    Com `renovar`, lê e devolve o prazo ao máximo no mesmo comando (`GETEX`,
+    Redis 6.2+; a imagem é a 7). Em dois comandos, uma sessão que vencesse entre
+    o `GET` e o `EXPIRE` seria lida como válida e não renovada, e a próxima
+    requisição cairia sem motivo aparente. Sem `renovar`, só lê.
     """
-    bruto = await redis_bus.cliente(cfg).getex(chave_da_sessao(token), ex=duracao_s(cfg))
+    cliente = redis_bus.cliente(cfg)
+    chave = chave_da_sessao(token)
+    bruto = await (cliente.getex(chave, ex=duracao_s(cfg)) if renovar else cliente.get(chave))
     if not bruto:
         return None
     try:

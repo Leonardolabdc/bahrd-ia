@@ -57,9 +57,33 @@ export function aoPerderASessao(fazer: () => void): () => void {
  *  ninguém entrou ainda) e quem chama já trata. Não é sessão perdida. */
 const ROTA_DA_SESSAO = "/painel/sessao";
 
-function cabecalhos(comCorpo: boolean): Record<string, string> {
+/**
+ * Quanto tempo depois do último clique, tecla ou rolagem uma chamada ainda
+ * conta como uso do painel.
+ *
+ * A sessão vale 12 h **sem uso**, e o servidor só renova o prazo quando a
+ * chamada não vem marcada como automática. Várias telas se recarregam sozinhas
+ * (fila, Visão geral, desativados, conversa ao vivo); sem esta marca, uma aba
+ * esquecida aberta manteria a sessão viva para sempre. Medir a atividade aqui,
+ * e não em cada tela, cobre também a próxima tela que ganhar recarga.
+ */
+const ATIVIDADE_RECENTE_MS = 5 * 60 * 1000;
+let ultimaAtividade = Date.now();
+
+for (const evento of ["pointerdown", "keydown", "wheel", "touchstart"] as const) {
+  window.addEventListener(evento, () => (ultimaAtividade = Date.now()), {
+    capture: true,
+    passive: true,
+  });
+}
+
+function cabecalhos(caminho: string, comCorpo: boolean): Record<string, string> {
   const h: Record<string, string> = { Accept: "application/json" };
   if (comCorpo) h["Content-Type"] = "application/json";
+
+  if (caminho.startsWith("/painel/") && Date.now() - ultimaAtividade > ATIVIDADE_RECENTE_MS) {
+    h["X-Painel-Atualizacao"] = "automatica";
+  }
 
   // A API exige este cabeçalho em `/painel/*` quando `PAINEL_TOKEN` está
   // definido. É a credencial entre a borda e a API, não a de quem usa: em
@@ -90,7 +114,7 @@ async function detalheDe(resposta: Response): Promise<string> {
 async function chamar(caminho: string, metodo: string, corpo?: unknown): Promise<Response> {
   const resposta = await fetch(`${config.apiBaseUrl}${caminho}`, {
     method: metodo,
-    headers: cabecalhos(corpo !== undefined),
+    headers: cabecalhos(caminho, corpo !== undefined),
     body: corpo === undefined ? undefined : JSON.stringify(corpo),
     credentials: "include",
   });

@@ -64,6 +64,10 @@ log = logger(__name__)
 
 CABECALHO = "X-Painel-Token"
 
+#: Marca as chamadas que o painel faz sozinho, no recarregamento periódico.
+#: Com valor `automatica`, a sessão é conferida mas não renovada.
+CABECALHO_ATUALIZACAO = "X-Painel-Atualizacao"
+
 #: O cookie da sessão. `HttpOnly`: nenhum JavaScript da página o lê, então um
 #: script injetado não o leva embora. `SameSite=Strict`: o navegador não o
 #: manda em requisição que nasce em outro site, o que fecha CSRF sem token.
@@ -167,8 +171,10 @@ async def exigir_sessao(request: Request) -> QuemEsta:
     Assim, tirar alguém de `PAINEL_USUARIOS` (ou rebaixar de admin para
     operador) e reiniciar a API vale na hora, sem esperar a sessão expirar.
 
-    Cada passagem por aqui renova o prazo da sessão no Redis: o prazo conta
-    a partir do último uso, não do login.
+    Cada passagem por aqui renova o prazo da sessão no Redis, o prazo conta a
+    partir do último uso e não do login, menos quando a chamada é a
+    atualização automática do painel (`CABECALHO_ATUALIZACAO`): essa confere a
+    sessão sem renová-la, senão uma aba esquecida aberta nunca expiraria.
     """
     cfg = settings()
     usuarios = usuarios_ou_503(cfg)
@@ -182,7 +188,8 @@ async def exigir_sessao(request: Request) -> QuemEsta:
         raise _sem_sessao()
 
     try:
-        dados = await sessoes_do_painel.ler_e_renovar(cfg, token)
+        automatica = request.headers.get(CABECALHO_ATUALIZACAO, "").lower() == "automatica"
+        dados = await sessoes_do_painel.ler(cfg, token, renovar=not automatica)
         usuario = usuarios.get(str(dados.get("usuario", ""))) if dados else None
         if dados is not None and usuario is None:
             # Sessão de alguém que saiu da configuração: some agora, e não
