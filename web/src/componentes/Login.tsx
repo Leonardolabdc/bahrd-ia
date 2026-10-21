@@ -13,9 +13,10 @@ import { RotaDaEntrada, useCicloDaEntrada } from "./RotaDaEntrada";
  * Duas colunas. À esquerda, ocupando o resto da largura, um mapa de
  * rastreamento em vetor (`ArteDaEntrada`), por onde anda uma rota no vermelho
  * da marca (`RotaDaEntrada`) que termina na borda do mapa, na altura da marca
- * do Bahrd. À direita, numa coluna de 480 px, a marca grande que acende quando
- * o sinal chega (`LogoQueAcende`) e o formulário. Um sinal sai de um veículo,
- * atravessa a cidade e chega à Central: é o que o sistema faz o dia inteiro.
+ * do Bahrd. À direita, numa coluna de fundo liso, a marca grande que acende
+ * quando o sinal chega (`LogoQueAcende`) e o formulário. Um sinal sai de um
+ * veículo, atravessa a cidade e chega à Central: é o que o sistema faz o dia
+ * inteiro.
  *
  * A arte é enfeite e nada mais: `aria-hidden`, sem foco, sem clique. Até
  * 900 px o mapa vira uma faixa no topo e a rota some. Para quem pediu menos
@@ -156,33 +157,31 @@ export function Login({
         </div>
 
         <div className="entrada-conteudo" ref={conteudo}>
-          {/* A mesma marca do cabeçalho, grande, onde a rota chega. */}
+          {/* A mesma marca do cabeçalho, grande, onde a rota chega. Fora de
+              produção, o selo do ambiente vem colado no nome: pequeno, mas
+              antes do formulário, que é onde quem entra olha primeiro. */}
           <div className="entrada-marca">
             <LogoQueAcende ref={marca} />
             <span className="entrada-marca-logo">Bahrd</span>
             <span className="marca-risco entrada-marca-risco" aria-hidden="true" />
             <span className="entrada-marca-nome">Central IA</span>
+            {foraDeProducao && (
+              <span
+                className="selo-ambiente entrada-selo"
+                title={`${NOME_DO_AMBIENTE[ambiente] ?? `Ambiente ${ambiente}`}. Nada aqui é atendimento real.`}
+              >
+                <span aria-hidden="true">{ambiente.toUpperCase()}</span>
+                <span className="entrada-so-leitor">
+                  {NOME_DO_AMBIENTE[ambiente] ?? `Ambiente ${ambiente}`}
+                </span>
+              </span>
+            )}
           </div>
 
           <form className="login-form" onSubmit={enviar} noValidate aria-labelledby="login-titulo">
-            <div className="login-cab">
-              <h1 id="login-titulo" className="login-titulo">
-                Entrar
-              </h1>
-              <p className="login-sub">
-                Use o usuário e a senha que o administrador do painel passou para você.
-              </p>
-            </div>
-
-            {foraDeProducao && (
-              <p
-                className="login-ambiente"
-                title={`Ambiente de ${ambiente}. Nada aqui é atendimento real.`}
-              >
-                <span className="selo-ambiente">{ambiente.toUpperCase()}</span>
-                {NOME_DO_AMBIENTE[ambiente] ?? `Ambiente ${ambiente}`}
-              </p>
-            )}
+            <h1 id="login-titulo" className="login-titulo">
+              Entrar no painel
+            </h1>
 
             <div className="campo login-campo">
               <label className="campo-nome" htmlFor="login-usuario">
@@ -197,6 +196,7 @@ export function Login({
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
+                placeholder="seu usuário"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
                 aria-invalid={erro !== null}
@@ -273,7 +273,6 @@ export function Login({
           </form>
         </div>
 
-        <footer className="entrada-pe">Painel do operador · POC de IA da Central Bahrd</footer>
       </main>
     </div>
   );

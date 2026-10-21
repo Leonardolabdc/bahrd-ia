@@ -1,63 +1,80 @@
 import type { Ref } from "react";
+import { Marca } from "./Marca";
 
 /**
- * O mapa do fundo da tela de entrada: um bairro qualquer, visto de cima.
+ * O mapa do fundo da tela de entrada: uma cidade qualquer, vista de cima, à
+ * noite.
  *
- * Tudo em vetor e nada em imagem: o degradê e a grade de 40 px são CSS
+ * Tudo em vetor e nada em imagem: o fundo e a grade quase invisível são CSS
  * (`.arte` em `painel.css`), e as ruas são este SVG. Fica nítido em qualquer
  * densidade de tela e não custa requisição nenhuma.
+ *
+ * **Poucas ruas, finas e tortas.** Sete na vertical e seis na horizontal, com
+ * espaçamento irregular e uma curva leve cada uma. Ficam discretas de
+ * propósito: o que tem de chamar o olho é a rota.
  *
  * **As ruas se esticam, a espessura não.** O `viewBox` é 1000×1000 com
  * `preserveAspectRatio="none"`, então o desenho ocupa o mapa inteiro em
  * qualquer proporção, e `vector-effect: non-scaling-stroke` (no CSS) mantém
- * cada linha com a espessura em pixels que o CSS deu. As posições das ruas
- * principais são frações da largura e da altura, exportadas abaixo, e é por
- * elas que a rota (`RotaDaEntrada.tsx`) anda: ela cai em cima das ruas em
- * qualquer tamanho de janela.
+ * cada linha com a espessura em pixels que o CSS deu.
  *
- * Decorativo: `aria-hidden`, fora da ordem de foco e sem clique. O bairro não
+ * No rodapé esquerdo, a assinatura: a marca do Bahrd, o nome, um risco e
+ * "Central IA". É a `Marca` do cabeçalho, parada; a que acende fica na coluna
+ * do formulário, onde a rota chega.
+ *
+ * Decorativo: `aria-hidden`, fora da ordem de foco e sem clique. A cidade não
  * existe; não é mapa de lugar nenhum.
  */
 
-/** As ruas principais, em fração da largura (verticais) e da altura (horizontais). */
-export const RUAS_VERTICAIS = [0.07, 0.21, 0.37, 0.53, 0.69, 0.85] as const;
-export const RUAS_HORIZONTAIS = [0.13, 0.29, 0.46, 0.63, 0.81] as const;
+type Ponto = { x: number; y: number };
 
-/** Ruas menores, em trechos, no espaço 0–1000: quebram a grade regular. */
-const RUAS_MENORES = [
-  "M140 290V630",
-  "M290 0V460",
-  "M450 0V130",
-  "M450 460V1000",
-  "M610 130V630",
-  "M770 630V1000",
-  "M930 0V460",
-  "M210 210H690",
-  "M0 375H530",
-  "M370 545H1000",
-  "M0 720H370",
-  "M690 720H1000",
-  "M210 900H850",
-  "M530 60H1000",
+/**
+ * Uma curva suave que passa por todos os pontos (Catmull-Rom convertida em
+ * Bézier cúbica). Nas pontas, o vizinho que falta é o próprio ponto, e a
+ * curva sai e chega na direção do trecho seguinte.
+ *
+ * A rota (`RotaDaEntrada.tsx`) usa a mesma curva, para andar do mesmo jeito
+ * que as ruas.
+ */
+export function curvaSuave(pontos: Ponto[], casas = 1): string {
+  if (pontos.length < 2) return "";
+  const f = (n: number) => n.toFixed(casas);
+  const p = (i: number) => pontos[Math.min(Math.max(i, 0), pontos.length - 1)];
+  let d = `M${f(p(0).x)} ${f(p(0).y)}`;
+  for (let i = 0; i < pontos.length - 1; i++) {
+    const [a, b, c, e] = [p(i - 1), p(i), p(i + 1), p(i + 2)];
+    const c1 = { x: b.x + (c.x - a.x) / 6, y: b.y + (c.y - a.y) / 6 };
+    const c2 = { x: c.x - (e.x - b.x) / 6, y: c.y - (e.y - b.y) / 6 };
+    d += ` C${f(c1.x)} ${f(c1.y)} ${f(c2.x)} ${f(c2.y)} ${f(c.x)} ${f(c.y)}`;
+  }
+  return d;
+}
+
+/**
+ * As ruas, no espaço 0–1000, cada uma pelos pontos por onde passa. Começam e
+ * terminam um pouco fora do mapa, para a ponta não aparecer.
+ */
+const VERTICAIS: [number, number][][] = [
+  [[40, -20], [49, 330], [68, 660], [86, 1020]],
+  [[194, -20], [202, 300], [197, 640], [206, 1020]],
+  [[384, -20], [389, 360], [397, 700], [394, 1020]],
+  [[562, -20], [566, 280], [575, 620], [581, 1020]],
+  [[702, -20], [709, 380], [716, 680], [729, 1020]],
+  [[826, -20], [820, 300], [833, 720], [846, 1020]],
+  [[902, -20], [906, 420], [917, 760], [926, 1020]],
+];
+const HORIZONTAIS: [number, number][][] = [
+  [[-20, 46], [320, 52], [700, 40], [1020, 32]],
+  [[-20, 177], [330, 180], [660, 183], [1020, 208]],
+  [[-20, 413], [390, 444], [705, 386], [1020, 352]],
+  [[-20, 640], [300, 628], [640, 648], [1020, 612]],
+  [[-20, 880], [360, 873], [700, 866], [1020, 842]],
+  [[-20, 974], [420, 969], [1020, 956]],
 ];
 
-/** Avenidas: as que cortam o bairro na diagonal e em curva. */
-const AVENIDAS = [
-  "M0 960C180 820 300 760 420 700S760 520 1000 300",
-  "M600 1000L1000 650",
-  "M-40 430Q120 90 520 -40",
-];
-
-/** Um rio no canto, para o mapa não ser só grade. */
-const RIO = "M-20 250C120 230 190 120 300 60S430 -10 540 -40";
-
-/** Duas quadras de praça. */
-const PRACAS = [
-  { x: 378, y: 138, largura: 144, altura: 144 },
-  { x: 698, y: 638, largura: 144, altura: 164 },
-];
-
-const escala = (fracao: number) => fracao * 1000;
+const RUAS = [...VERTICAIS, ...HORIZONTAIS].map((pontos) =>
+  curvaSuave(pontos.map(([x, y]) => ({ x, y }))),
+);
 
 export function ArteDaEntrada({ ref }: { ref?: Ref<HTMLDivElement> }) {
   return (
@@ -68,30 +85,22 @@ export function ArteDaEntrada({ ref }: { ref?: Ref<HTMLDivElement> }) {
         preserveAspectRatio="none"
         focusable="false"
       >
-        {PRACAS.map((p) => (
-          <rect
-            key={`${p.x}-${p.y}`}
-            className="arte-praca"
-            x={p.x}
-            y={p.y}
-            width={p.largura}
-            height={p.altura}
-          />
-        ))}
-        <path className="arte-rio" d={RIO} />
-        {RUAS_MENORES.map((d) => (
+        {RUAS.map((d) => (
           <path key={d} className="arte-rua" d={d} />
         ))}
-        {AVENIDAS.map((d) => (
-          <path key={d} className="arte-avenida" d={d} />
-        ))}
-        {RUAS_VERTICAIS.map((x) => (
-          <path key={`v${x}`} className="arte-rua-principal" d={`M${escala(x)} 0V1000`} />
-        ))}
-        {RUAS_HORIZONTAIS.map((y) => (
-          <path key={`h${y}`} className="arte-rua-principal" d={`M0 ${escala(y)}H1000`} />
-        ))}
       </svg>
+
+      <div className="arte-assinatura">
+        <span className="arte-assinatura-marca">
+          <Marca />
+          <span className="arte-assinatura-logo">Bahrd</span>
+        </span>
+        <span className="arte-assinatura-risco" />
+        <span className="arte-assinatura-texto">
+          <strong>Central IA</strong>
+          <span>Monitoramento e rastreamento 24 h</span>
+        </span>
+      </div>
     </div>
   );
 }

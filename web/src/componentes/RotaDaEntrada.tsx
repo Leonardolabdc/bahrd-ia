@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -8,20 +9,20 @@ import {
   type RefObject,
 } from "react";
 import { LADO_DA_MARCA, PONTO } from "./Marca";
-import { RUAS_HORIZONTAIS, RUAS_VERTICAIS } from "./ArteDaEntrada";
+import { curvaSuave } from "./ArteDaEntrada";
 
 /**
- * A rota da tela de entrada: um veículo anda pelas ruas do mapa, e o sinal
- * dele chega à marca do Bahrd, que acende. É o que a Central faz o dia
- * inteiro, contado em dezoito segundos.
+ * A rota da tela de entrada: um veículo atravessa o mapa, e o sinal dele
+ * chega à marca do Bahrd, que acende. É o que a Central faz o dia inteiro,
+ * contado em dezoito segundos.
  *
  * **Calculada em pixels, a partir do tamanho real.** Um `ResizeObserver` mede
  * o mapa e o bloco do formulário, e a rota é refeita sempre que um dos dois
  * muda de tamanho (a janela, a fonte que carregou, a mensagem de erro que
- * empurrou o formulário). Ela anda pelas ruas principais de `ArteDaEntrada`,
- * que são frações do mapa, e termina **na borda direita do mapa, na altura
- * do ponto da marca**: é ali, na linha que separa o mapa do formulário, que o
- * sinal encosta e cintila para cima e para baixo.
+ * empurrou o formulário). É uma curva suave e contínua, sem esquina: entra
+ * pela borda esquerda, embaixo, ondula pelos três pinos e sobe até **a borda
+ * direita do mapa, na altura do ponto da marca**. É ali, na linha que separa
+ * o mapa do formulário, que o sinal encosta e cintila para cima e para baixo.
  *
  * **A estrada e o rastro.** A rota inteira fica sempre desenhada, bem apagada,
  * como estrada. O que acende é só o rastro atrás do veículo: forte colado
@@ -32,21 +33,22 @@ import { RUAS_HORIZONTAIS, RUAS_VERTICAIS } from "./ArteDaEntrada";
  * nem foco (`pointer-events: none` no CSS).
  *
  * **Os tempos moram no CSS** (blocos `rota-*` e `entrada-*` de `painel.css`),
- * todos no mesmo ciclo de 18 s. As frações de `PINOS` e `ETIQUETAS` aparecem
- * lá também, convertidas em momento do ciclo: o veículo anda em velocidade
- * constante de 0 a 55%, então a fração `f` do comprimento é alcançada em
- * `f × 55%`. Mudou uma fração aqui, muda o keyframe correspondente lá. O
- * rastro não tem keyframe: ele lê o relógio da animação do veículo.
+ * todos no mesmo ciclo de 18 s. As frações de `PINOS` aparecem lá também,
+ * convertidas em momento do ciclo: o veículo anda em velocidade constante de
+ * 0 a 55%, então a fração `f` do comprimento é alcançada em `f × 55%`. Mudou
+ * uma fração aqui, muda o keyframe correspondente lá. As etiquetas aparecem
+ * junto com o pino delas. O rastro não tem keyframe: ele lê o relógio da
+ * animação do veículo.
  *
  * Todos os valores das etiquetas são inventados: não há cliente, veículo nem
- * coordenada de verdade nesta tela.
+ * leitura de verdade nesta tela.
  */
 
 type Ponto = { x: number; y: number };
 type Caixa = { x: number; y: number; largura: number; altura: number };
 
 /** Onde ficam os pinos, em fração do comprimento da rota. */
-const PINOS = [0.24, 0.47, 0.68] as const;
+const PINOS = [0.212, 0.444, 0.658] as const;
 
 /** Em que momento do ciclo o veículo chega à borda do mapa (`entrada-veiculo`). */
 const CHEGADA_NO_CICLO = 0.55;
@@ -61,38 +63,77 @@ const CAUDA = 0.38;
 const OPACIDADE_NA_PONTA = 0.9;
 const CURVA_DA_CAUDA = 1.6;
 
-/** Até onde a cintilada da divisa vai, em fração da distância até a borda. */
-const ALCANCE_DA_CINTILADA = 0.85;
-
 /** A largura da faixa que leva a cintilada, centrada na linha: folga para o
  *  `drop-shadow` dos brilhos não ser cortado dos lados. */
 const LARGURA_DA_DIVISA = 40;
 
+/** O raio do maior círculo do radar, em fração da altura do mapa. Os outros
+ *  dois são um terço e dois terços dele. */
+const RADAR_NA_ALTURA = 0.28;
+/** A abertura da fatia de varredura, em graus. */
+const ABERTURA_DO_RADAR = 48;
+
+/**
+ * Por onde a rota passa, em fração do mapa. `y` é a altura; os últimos pontos
+ * não têm altura fixa: `rumo` diz quanto do caminho entre o terceiro pino e a
+ * chegada (a altura da marca) eles já subiram, para a curva chegar à borda na
+ * altura certa em qualquer janela.
+ */
+const TRAJETO: ({ x: number; y: number } | { x: number; rumo: number })[] = [
+  { x: 0, y: 0.83 },
+  { x: 0.1, y: 0.76 },
+  { x: 0.215, y: 0.68 },
+  { x: 0.33, y: 0.672 },
+  { x: 0.475, y: 0.72 },
+  { x: 0.56, y: 0.71 },
+  { x: 0.68, y: 0.58 },
+  { x: 0.79, rumo: 0.36 },
+  { x: 0.885, rumo: 0.5 },
+  { x: 0.945, rumo: 0.78 },
+];
+/** A altura do terceiro pino no `TRAJETO`, de onde o `rumo` é contado. */
+const ALTURA_DO_TERCEIRO = 0.58;
+
+type Lado = "acima-direita" | "acima-esquerda" | "abaixo-direita" | "abaixo-esquerda";
+
 type Etiqueta = {
   id: string;
-  chave: string;
-  valor: string;
-  fracao: number;
-  /** Lado preferido. BAT vai abaixo da linha para não cobri-la; se ali ela
-   *  encostar na rota, tenta os outros lados (`caixaDaEtiqueta`). */
-  lado: "acima" | "abaixo";
+  /** O pino ao lado do qual ela fica (índice em `PINOS`). */
+  pino: number;
+  linhas: string[];
+  /** Os lados, em ordem de preferência. BAT só tem lados de baixo: fica
+   *  abaixo da linha para não cobri-la. */
+  lados: Lado[];
 };
 
 const ETIQUETAS: Etiqueta[] = [
-  { id: "evento", chave: "EVENTO", valor: "DEMO-0001", fracao: 0.04, lado: "acima" },
-  { id: "gps", chave: "GPS", valor: "12,3456 S · 45,6789 O", fracao: 0.33, lado: "acima" },
-  { id: "ign", chave: "IGN", valor: "LIGADA", fracao: 0.56, lado: "acima" },
-  { id: "bat", chave: "BAT", valor: "12,6 V", fracao: 0.74, lado: "abaixo" },
+  {
+    id: "evento",
+    pino: 0,
+    linhas: ["EVENTO · MOVIMENTO SEM IGNIÇÃO"],
+    lados: ["acima-direita", "acima-esquerda", "abaixo-direita", "abaixo-esquerda"],
+  },
+  {
+    id: "bat",
+    pino: 1,
+    linhas: ["BAT 12,6 V · SINAL 4G ▮▮▮▯"],
+    lados: ["abaixo-direita", "abaixo-esquerda"],
+  },
+  {
+    id: "gps",
+    pino: 2,
+    linhas: ["GPS -25.4291 -49.2718", "IGN DESLIGADA · 0 km/h"],
+    lados: ["abaixo-direita", "abaixo-esquerda", "acima-esquerda", "acima-direita"],
+  },
 ];
 
-/** Largura de um caractere da fonte mono a 10,5 px, com folga. A etiqueta é
- *  medida por conta, e não pelo DOM, para não custar uma segunda medição. */
-const LARGURA_DO_CARACTERE = 6.7;
-const ALTURA_DA_ETIQUETA = 20;
-const RESPIRO_DA_ETIQUETA = 8;
-
-/** Raio das esquinas da rota, em px. */
-const RAIO_DA_ESQUINA = 16;
+/** Largura de um caractere da fonte mono a 14 px com o espaçamento do CSS,
+ *  com folga. A etiqueta é medida por conta, e não pelo DOM, para não custar
+ *  uma segunda medição. */
+const LARGURA_DO_CARACTERE = 9.4;
+const ALTURA_DA_LINHA = 22;
+/** Da borda de cima da linha até a linha de base do texto. */
+const BASE_DO_TEXTO = 15;
 
 type Geometria = {
   largura: number;
@@ -104,62 +145,36 @@ type Geometria = {
 
 type Marcos = {
   pinos: Ponto[];
-  etiquetas: { ponto: Ponto; caixa: Caixa; ancora: Ponto; cabe: boolean }[];
+  etiquetas: { caixa: Caixa; cabe: boolean }[];
 };
 
 const arredonda = (n: number) => Math.round(n * 2) / 2;
 const fixo = (n: number) => n.toFixed(1);
-const distancia = (a: Ponto, b: Ponto) => Math.hypot(b.x - a.x, b.y - a.y);
 const limita = (n: number, min: number, max: number) =>
   max < min ? (min + max) / 2 : Math.min(Math.max(n, min), max);
 
-/** Linhas retas com as esquinas arredondadas: rua tem curva, não quina. */
-function caminhoArredondado(pontos: Ponto[], raio: number): string {
-  const p: Ponto[] = [];
-  for (const ponto of pontos) {
-    if (p.length === 0 || distancia(p[p.length - 1], ponto) > 0.5) p.push(ponto);
-  }
-  if (p.length < 2) return "";
-
-  let d = `M${fixo(p[0].x)} ${fixo(p[0].y)}`;
-  for (let i = 1; i < p.length - 1; i++) {
-    const [a, b, c] = [p[i - 1], p[i], p[i + 1]];
-    const l1 = distancia(a, b);
-    const l2 = distancia(b, c);
-    const r = Math.min(raio, l1 / 2, l2 / 2);
-    const entra = { x: b.x + ((a.x - b.x) * r) / l1, y: b.y + ((a.y - b.y) * r) / l1 };
-    const sai = { x: b.x + ((c.x - b.x) * r) / l2, y: b.y + ((c.y - b.y) * r) / l2 };
-    d += ` L${fixo(entra.x)} ${fixo(entra.y)} Q${fixo(b.x)} ${fixo(b.y)} ${fixo(sai.x)} ${fixo(sai.y)}`;
-  }
-  const fim = p[p.length - 1];
-  return `${d} L${fixo(fim.x)} ${fixo(fim.y)}`;
-}
-
-/**
- * O trajeto, em ruas: sobe, vira, sobe, vira, e no fim sobe (ou desce) pela
- * última rua até a altura da marca e sai pela borda do mapa.
- */
+/** O trajeto em pixels: os pontos do `TRAJETO` no mapa, e a chegada no fim. */
 function tracado(g: Geometria): string {
   const { mapa, chegada } = g;
-  const em = (fx: number, fy: number): Ponto => ({
-    x: mapa.x + fx * mapa.largura,
-    y: mapa.y + fy * mapa.altura,
+  const yDaChegada = (chegada.y - mapa.y) / mapa.altura;
+  const pontos = TRAJETO.map((t) => {
+    const fy = "y" in t ? t.y : ALTURA_DO_TERCEIRO + (yDaChegada - ALTURA_DO_TERCEIRO) * t.rumo;
+    return { x: mapa.x + t.x * mapa.largura, y: mapa.y + fy * mapa.altura };
   });
-  const [, x1, , x3, , x5] = RUAS_VERTICAIS;
-  const [, , y2, y3, y4] = RUAS_HORIZONTAIS;
-  const ultimaRua = em(x5, y2).x;
-  return caminhoArredondado(
-    [
-      em(x1, y4),
-      em(x1, y3),
-      em(x3, y3),
-      em(x3, y2),
-      em(x5, y2),
-      { x: ultimaRua, y: chegada.y },
-      chegada,
-    ],
-    RAIO_DA_ESQUINA,
-  );
+  return curvaSuave([...pontos, chegada]);
+}
+
+/** O raio do maior círculo do radar, em px. */
+const raioDoRadar = (g: Geometria) =>
+  arredonda(Math.min(g.mapa.altura * RADAR_NA_ALTURA, g.mapa.largura * 0.3));
+
+/** A fatia de varredura: de 180° (para a esquerda) voltando `ABERTURA_DO_RADAR`
+ *  graus para baixo. Gira inteira em volta do centro (`entrada-radar`). */
+function fatiaDoRadar(raio: number): string {
+  const a = ((180 - ABERTURA_DO_RADAR) * Math.PI) / 180;
+  const x = raio * Math.cos(a);
+  const y = raio * Math.sin(a);
+  return `M0 0L${fixo(-raio)} 0A${fixo(raio)} ${fixo(raio)} 0 0 0 ${fixo(x)} ${fixo(y)}Z`;
 }
 
 type Pedaco = {
@@ -182,7 +197,7 @@ const SVG = "http://www.w3.org/2000/svg";
  *
  * Cada pedaço segue a curva (pontos tirados com `getPointAtLength`) e tem
  * ponta reta, porque a redonda sobrepõe o vizinho e a transparência soma na
- * emenda. Para as pontas retas de dois vizinhos se encaixarem nas esquinas,
+ * emenda. Para as pontas retas de dois vizinhos se encaixarem nas curvas,
  * cada pedaço começa e termina com um passo minúsculo na direção da própria
  * rota: a ponta reta fica perpendicular à rota ali, a mesma nos dois lados.
  *
@@ -251,14 +266,6 @@ function apagarRastro(pedacos: Pedaco[]) {
   pintarRastro(pedacos, -1);
 }
 
-type Lado = "acima" | "abaixo" | "direita" | "esquerda";
-
-/** Em que ordem tentar cada lado. BAT começa por baixo, como pede o desenho. */
-const PREFERENCIA: Record<Etiqueta["lado"], Lado[]> = {
-  acima: ["acima", "direita", "esquerda", "abaixo"],
-  abaixo: ["abaixo", "esquerda", "direita", "acima"],
-};
-
 const encosta = (c: Caixa, p: Ponto, folga: number) =>
   p.x >= c.x - folga && p.x <= c.x + c.largura + folga &&
   p.y >= c.y - folga && p.y <= c.y + c.altura + folga;
@@ -268,55 +275,48 @@ const cruza = (a: Caixa, b: Caixa, folga: number) =>
   a.y < b.y + b.altura + folga && b.y < a.y + a.altura + folga;
 
 /**
- * Onde a etiqueta fica: no primeiro lado, na ordem de preferência, em que ela
- * não encosta na linha, nem num pino, nem numa etiqueta já posta.
+ * Onde a etiqueta fica: no primeiro lado, na ordem de preferência, em que o
+ * texto não encosta na linha, nem num pino, nem numa etiqueta já posta.
  *
- * Por colisão, e não pela direção da rota no ponto: perto de uma esquina a
- * direção engana (o trecho é horizontal, mas a amostra pega a curva), e a
- * etiqueta caía em cima da linha. Tenta cada lado perto e, depois, mais longe.
- * Se nenhum servir (mapa estreito, perto dos 900 px), a etiqueta não aparece:
+ * Por colisão, e não pela direção da rota no ponto: a rota é curva, e a
+ * direção num ponto engana sobre onde ela passa logo adiante. Tenta cada lado
+ * perto e, depois, mais longe, e um lado que não cabe no mapa não conta. Se
+ * nenhum servir (mapa estreito, perto dos 900 px), a etiqueta não aparece:
  * cobrir a linha é justamente o que ela não pode fazer.
  */
 function caixaDaEtiqueta(
   e: Etiqueta,
-  ponto: Ponto,
+  pino: Ponto,
   mapa: Caixa,
   rota: Ponto[],
   pinos: Ponto[],
   postas: Caixa[],
-): { caixa: Caixa; ancora: Ponto; cabe: boolean } {
-  const largura = (e.chave.length + 1 + e.valor.length) * LARGURA_DO_CARACTERE + 2 * RESPIRO_DA_ETIQUETA;
-  const altura = ALTURA_DA_ETIQUETA;
-  const centro = (lado: Lado, longe: number): Ponto => {
-    switch (lado) {
-      case "acima": return { x: ponto.x, y: ponto.y - 26 - longe };
-      case "abaixo": return { x: ponto.x, y: ponto.y + 26 + longe };
-      case "direita": return { x: ponto.x + 18 + longe + largura / 2, y: ponto.y };
-      case "esquerda": return { x: ponto.x - 18 - longe - largura / 2, y: ponto.y };
-    }
+): { caixa: Caixa; cabe: boolean } {
+  const largura = Math.max(...e.linhas.map((l) => l.length)) * LARGURA_DO_CARACTERE;
+  const altura = e.linhas.length * ALTURA_DA_LINHA;
+  const caixaEm = (lado: Lado, longe: number): Caixa | null => {
+    const direita = lado.endsWith("direita");
+    const acima = lado.startsWith("acima");
+    const x = direita ? pino.x + 22 + longe : pino.x - 22 - longe - largura;
+    const y = acima ? pino.y - 18 - altura - longe / 2 : pino.y + 22 + longe / 2;
+    // Empurrada para dentro do mapa, a etiqueta descolaria do pino: esse lado
+    // não serve.
+    if (x < mapa.x + 12 || x + largura > mapa.x + mapa.largura - 12) return null;
+    if (y < mapa.y + 12 || y + altura > mapa.y + mapa.altura - 12) return null;
+    return { x, y, largura, altura };
   };
-  const caixaEm = (lado: Lado, longe = 0): Caixa => {
-    const c = centro(lado, longe);
-    const cx = limita(c.x, mapa.x + largura / 2 + 10, mapa.x + mapa.largura - largura / 2 - 10);
-    const cy = limita(c.y, mapa.y + altura / 2 + 10, mapa.y + mapa.altura - altura / 2 - 10);
-    return { x: cx - largura / 2, y: cy - altura / 2, largura, altura };
-  };
-  const livre = (c: Caixa) =>
-    !rota.some((p) => encosta(c, p, 5)) &&
-    // O pulso chega a ~23 px do centro, e o radar do terceiro pino a 26.
-    !pinos.some((p, i) => encosta(c, p, i === 2 ? 28 : 14)) &&
-    !postas.some((outra) => cruza(c, outra, 6));
+  const livre = (c: Caixa | null): c is Caixa =>
+    c !== null &&
+    !rota.some((p) => encosta(c, p, 6)) &&
+    // O anel de cada pino tem 13 px de raio.
+    !pinos.some((p) => encosta(c, p, 16)) &&
+    !postas.some((outra) => cruza(c, outra, 8));
 
-  const lados = PREFERENCIA[e.lado];
-  const candidatas = [0, 22].flatMap((longe) => lados.map((lado) => caixaEm(lado, longe)));
+  // Primeiro o lado preferido, perto e depois mais longe; só então o próximo.
+  const candidatas = e.lados.flatMap((lado) => [0, 24].map((longe) => caixaEm(lado, longe)));
   const achada = candidatas.find(livre);
-  const caixa = achada ?? caixaEm(lados[0]);
-  // O fio sai do ponto da rota e encosta na borda mais próxima da etiqueta.
-  const ancora = {
-    x: limita(ponto.x, caixa.x, caixa.x + largura),
-    y: limita(ponto.y, caixa.y, caixa.y + altura),
-  };
-  return { caixa, ancora, cabe: achada !== undefined };
+  const reserva = { x: pino.x + 22, y: pino.y + 22, largura, altura };
+  return { caixa: achada ?? reserva, cabe: achada !== undefined };
 }
 
 function medir(
@@ -359,7 +359,7 @@ const mesmaGeometria = (a: Geometria | null, b: Geometria | null) =>
  * (`display: none` cancela a animação, e voltar a mostra recomeça do zero), e
  * aí a rota chegaria à marca fora de hora. Alinhar todas ao começo do relógio
  * do documento (`startTime = 0`) põe todas na mesma fase, sempre. Funciona
- * porque todo período aqui divide os 18 s do ciclo: pulso de 2 s, radar de 3 s.
+ * porque todo período aqui divide os 18 s do ciclo: pulso de 2 s, radar de 6 s.
  *
  * Só as animações com o prefixo `entrada-`: a chegada do formulário é outra
  * coisa e não pode ser pulada.
@@ -414,13 +414,14 @@ export function RotaDaEntrada({
   const rastro = useRef<SVGGElement>(null);
   const pedacos = useRef<Pedaco[]>([]);
   const veiculo = useRef<SVGPathElement>(null);
+  const idDoFeixe = `rota-feixe-${useId().replace(/:/g, "")}`;
 
   // `useEffect`, e não `useLayoutEffect`: este componente vem antes da coluna
   // do formulário na árvore, e no efeito de layout dele as refs da marca e do
   // conteúdo ainda não estão ligadas. Sem elas o conteúdo não era observado, e
-  // a rota ficava na altura antiga quando o selo de ambiente chegava e
-  // empurrava a marca. Até a primeira medida o SVG fica escondido
-  // (`rota-sem-medida`), então não há quadro com a rota no lugar errado.
+  // a rota ficava na altura antiga quando algo empurrava a marca. Até a
+  // primeira medida o SVG fica escondido (`rota-sem-medida`), então não há
+  // quadro com a rota no lugar errado.
   useEffect(() => {
     const atualizar = () => {
       const r = raiz.current;
@@ -443,9 +444,9 @@ export function RotaDaEntrada({
 
   const d = useMemo(() => (geo ? tracado(geo) : ""), [geo]);
 
-  // Pinos e etiquetas na rota de verdade, já com as curvas das esquinas. A
-  // medida é feita num caminho sem `pathLength`: com ele, alguns navegadores
-  // escalam a distância de `getPointAtLength` e outros não.
+  // Pinos e etiquetas na rota de verdade. A medida é feita num caminho sem
+  // `pathLength`: com ele, alguns navegadores escalam a distância de
+  // `getPointAtLength` e outros não.
   useLayoutEffect(() => {
     const caminho = medidor.current;
     if (!caminho || !geo || !d) return;
@@ -463,10 +464,9 @@ export function RotaDaEntrada({
     setMarcos({
       pinos,
       etiquetas: ETIQUETAS.map((e) => {
-        const ponto = em(e.fracao);
-        const posta = caixaDaEtiqueta(e, ponto, geo.mapa, rota, pinos, postas);
+        const posta = caixaDaEtiqueta(e, pinos[e.pino], geo.mapa, rota, pinos, postas);
         if (posta.cabe) postas.push(posta.caixa);
-        return { ponto, ...posta };
+        return posta;
       }),
     });
   }, [d, geo]);
@@ -554,9 +554,11 @@ export function RotaDaEntrada({
   // Os elementos existem desde a primeira pintura, mesmo antes da medida, e
   // nunca são recriados: uma animação de CSS recomeça quando o elemento nasce,
   // e um pino recriado a cada redimensionamento sairia do compasso.
-  const fora: Ponto = { x: -100, y: -100 };
+  const fora: Ponto = { x: -1000, y: -1000 };
   const largura = geo?.largura ?? 0;
   const altura = geo?.altura ?? 0;
+  const raio = geo ? raioDoRadar(geo) : 0;
+  const centroDoRadar = marcos?.pinos[2] ?? fora;
 
   // A cintilada da divisa: uma faixa estreita em cima da linha entre o mapa e
   // a coluna, da altura do mapa, que corta os brilhos na borda da tela. As
@@ -569,8 +571,9 @@ export function RotaDaEntrada({
         top: `${geo.mapa.y}px`,
         height: `${geo.mapa.altura}px`,
         "--contato": `${geo.chegada.y - geo.mapa.y}px`,
-        "--subida": `${fixo(ALCANCE_DA_CINTILADA * (geo.chegada.y - geo.mapa.y))}px`,
-        "--descida": `${fixo(ALCANCE_DA_CINTILADA * (geo.mapa.y + geo.mapa.altura - geo.chegada.y))}px`,
+        // A distância inteira do contato até cada borda: os brilhos vão até lá.
+        "--subida": `${fixo(geo.chegada.y - geo.mapa.y)}px`,
+        "--descida": `${fixo(geo.mapa.y + geo.mapa.altura - geo.chegada.y)}px`,
       } as CSSProperties)
     : {};
 
@@ -585,7 +588,34 @@ export function RotaDaEntrada({
         aria-hidden="true"
         focusable="false"
       >
+        <defs>
+          {/* A fatia some na borda: forte no centro, nada no maior círculo. */}
+          <radialGradient id={idDoFeixe} gradientUnits="userSpaceOnUse" cx={0} cy={0} r={raio || 1}>
+            <stop offset="0" className="rota-feixe-centro" />
+            <stop offset="0.85" className="rota-feixe-meio" />
+            <stop offset="1" className="rota-feixe-borda" />
+          </radialGradient>
+        </defs>
+
         <path ref={medidor} className="rota-medida" d={d} />
+
+        {/* O radar do terceiro pino, por baixo da estrada: três círculos e a
+            fatia que varre. Some com os pinos (`rota-some`). */}
+        <g className="rota-some">
+          <g transform={`translate(${fixo(centroDoRadar.x)} ${fixo(centroDoRadar.y)})`}>
+            <g className="rota-radar">
+              {[1 / 3, 2 / 3, 1].map((k) => (
+                <circle key={k} className="rota-radar-anel" r={fixo(raio * k)} />
+              ))}
+              <g className="rota-radar-giro">
+                {/* Invisível: dá ao grupo uma caixa centrada no pino, para a
+                    fatia girar em volta dele (`transform-box: fill-box`). */}
+                <circle className="rota-radar-caixa" r={fixo(raio)} />
+                <path className="rota-radar-feixe" d={fatiaDoRadar(raio)} fill={`url(#${idDoFeixe})`} />
+              </g>
+            </g>
+          </g>
+        </g>
 
         {/* A estrada: a rota inteira, apagada, sempre lá. */}
         <path className="rota-estrada" d={d} />
@@ -599,14 +629,11 @@ export function RotaDaEntrada({
             return (
               <g key={i} transform={`translate(${fixo(p.x)} ${fixo(p.y)})`}>
                 <g className={`rota-pino rota-pino-${i + 1}`}>
-                  {i === 2 && (
-                    <g className="rota-radar">
-                      <circle className="rota-radar-anel" r={26} />
-                      <path className="rota-radar-feixe" d="M0 0L26 0A26 26 0 0 0 13 -22.5Z" />
-                    </g>
-                  )}
-                  <circle className="rota-pulso" r={9} />
-                  <circle className="rota-pino-miolo" r={5} />
+                  <circle className="rota-pulso" r={14} />
+                  <circle className="rota-pino-anel" r={13} />
+                  <circle className="rota-pino-halo" r={10} />
+                  <circle className="rota-pino-miolo" r={6.5} />
+                  <circle className="rota-pino-centro" r={2.6} />
                 </g>
               </g>
             );
@@ -614,34 +641,23 @@ export function RotaDaEntrada({
 
           {ETIQUETAS.map((e, i) => {
             const m = marcos?.etiquetas[i];
-            const caixa = m?.caixa ?? { ...fora, largura: 0, altura: ALTURA_DA_ETIQUETA };
-            const ponto = m?.ponto ?? fora;
-            const ancora = m?.ancora ?? fora;
+            const caixa = m?.caixa ?? { ...fora, largura: 0, altura: 0 };
             return (
-              <g
+              <text
                 key={e.id}
                 className={`rota-etiqueta rota-etiqueta-${e.id}`}
                 visibility={m && !m.cabe ? "hidden" : undefined}
               >
-                <line
-                  className="rota-etiqueta-fio"
-                  x1={fixo(ponto.x)}
-                  y1={fixo(ponto.y)}
-                  x2={fixo(ancora.x)}
-                  y2={fixo(ancora.y)}
-                />
-                <g transform={`translate(${fixo(caixa.x)} ${fixo(caixa.y)})`}>
-                  <rect
-                    className="rota-etiqueta-caixa"
-                    width={fixo(caixa.largura)}
-                    height={caixa.altura}
-                    rx={4}
-                  />
-                  <text className="rota-etiqueta-texto" x={RESPIRO_DA_ETIQUETA} y={13.6}>
-                    <tspan className="rota-etiqueta-chave">{e.chave}</tspan> {e.valor}
-                  </text>
-                </g>
-              </g>
+                {e.linhas.map((linha, k) => (
+                  <tspan
+                    key={linha}
+                    x={fixo(caixa.x)}
+                    y={fixo(caixa.y + BASE_DO_TEXTO + k * ALTURA_DA_LINHA)}
+                  >
+                    {linha}
+                  </tspan>
+                ))}
+              </text>
             );
           })}
         </g>

@@ -43,22 +43,19 @@
 
   /* O mapa da tela de entrada. Escuro nos DOIS temas, de propósito: é uma
      tela de rastreamento à noite, e o vermelho da rota só brilha sobre fundo
-     escuro. O que muda com o tema é o tom, para o mapa assentar ao lado da
-     coluna clara ou da escura. Os textos do mapa não usam --ink: ficam sobre
-     o mapa, que não troca de fundo. */
-  --arte-centro:   #1E3760;
-  --arte-meio:     #11264A;
-  --arte-borda:    #0A1730;
-  --arte-grade:    rgba(140, 175, 230, 0.07);
-  --arte-rua:      rgba(150, 182, 228, 0.13);
-  --arte-rua-forte: rgba(165, 195, 240, 0.24);
-  --arte-avenida:  rgba(175, 205, 245, 0.2);
-  --arte-rio:      rgba(70, 135, 230, 0.16);
-  --arte-praca:    rgba(80, 175, 135, 0.08);
-  --arte-etiqueta: rgba(6, 14, 30, 0.8);
-  --arte-etiqueta-borda: rgba(200, 220, 255, 0.16);
+     escuro. Por isso estes tokens não mudam com o tema, e os textos do mapa
+     não usam --ink: ficam sobre o mapa, que não troca de fundo. */
+  --arte-alto:     #0C1625;
+  --arte-meio:     #0D1828;
+  --arte-baixo:    #05080F;
+  --arte-luz:      rgba(22, 38, 58, 0.7);
+  --arte-grade:    rgba(140, 170, 215, 0.035);
+  --arte-rua:      rgba(110, 150, 200, 0.2);
+  --arte-radar:    rgba(130, 160, 205, 0.2);
+  --arte-risco:    rgba(200, 215, 235, 0.22);
   --arte-texto:    #E6EEF9;
-  --arte-texto-2:  #93A9C9;
+  --arte-texto-2:  #9DB1CC;
+  --arte-texto-3:  #B4C0D0;
 
   /* Acompanha o tema, nos mesmos blocos dele: é o que deixa os controles
      nativos (barra de rolagem, ícones de campo, lista do `select`) legíveis
@@ -86,7 +83,6 @@
     --accent: #74A4FF; --accent-ink: #0D1218; --accent-wash: #18222F;
     --dado: #4B85F5; --dado-fill: rgba(75, 133, 245, 0.20); --dado-bom: #2AA579;
     --critica: #FF7A70; --alta: #F5A55D; --media: #E0BC5A; --baixa: #2AA579;
-    --arte-centro: #172C4F; --arte-meio: #0D1C36; --arte-borda: #070F1F;
     color-scheme: dark;
   }
 }
@@ -97,7 +93,6 @@
   --accent: #74A4FF; --accent-ink: #0D1218; --accent-wash: #18222F;
   --dado: #4B85F5; --dado-fill: rgba(75, 133, 245, 0.20); --dado-bom: #2AA579;
   --critica: #FF7A70; --alta: #F5A55D; --media: #E0BC5A; --baixa: #2AA579;
-  --arte-centro: #172C4F; --arte-meio: #0D1C36; --arte-borda: #070F1F;
   color-scheme: dark;
 }
 /* ============================================================ BASE */
@@ -1523,8 +1518,8 @@ kbd {
 
 /* ============================================================ ENTRADA
    A tela de entrada. Duas colunas: o mapa à esquerda, ocupando o resto, e o
-   formulário numa coluna de 480 px à direita. Um sinal sai de um veículo no
-   mapa, percorre a rota e acende a marca do Bahrd.
+   formulário numa coluna de fundo liso à direita. Um sinal sai de um veículo
+   no mapa, percorre a rota e acende a marca do Bahrd.
 
    As cores do formulário são os tokens de cima, então claro e escuro saem de
    graça, com o mesmo botão de sol e lua do painel. O mapa é escuro nos dois
@@ -1532,26 +1527,28 @@ kbd {
    coluna tem o --surface próprio, e o contraste do formulário é o do painel.
 
    O ciclo inteiro dura 18 s (--ciclo), e toda animação daqui ou dura isso ou
-   divide isso (pulso de 2 s, radar de 3 s), para nada sair do compasso. O
-   `useCicloDaEntrada` põe todas no mesmo relógio; por isso o prefixo
-   `entrada-` em todo keyframe.
+   divide isso (pulso de 2 s, varredura do radar de 6 s), para nada sair do
+   compasso. O `useCicloDaEntrada` põe todas no mesmo relógio; por isso o
+   prefixo `entrada-` em todo keyframe.
 
-     0 a 55%    o veículo percorre a rota, com o rastro aceso atrás dele
+     0 a 55%    o veículo percorre a rota, com o rastro aceso atrás dele;
+                cada pino, com a etiqueta dele, aparece quando ele passa
      55%        o veículo encosta na divisa entre o mapa e a coluna
-     55 a 75%   dois brilhos saem dali pela divisa, um sobe e outro desce;
-                o rastro termina de entrar na borda e some (~76%)
+     55 a 78%   dois brilhos saem dali pela divisa, um sobe e outro desce,
+                desacelerando e apagando até as bordas; o rastro termina
+                de entrar na borda e some (~76%)
      61 a 66%   a marca acende de dentro para fora: ponto, arco pequeno,
                 arco grande
      77%        o brilho da marca baixa, uma vez
      84%        o brilho volta
-     80 a 96%   pinos e etiquetas somem aos poucos
+     80 a 96%   pinos, radar e etiquetas somem aos poucos
      97%        a marca apaga e o ciclo recomeça
 
    O rastro é o único movimento que não é CSS: o `RotaDaEntrada` o pinta a
    cada quadro, lendo o relógio da animação do veículo.
 
    Sem movimento (`prefers-reduced-motion: reduce`) vale o estado de fora das
-   media queries: a estrada desenhada, pinos e etiquetas parados, marca
+   media queries: a estrada desenhada, pinos, radar e etiquetas parados, marca
    normal, sem brilho, sem rastro, sem cintilada e sem o veículo. As animações
    só existem dentro de `prefers-reduced-motion: no-preference`, como no resto
    do painel. */
@@ -1561,39 +1558,61 @@ kbd {
   --ciclo: 18s;
   position: relative;
   min-height: 100vh; min-height: 100dvh;
-  display: grid; grid-template-columns: minmax(0, 1fr) 480px;
+  display: grid; grid-template-columns: minmax(0, 1fr) clamp(480px, 31.2vw, 600px);
   background: var(--surface);
 }
 
 /* ---------------------------------------------------------------- o mapa */
+/* Azul-marinho quase liso: um pouco mais claro no meio, onde a rota anda, e
+   escurecendo para baixo. */
 .arte {
   position: relative; overflow: hidden; min-height: 100%;
-  background: radial-gradient(
-    120% 95% at 32% 38%,
-    var(--arte-centro) 0%, var(--arte-meio) 52%, var(--arte-borda) 100%
-  );
+  background:
+    radial-gradient(60% 55% at 32% 46%, var(--arte-luz) 0%, transparent 100%),
+    linear-gradient(to bottom, var(--arte-alto) 0%, var(--arte-meio) 55%, var(--arte-baixo) 100%);
 }
-/* A grade de 40 px: duas famílias de linhas de 1 px, em CSS. */
+/* Uma grade de 44 px, quase invisível: duas famílias de linhas de 1 px. */
 .arte::before {
   content: ""; position: absolute; inset: 0;
   background-image:
     linear-gradient(to right, var(--arte-grade) 1px, transparent 1px),
     linear-gradient(to bottom, var(--arte-grade) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size: 44px 44px;
 }
-/* Vinheta: as bordas escurecem e o olho vai para o meio, onde a rota anda. */
+/* Vinheta: as bordas escurecem, a da direita mais, e o olho vai para o meio,
+   onde a rota anda. */
 .arte::after {
   content: ""; position: absolute; inset: 0;
-  background: radial-gradient(130% 100% at 40% 45%, transparent 55%, rgba(3, 8, 18, 0.45) 100%);
+  background:
+    linear-gradient(to right, transparent 38%, rgba(3, 6, 12, 0.55) 100%),
+    radial-gradient(115% 100% at 40% 44%, transparent 52%, rgba(2, 5, 10, 0.5) 100%);
 }
-.arte-ruas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.arte-ruas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
 /* A espessura em pixels, qualquer que seja o esticão do `viewBox`. */
-.arte-ruas path, .arte-ruas rect { vector-effect: non-scaling-stroke; }
-.arte-rua { fill: none; stroke: var(--arte-rua); stroke-width: 1; }
-.arte-rua-principal { fill: none; stroke: var(--arte-rua-forte); stroke-width: 2.5; }
-.arte-avenida { fill: none; stroke: var(--arte-avenida); stroke-width: 4; stroke-linecap: round; }
-.arte-rio { fill: none; stroke: var(--arte-rio); stroke-width: 22; stroke-linecap: round; }
-.arte-praca { fill: var(--arte-praca); }
+.arte-ruas path { vector-effect: non-scaling-stroke; }
+.arte-rua { fill: none; stroke: var(--arte-rua); stroke-width: 1.5; }
+
+/* A assinatura no rodapé esquerdo do mapa: a marca parada, o nome, um risco e
+   "Central IA" com o que a central faz. O ponto da marca usa o acento do tema
+   escuro nos dois temas, porque o mapa é escuro nos dois. */
+.arte-assinatura {
+  position: absolute; z-index: 1;
+  left: clamp(32px, 4.6vw, 66px); bottom: clamp(28px, 5.5vh, 46px);
+  display: flex; align-items: center; gap: 22px;
+  color: var(--arte-texto);
+  --accent: #74A4FF;
+}
+.arte-assinatura-marca { display: flex; align-items: center; gap: 8px; }
+.arte-assinatura .marca-glifo { width: 42px; height: 42px; color: var(--arte-texto); }
+.arte-assinatura-logo {
+  font-size: 31px; font-weight: 650; letter-spacing: -0.015em; line-height: 1;
+}
+.arte-assinatura-risco { width: 1px; height: 62px; flex: none; background: var(--arte-risco); }
+.arte-assinatura-texto { display: flex; flex-direction: column; gap: 7px; }
+.arte-assinatura-texto strong {
+  font-size: 24px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1;
+}
+.arte-assinatura-texto span { font-size: 14px; color: var(--arte-texto-3); }
 
 /* ---------------------------------------------------------------- a rota */
 /* Por cima da tela inteira, e não só do mapa, no mesmo sistema de
@@ -1621,25 +1640,34 @@ kbd {
 .rota-rastro-brilho { stroke: color-mix(in srgb, var(--marca) 30%, transparent); stroke-width: 8; }
 .rota-rastro-traco { stroke: var(--marca); stroke-width: 2.5; }
 
-/* Pino, pulso e radar giram e crescem em volta do próprio centro. Tudo neles
-   é desenhado simétrico em torno do (0, 0) do grupo que os posiciona, então a
-   caixa do próprio desenho tem o centro ali. */
-.rota-pino, .rota-pulso, .rota-radar { transform-box: fill-box; transform-origin: center; }
-.rota-pino-miolo { fill: var(--marca); stroke: #FFFFFF; stroke-width: 2; }
-.rota-pulso { fill: none; stroke: var(--marca); stroke-width: 1.5; opacity: 0; }
-.rota-radar-anel {
-  fill: none; stroke: color-mix(in srgb, var(--marca) 45%, transparent);
-  stroke-width: 1; stroke-dasharray: 2 4;
-}
-.rota-radar-feixe { fill: color-mix(in srgb, var(--marca) 26%, transparent); }
+/* O pino: ponto vermelho com miolo branco, um halo suave colado nele, um anel
+   em volta e o pulso, um anel largo e translúcido que cresce e some. Pino e
+   pulso crescem em volta do próprio centro: tudo neles é desenhado simétrico
+   em torno do (0, 0) do grupo que os posiciona, então a caixa do próprio
+   desenho tem o centro ali. */
+.rota-pino, .rota-pulso { transform-box: fill-box; transform-origin: center; }
+.rota-pino-miolo { fill: var(--marca); }
+.rota-pino-centro { fill: #FFFFFF; }
+.rota-pino-halo { fill: color-mix(in srgb, var(--marca) 34%, transparent); }
+.rota-pino-anel { fill: none; stroke: color-mix(in srgb, var(--marca) 62%, transparent); stroke-width: 2.5; }
+.rota-pulso { fill: none; stroke: color-mix(in srgb, var(--marca) 55%, transparent); stroke-width: 4; opacity: 0; }
 
-.rota-etiqueta-fio { stroke: var(--arte-etiqueta-borda); stroke-width: 1; }
-.rota-etiqueta-caixa { fill: var(--arte-etiqueta); stroke: var(--arte-etiqueta-borda); stroke-width: 1; }
-.rota-etiqueta-texto {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em;
-  fill: var(--arte-texto);
+/* O radar do terceiro pino: três círculos finos e uma fatia vermelha que
+   varre, em degradê, sumindo na borda do maior círculo (`radialGradient` do
+   `RotaDaEntrada`). A fatia gira em volta do pino: a caixa do grupo é o
+   círculo invisível do tamanho do radar, centrado nele. */
+.rota-radar-anel { fill: none; stroke: var(--arte-radar); stroke-width: 1; }
+.rota-radar-caixa { fill: none; stroke: none; }
+.rota-radar-giro { transform-box: fill-box; transform-origin: center; }
+.rota-feixe-centro { stop-color: var(--marca); stop-opacity: 0.1; }
+.rota-feixe-meio   { stop-color: var(--marca); stop-opacity: 0.08; }
+.rota-feixe-borda  { stop-color: var(--marca); stop-opacity: 0; }
+
+/* A telemetria: texto solto, sem caixa, ao lado de cada pino. */
+.rota-etiqueta {
+  font-family: var(--mono); font-size: 14px; letter-spacing: 0.06em;
+  fill: var(--arte-texto-2);
 }
-.rota-etiqueta-chave { fill: var(--arte-texto-2); font-weight: 700; letter-spacing: 0.08em; }
 
 /* O veículo só existe em movimento: parado, não diria nada. */
 .rota-veiculo { display: none; }
@@ -1658,8 +1686,8 @@ kbd {
    height). Ela corta os brilhos na borda da tela; os 40 px de largura são a
    folga do `drop-shadow`. Cada brilho é um traço de 2 × 180 px, transparente
    nas pontas e branco no meio, que nasce centrado no ponto de contato
-   (--contato) e desliza até --subida ou --descida, 85% do caminho até a
-   borda. Em HTML, com o `drop-shadow` do CSS: um filtro de SVG em unidades de
+   (--contato) e desliza --subida ou --descida, a distância inteira até a
+   borda de cima ou a de baixo. Em HTML, com o `drop-shadow` do CSS: um filtro de SVG em unidades de
    % não desenha numa linha de largura zero. Parada, não aparece. */
 .rota-divisa {
   position: absolute; z-index: 2; width: 40px;
@@ -1700,43 +1728,41 @@ kbd {
   position: relative; z-index: 1;
   display: flex; flex-direction: column;
   min-height: 100vh; min-height: 100dvh;
-  padding: 18px 40px 22px 64px;
+  padding: 18px 40px 22px clamp(56px, 4vw, 76px);
   background: var(--surface);
   /* A divisa com o mapa: discreta, mas é nela que o veículo encosta e que a
      cintilada corre. */
   border-left: 1px solid var(--hairline);
 }
 .entrada-topo { display: flex; justify-content: flex-end; }
-.entrada-conteudo { width: 100%; max-width: 356px; margin: auto 0; padding: 24px 0 36px; }
-.entrada-pe { font-size: var(--t-sm); color: var(--ink-3); }
+.entrada-conteudo { width: 100%; max-width: 450px; margin: auto 0; padding: 24px 0 60px; }
 
 /* A marca do cabeçalho, em tamanho grande: o glifo, "Bahrd", o risco e o nome. */
-.entrada-marca { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; }
+.entrada-marca { display: flex; align-items: center; gap: 14px; margin-bottom: 34px; }
 .entrada-marca-logo {
   margin-left: -6px;
-  font-size: 27px; font-weight: 650; letter-spacing: -0.015em; line-height: 1; color: var(--ink);
+  font-size: 30px; font-weight: 650; letter-spacing: -0.015em; line-height: 1; color: var(--ink);
 }
-.entrada-marca-risco { height: 30px; }
-.entrada-marca-nome { font-size: 17px; font-weight: 600; letter-spacing: -0.005em; color: var(--ink); }
-
-.login-form { display: flex; flex-direction: column; gap: 16px; }
-.login-cab { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
-.login-titulo { font-size: 26px; letter-spacing: -0.015em; line-height: 1.2; }
-.login-sub { font-size: var(--t-md); color: var(--ink-2); line-height: 1.5; }
-
-/* O mesmo selo do cabeçalho, com a frase ao lado: quem entra precisa saber,
-   antes de entrar, que não está em produção. */
-.login-ambiente {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; border-radius: 6px;
-  background: var(--hairline-2); font-size: var(--t-sm); color: var(--ink-2);
+.entrada-marca-risco { height: 32px; }
+.entrada-marca-nome { font-size: 16px; font-weight: 600; letter-spacing: -0.005em; color: var(--ink); }
+/* O selo de ambiente, pequeno, colado no nome. */
+.entrada-selo { margin-left: -4px; padding: 2px 6px; font-size: 10px; }
+.entrada-so-leitor {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
 }
 
-.login-campo { gap: 6px; }
+.login-form { display: flex; flex-direction: column; gap: 20px; }
+.login-titulo { margin-bottom: 6px; font-size: 25px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.2; }
+
+.login-campo { gap: 8px; }
+.login-campo .campo-nome {
+  font-size: 14px; color: color-mix(in srgb, var(--ink) 84%, var(--surface));
+}
 /* 16 px no campo, e não os 13,5 do resto: abaixo disso o Safari do celular dá
    zoom na página inteira ao tocar no campo, e o formulário sai da tela. */
 .login-campo input {
-  padding: 10px 12px; border-radius: 6px; font-size: var(--t-lg); line-height: 1.3;
+  padding: 12px 13px; border-radius: 6px; font-size: var(--t-lg); line-height: 1.3;
 }
 .login-campo input[aria-invalid="true"] { border-color: var(--critica); }
 .login-campo input[aria-invalid="true"]:focus { outline-color: var(--critica); }
@@ -1745,7 +1771,7 @@ kbd {
 .login-senha { position: relative; }
 .login-senha input { padding-right: 46px; }
 .login-olho {
-  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
   display: grid; place-items: center; width: 36px; height: 36px;
   border-radius: 5px; color: var(--ink-3); transition: color 120ms ease;
 }
@@ -1762,8 +1788,8 @@ kbd {
 }
 
 .login-entrar {
-  justify-content: center; gap: 9px; width: 100%; margin-top: 4px;
-  padding: 11px 18px; border-radius: 6px;
+  justify-content: center; gap: 9px; width: 100%; margin-top: 2px;
+  padding: 15px 18px; border-radius: 8px; font-size: 15px;
 }
 .login-entrar:disabled { opacity: 0.78; cursor: progress; filter: none; }
 .login-giro {
@@ -1772,18 +1798,18 @@ kbd {
 }
 
 /* Até 900 px: o mapa vira uma faixa de 220 px no topo, e a rota some, com
-   pinos, etiquetas, veículo, rastro e cintilada, para não brigar com o
-   formulário. A divisa lateral não existe mais: a coluna fica embaixo. */
+   pinos, radar, etiquetas, veículo, rastro e cintilada, para não brigar com o
+   formulário. A assinatura do mapa também sai: a marca já está logo abaixo,
+   na coluna. A divisa lateral não existe mais: a coluna fica embaixo. */
 @media (max-width: 900px) {
   .entrada { grid-template-columns: minmax(0, 1fr); grid-template-rows: 220px auto; }
   .arte { min-height: 0; height: 220px; }
-  .rota, .rota-divisa { display: none; }
+  .rota, .rota-divisa, .arte-assinatura { display: none; }
   .entrada-lado { min-height: 0; padding: 12px 24px 22px; border-left: 0; }
-  .entrada-conteudo { max-width: 400px; margin: 0 auto; padding: 8px 0 32px; }
-  .entrada-pe { text-align: center; }
+  .entrada-conteudo { max-width: 420px; margin: 0 auto; padding: 8px 0 32px; }
   .entrada-marca { margin-bottom: 26px; }
   .logo-acende { width: 46px; height: 46px; }
-  .entrada-marca-logo { font-size: 23px; }
+  .entrada-marca-logo { font-size: 24px; }
 }
 @media (max-width: 480px) {
   .entrada-lado { padding-left: 16px; padding-right: 16px; }
@@ -1802,7 +1828,7 @@ kbd {
   .login-giro { animation: login-gira 700ms linear infinite; }
   @keyframes login-gira { to { transform: rotate(360deg); } }
 
-  /* 80 a 96%: pinos e etiquetas somem aos poucos. A estrada fica. */
+  /* 80 a 96%: pinos, radar e etiquetas somem aos poucos. A estrada fica. */
   .rota-some { animation: entrada-rota-some var(--ciclo) ease-in-out infinite both; }
   @keyframes entrada-rota-some {
     0%, 80%   { opacity: 1; }
@@ -1825,58 +1851,83 @@ kbd {
     56%, 100% { opacity: 0; }
   }
 
-  /* Cada pino aparece quando a ponta da linha passa por ele: a 24, 47 e 68%
-     do caminho, ou seja, a 13,2, 25,85 e 37,4% do ciclo (fração × 55%). */
+  /* Cada pino aparece quando a ponta da linha passa por ele: a 21,2, 44,4 e
+     65,8% do caminho, ou seja, a 11,66, 24,42 e 36,19% do ciclo (fração ×
+     55%). */
   .rota-pino-1 { animation: entrada-pino-1 var(--ciclo) ease-out infinite both; }
   .rota-pino-2 { animation: entrada-pino-2 var(--ciclo) ease-out infinite both; }
   .rota-pino-3 { animation: entrada-pino-3 var(--ciclo) ease-out infinite both; }
   @keyframes entrada-pino-1 {
-    0%, 13.2%    { opacity: 0; transform: scale(0.3); }
-    14.6%, 100%  { opacity: 1; transform: scale(1); }
+    0%, 11.66%   { opacity: 0; transform: scale(0.3); }
+    13.06%, 100% { opacity: 1; transform: scale(1); }
   }
   @keyframes entrada-pino-2 {
-    0%, 25.85%   { opacity: 0; transform: scale(0.3); }
-    27.25%, 100% { opacity: 1; transform: scale(1); }
+    0%, 24.42%   { opacity: 0; transform: scale(0.3); }
+    25.82%, 100% { opacity: 1; transform: scale(1); }
   }
   @keyframes entrada-pino-3 {
-    0%, 37.4%    { opacity: 0; transform: scale(0.3); }
-    38.8%, 100%  { opacity: 1; transform: scale(1); }
+    0%, 36.19%   { opacity: 0; transform: scale(0.3); }
+    37.59%, 100% { opacity: 1; transform: scale(1); }
   }
-  /* O pulso de cada pino e o radar do terceiro: 2 s e 3 s, que cabem nove e
-     seis vezes no ciclo e nunca saem de fase com ele. */
+  /* O pulso de cada pino: 2 s, que cabem nove vezes no ciclo e nunca saem de
+     fase com ele. Os três pinos pulsam defasados, um terço de volta cada. */
   .rota-pulso { animation: entrada-pulso 2s ease-out infinite both; }
+  .rota-pino-2 .rota-pulso { animation-delay: -0.67s; }
+  .rota-pino-3 .rota-pulso { animation-delay: -1.33s; }
   @keyframes entrada-pulso {
-    0%        { opacity: 0.8; transform: scale(0.6); }
-    70%, 100% { opacity: 0; transform: scale(2.6); }
+    0%        { opacity: 0.95; transform: scale(1); }
+    60%       { opacity: 0.4; transform: scale(2.6); }
+    85%, 100% { opacity: 0; transform: scale(3.1); }
   }
-  .rota-radar { animation: entrada-radar 3s linear infinite; }
+  /* O radar chega com o terceiro pino, mais devagar que ele, e a fatia varre
+     uma volta a cada 6 s, três por ciclo. */
+  .rota-radar { animation: entrada-radar-chega var(--ciclo) ease-out infinite both; }
+  @keyframes entrada-radar-chega {
+    0%, 36.19%  { opacity: 0; }
+    41%, 100%   { opacity: 1; }
+  }
+  .rota-radar-giro { animation: entrada-radar 6s linear infinite; }
   @keyframes entrada-radar { to { transform: rotate(360deg); } }
 
-  /* As etiquetas acompanham o veículo: EVENTO a 4% do caminho, GPS a 33%,
-     IGN a 56% e BAT a 74% (2,2, 18,15, 30,8 e 40,7% do ciclo). */
+  /* Cada etiqueta chega logo depois do pino dela: EVENTO com o primeiro, BAT
+     com o segundo, GPS e IGN com o terceiro. */
   .rota-etiqueta-evento { animation: entrada-etiqueta-evento var(--ciclo) linear infinite both; }
-  .rota-etiqueta-gps    { animation: entrada-etiqueta-gps var(--ciclo) linear infinite both; }
-  .rota-etiqueta-ign    { animation: entrada-etiqueta-ign var(--ciclo) linear infinite both; }
   .rota-etiqueta-bat    { animation: entrada-etiqueta-bat var(--ciclo) linear infinite both; }
-  @keyframes entrada-etiqueta-evento { 0%, 2.2%   { opacity: 0; } 3.6%, 100%   { opacity: 1; } }
-  @keyframes entrada-etiqueta-gps    { 0%, 18.15% { opacity: 0; } 19.55%, 100% { opacity: 1; } }
-  @keyframes entrada-etiqueta-ign    { 0%, 30.8%  { opacity: 0; } 32.2%, 100%  { opacity: 1; } }
-  @keyframes entrada-etiqueta-bat    { 0%, 40.7%  { opacity: 0; } 42.1%, 100%  { opacity: 1; } }
+  .rota-etiqueta-gps    { animation: entrada-etiqueta-gps var(--ciclo) linear infinite both; }
+  @keyframes entrada-etiqueta-evento { 0%, 12.26% { opacity: 0; } 14.06%, 100% { opacity: 1; } }
+  @keyframes entrada-etiqueta-bat    { 0%, 25.02% { opacity: 0; } 26.82%, 100% { opacity: 1; } }
+  @keyframes entrada-etiqueta-gps    { 0%, 36.79% { opacity: 0; } 38.59%, 100% { opacity: 1; } }
 
-  /* 55 a 75%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
-     veículo encostou, devagar e fracos (no máximo 0,55), e somem antes de
-     chegar à borda. */
-  .rota-divisa-sobe  { animation: entrada-divisa-sobe var(--ciclo) ease-out infinite both; }
-  .rota-divisa-desce { animation: entrada-divisa-desce var(--ciclo) ease-out infinite both; }
+  /* 55 a 78%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
+     veículo encostou e percorrem a linha inteira, um até a borda de cima e
+     outro até a de baixo: rápidos na saída e cada vez mais devagar (o
+     `cubic-bezier` do trecho de 55 a 78%). São duas animações em cada brilho,
+     porque o movimento e a opacidade têm curvas diferentes: a opacidade sobe
+     a 0,55 logo na saída e cai sem parar, em linha reta, até 0 no instante
+     em que o brilho chega à borda. Cada um anda a própria distância
+     (--subida e --descida), que não são iguais. */
+  .rota-divisa-sobe {
+    animation:
+      entrada-divisa-sobe var(--ciclo) linear infinite both,
+      entrada-divisa-brilho var(--ciclo) linear infinite both;
+  }
+  .rota-divisa-desce {
+    animation:
+      entrada-divisa-desce var(--ciclo) linear infinite both,
+      entrada-divisa-brilho var(--ciclo) linear infinite both;
+  }
   @keyframes entrada-divisa-sobe {
-    0%, 55%    { opacity: 0; transform: translateY(0); }
-    58.5%, 65% { opacity: 0.55; }
-    75%, 100%  { opacity: 0; transform: translateY(calc(-1 * var(--subida, 0px))); }
+    0%, 55%   { transform: translateY(0); animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1); }
+    78%, 100% { transform: translateY(calc(-1 * var(--subida, 0px))); }
   }
   @keyframes entrada-divisa-desce {
-    0%, 55%    { opacity: 0; transform: translateY(0); }
-    58.5%, 65% { opacity: 0.55; }
-    75%, 100%  { opacity: 0; transform: translateY(var(--descida, 0px)); }
+    0%, 55%   { transform: translateY(0); animation-timing-function: cubic-bezier(0.15, 0.6, 0.3, 1); }
+    78%, 100% { transform: translateY(var(--descida, 0px)); }
+  }
+  @keyframes entrada-divisa-brilho {
+    0%, 55%   { opacity: 0; }
+    56%       { opacity: 0.55; }
+    78%, 100% { opacity: 0; }
   }
 
   /* 61 a 66%: a marca acende de dentro para fora, cada parte numa rampa de
