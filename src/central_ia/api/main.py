@@ -20,9 +20,10 @@ from central_ia.api.rotas import (
     midia,
     painel,
     saude,
+    sessao,
     whatsapp,
 )
-from central_ia.api.seguranca import avisar_se_aberto
+from central_ia.api.seguranca import avisar_se_aberto, avisar_sobre_o_login
 from central_ia.config import settings
 from central_ia.observability.logging import configurar_logging, logger
 from central_ia.observability.tracing import configurar_tracing
@@ -37,6 +38,7 @@ async def ciclo_de_vida(_app: FastAPI):
     cfg = settings()
     configurar_logging(cfg)
     avisar_se_aberto()
+    avisar_sobre_o_login()
     log.info(
         "api_iniciando",
         versao=__version__,
@@ -124,6 +126,8 @@ def criar_app() -> FastAPI:
         )
 
     app.include_router(saude.router)
+    # Antes do painel: é o único `/painel/*` que funciona sem sessão.
+    app.include_router(sessao.router)
     app.include_router(painel.router)
     app.include_router(whatsapp.router)
     app.include_router(eventos.router)

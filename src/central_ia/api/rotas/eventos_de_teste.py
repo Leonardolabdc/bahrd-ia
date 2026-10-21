@@ -34,12 +34,12 @@ As quatro travas, e a ordem importa:
    novo, que é justamente o que esta tela existe para evitar.
 
    ⛔ O que se perdeu com isso, dito por escrito para ninguém redescobrir
-   sozinho: quem tiver o token do painel pode fazer a IA escrever para qualquer
+   sozinho: quem entra como admin pode fazer a IA escrever para qualquer
    celular do Brasil. A validação de formato pega o dígito faltando, que era o
    erro mais provável, mas **não pega o dígito trocado** — e um dígito trocado
    manda "Acionamento do botão de pânico", com ligação para o 0800 real, para a
-   casa de um estranho. O que sobrou contra isso é o token, o teto diário e o
-   404 fora de desenvolvimento.
+   casa de um estranho. O que sobrou contra isso é o login de admin, o teto
+   diário e o 404 fora de desenvolvimento.
 3. Teto diário — rígido, e aqui o princípio do resto do sistema **se inverte**.
    O `SECURITY.md` diz "alerta, nunca teto", porque teto no caminho de
    atendimento vira cliente sem resposta. Teste bloqueado não custa a ninguém.
@@ -61,17 +61,37 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from central_ia.api.rotas.eventos import processar_evento_rastreador
-from central_ia.api.seguranca import exigir_token_do_painel
+from central_ia.api.seguranca import exigir_admin, exigir_sessao, exigir_token_do_painel
 from central_ia.config import Settings, settings
 from central_ia.domain import eventos
 from central_ia.integrations.rastreamento.bahrd_webhook import LIMITE_NOME, _telefone
 
 log = structlog.get_logger(__name__)
 
+async def _tela_ligada() -> None:
+    """A trava 1 como dependência do router, antes do login.
+
+    ⚠️ **A ordem é de propósito.** Desligada (e em produção ela sempre está), a
+    rota responde 404 para todo mundo, logado ou não, admin ou operador. Se o
+    login viesse antes, um operador receberia 403 de uma tela que nem existe
+    no ambiente, e 403 confirma que a rota existe, que é o que o 404 da trava
+    1 existe para não contar. Cada rota continua chamando `_exigir_tela_ligada`
+    por dentro, como antes: a dependência é a primeira linha, não a única.
+    """
+    _exigir_tela_ligada(settings())
+
+
+# Tudo aqui é de admin: disparar evento manda WhatsApp de verdade, e trocar o
+# modelo muda o atendimento de cliente. O operador recebe 403.
 router = APIRouter(
     prefix="/painel/testes",
     tags=["painel"],
-    dependencies=[Depends(exigir_token_do_painel)],
+    dependencies=[
+        Depends(exigir_token_do_painel),
+        Depends(_tela_ligada),
+        Depends(exigir_sessao),
+        Depends(exigir_admin),
+    ],
 )
 
 FUSO_PAINEL = ZoneInfo("America/Sao_Paulo")

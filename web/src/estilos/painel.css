@@ -1492,3 +1492,126 @@ kbd {
    o número conta casos que a lista não mostra, e número sem correspondência na
    tela é o tipo de coisa que faz alguém procurar por meia hora. */
 .enc-nota { margin-top: 2px; font-size: var(--t-sm); color: var(--ink-3); }
+
+/* ============================================================ LOGIN
+   A porta do painel. É o mesmo produto, não uma tela à parte: o cabeçalho é o
+   `.topo` do painel, a linha vermelha é a mesma regra `.segmentos` (com o
+   brilho que atravessa e some para quem pediu menos movimento), e as cores
+   são só os tokens de cima — claro e escuro saem de graça.
+
+   O cartão fica no `--surface` sobre o `--ground`, como os cartões da fila. O
+   vermelho da marca continua só na linha: no formulário, vermelho é erro. */
+.login { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.login-conferindo { min-height: 100vh; display: grid; place-items: center; }
+/* Sem abas aqui: a faixa é só a altura que a luz da linha precisa para se
+   dissipar. A régua de baixo é a mesma que separa o bloco do conteúdo. */
+.login-linha { height: 30px; }
+
+.login-corpo {
+  flex: 1; display: grid; place-items: center;
+  padding: 48px 24px 64px;
+}
+.login-cartao {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 28px 28px 26px;
+  background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(14, 23, 37, 0.04), 0 12px 32px -12px rgba(14, 23, 37, 0.14);
+}
+:root[data-theme="dark"] .login-cartao { box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .login-cartao { box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .login-cartao { animation: login-chega 220ms ease-out; }
+  @keyframes login-chega {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+.login-cab { display: flex; flex-direction: column; gap: 5px; margin-bottom: 2px; }
+.login-titulo { font-size: var(--t-xl); letter-spacing: -0.012em; line-height: 1.25; }
+.login-sub { font-size: var(--t-sm); color: var(--ink-2); line-height: 1.5; }
+
+/* O mesmo selo do cabeçalho, com a frase ao lado: quem entra precisa saber,
+   antes de entrar, que não está em produção. */
+.login-ambiente {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: 6px;
+  background: var(--hairline-2); font-size: var(--t-sm); color: var(--ink-2);
+}
+
+.login-campo { gap: 6px; }
+/* 16 px no campo, e não os 13,5 do resto: abaixo disso o Safari do celular dá
+   zoom na página inteira ao tocar no campo, e o cartão sai da tela. */
+.login-campo input {
+  padding: 10px 12px; border-radius: 6px; font-size: var(--t-lg); line-height: 1.3;
+}
+.login-campo input[aria-invalid="true"] { border-color: var(--critica); }
+.login-campo input[aria-invalid="true"]:focus { outline-color: var(--critica); }
+.login-campo input:read-only { color: var(--ink-2); }
+
+.login-senha { position: relative; }
+.login-senha input { padding-right: 46px; }
+.login-olho {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 36px; height: 36px;
+  border-radius: 5px; color: var(--ink-3); transition: color 120ms ease;
+}
+.login-olho:hover { color: var(--ink); }
+.login-olho:focus-visible { outline-offset: -2px; }
+.login-caps { font-size: var(--t-sm); font-weight: 600; color: var(--alta); }
+
+/* Mesmo desenho do aviso da tela de testes: faixa à esquerda e fundo leve. */
+.login-erro {
+  padding: 10px 12px; border-radius: 3px;
+  background: color-mix(in srgb, var(--critica) 9%, transparent);
+  border-left: 2px solid var(--critica);
+  font-size: var(--t-sm); color: var(--ink); line-height: 1.5;
+}
+
+.login-entrar {
+  justify-content: center; gap: 9px; width: 100%; margin-top: 4px;
+  padding: 11px 18px; border-radius: 6px;
+}
+.login-entrar:disabled { opacity: 0.78; cursor: progress; filter: none; }
+.login-giro {
+  width: 14px; height: 14px; flex: none; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent; opacity: 0.85;
+}
+/* Sem movimento, o círculo fica parado e o "Entrando…" diz o mesmo. */
+@media (prefers-reduced-motion: no-preference) {
+  .login-giro { animation: login-gira 700ms linear infinite; }
+  @keyframes login-gira { to { transform: rotate(360deg); } }
+}
+
+@media (max-width: 480px) {
+  .login .faixa { padding-left: 16px; padding-right: 16px; }
+  .login-corpo { padding: 28px 16px 40px; place-items: start center; }
+  .login-cartao { padding: 22px 18px 20px; border-radius: 8px; }
+  .login .pe .quadro { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ------------------------------------------------- quem está no cabeçalho */
+.topo-usuario { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.usuario-nome {
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--t-sm); font-weight: 600; color: var(--ink-2);
+}
+/* Pílula discreta: diz o perfil sem competir com o estado da IA, que é a
+   pílula que importa no cabeçalho. Admin ganha o acento da interface, nunca
+   uma cor de estado. */
+.selo-perfil {
+  padding: 2px 9px; border-radius: 999px; border: 1px solid var(--hairline);
+  background: var(--hairline-2); color: var(--ink-2);
+  font-size: var(--t-lb); font-weight: 600; letter-spacing: 0.04em; white-space: nowrap;
+}
+.selo-perfil-admin {
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--accent-wash); color: var(--accent);
+}
+.botao-sair { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 520px) {
+  .usuario-nome { display: none; }
+}

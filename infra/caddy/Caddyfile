@@ -45,10 +45,14 @@
 			# Assim ele passa a ser o que sempre deveria ter sido: credencial
 			# entre a borda e a API, nunca do lado do cliente.
 			#
-			# ⚠️ Isto NÃO é autenticação. Quem alcança este domínio alcança o
-			#    painel. É a lacuna 12 da auditoria, aceita de propósito
-			#    enquanto todo dado é sintético e há um operador só. O que se
-			#    ganha aqui é não vazar o segredo — não controle de acesso.
+			# ⚠️ Isto NÃO é o login. É a credencial entre a borda e a API, e
+			#    sozinha não diz quem está usando. Quem entra no painel é
+			#    decidido pela API: usuário e senha de PAINEL_USUARIOS, sessão
+			#    em cookie HttpOnly, perfis admin e operador. Fechou a lacuna 12
+			#    da auditoria. As duas trancas valem juntas em /painel/*.
+			#
+			# O `X-Forwarded-Proto https` de cima também é do login: é por ele
+			# que a API sabe marcar o cookie da sessão como Secure.
 			header_up X-Painel-Token {$PAINEL_TOKEN}
 		}
 	}

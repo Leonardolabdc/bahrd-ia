@@ -173,12 +173,13 @@ pedida de fora por `curl`; janela da direita é o script rodando, terminando em
 
 Log de outra execução, 33s: [docs/evidencias/rollback-2026-09-15.log](docs/evidencias/rollback-2026-09-15.log).
 
-> **O painel está aberto a quem tiver o endereço.** Não é descuido: é a
-> [lacuna 12 da auditoria](docs/auditoria-prototipo.md), aceita enquanto todo
-> dado é sintético e há um operador só. O segredo que protege `/painel/*` é
-> injetado pelo Caddy no caminho servidor-a-servidor e **nunca chega ao
-> navegador** — o que se garante aqui é não vazar credencial, não controle de
-> acesso. Autenticação de operador é item de fila, com gatilho declarado.
+> **O painel pede login.** Dois perfis, admin e operador, com usuários
+> definidos na configuração do servidor (`PAINEL_USUARIOS`), sem cadastro pela
+> tela, e a conferência acontece na API em cada requisição. Fechou a
+> [lacuna 12 da auditoria](docs/auditoria-prototipo.md). O segredo da borda que
+> protege `/painel/*` continua valendo junto: é injetado pelo Caddy no caminho
+> servidor-a-servidor e **nunca chega ao navegador**. Em produção, sem usuário
+> configurado, o painel fica fechado.
 
 ## Como rodar
 
@@ -409,7 +410,7 @@ O que ainda não funciona, ou funciona com ressalva:
 | **Sem rastreador real** | Não há acesso ao sistema de rastreamento de uma frota de verdade. Os eventos entram pelo painel de testes (só em dev) ou pelo webhook com payload sintético | O selo **Amostra** aparece no cabeçalho, e parte da Visão geral (contenção de 58%, 1º contato, falsos fechamentos) é número de exemplo fixo |
 | **Ocorrência e conversa não vão para o banco** | Oracle e MySQL sobem e respondem à sonda, mas nenhum código grava neles ainda | Encerrados e números da Visão geral zeram quando a API reinicia. O expurgo de 90 dias roda todo dia, mas sobre tabelas vazias |
 | **Curva de contenção** | Sem nenhum caso real no dia, a tela mantém a curva de amostra em vez de ficar vazia | Hora com caso real usa o número real; hora sem caso nunca vira 0% |
-| **Painel sem login** | [Lacuna 12](docs/auditoria-prototipo.md), aceita enquanto todo dado é sintético | Quem tiver o endereço vê o painel. O token do servidor não chega ao navegador |
+| **Login com dois perfis, usuários definidos na configuração** | Fecha a [lacuna 12](docs/auditoria-prototipo.md). Não há cadastro pela tela nem troca de senha pela tela | Criar, remover ou trocar a senha de alguém é gerar a entrada com `scripts/criar_usuario_painel.py`, editar `PAINEL_USUARIOS` no servidor e reiniciar a API |
 | **Assinatura do webhook sem segredo** | A conferência HMAC-SHA256 está implementada, mas o segredo ainda não foi combinado com quem envia o evento ([lacuna 4](docs/auditoria-prototipo.md)) | Sem o segredo, o webhook aceita o evento e avisa no log. Não há como provar que ele veio do rastreador |
 | **MySQL de produção com conta administrativa** | A conta de aplicação com privilégio mínimo ainda não foi criada | Isolado de dev, mas fora do princípio de menor privilégio |
 | **Nome de terceiro em texto livre** | A sanitização troca nome, placa e endereço cadastrados e barra CPF, telefone e e-mail, mas não reconhece um nome solto na frase | Risco residual registrado em [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md) |

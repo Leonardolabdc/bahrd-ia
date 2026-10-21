@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api } from "./api";
+import { api, aoPerderASessao, ErroDaApi } from "./api";
 import { config } from "./config";
 import { LinhaIaFazendo, LinhaPrecisaDeVoce } from "./componentes/Fila";
 import { AoVivo } from "./componentes/AoVivo";
@@ -10,9 +10,10 @@ import { Marca } from "./componentes/Marca";
 import { EventosDeTeste } from "./componentes/EventosDeTeste";
 import { Ocorrencia } from "./componentes/Ocorrencia";
 import { VisaoGeral } from "./componentes/VisaoGeral";
-import { Grafico, Lua, Sol } from "./componentes/Icones";
+import { Grafico, Lua, Sair, Sol } from "./componentes/Icones";
 import { CampoBusca } from "./componentes/CampoBusca";
-import type { EstadoIA, Fila, Prontidao } from "./tipos";
+import { Login } from "./componentes/Login";
+import type { EstadoIA, Fila, Prontidao, SessaoDoPainel } from "./tipos";
 
 export type Aba = "voce" | "ia" | "encerrados" | "desativados" | "removidos" | "geral";
 
@@ -50,7 +51,22 @@ function useTema() {
   };
 }
 
-export function App() {
+/**
+ * O painel em si: só existe com sessão. Quem decide se ele aparece é o `App`,
+ * lá embaixo, e enquanto o login está na tela nada daqui é montado: nenhuma
+ * fila carrega por trás, nenhum atalho de teclado escuta.
+ */
+function Painel({
+  sessao,
+  tema,
+  alterna,
+  aoSair,
+}: {
+  sessao: SessaoDoPainel;
+  tema: "claro" | "escuro";
+  alterna: () => void;
+  aoSair: () => void;
+}) {
   const [fila, setFila] = useState<Fila | null>(null);
   const [encerrados, setEncerrados] = useState<number | null>(null);
   const [desativados, setDesativados] = useState<number | null>(null);
@@ -66,15 +82,23 @@ export function App() {
   // digitado.
   const [buscaVoce, setBuscaVoce] = useState("");
   const [buscaIa, setBuscaIa] = useState("");
-  const { tema, alterna } = useTema();
+  const ehAdmin = sessao.perfil === "admin";
 
   // O botão só aparece se o servidor disser que a tela existe. A rota devolve
   // 404 quando `PAINEL_TESTES_ATIVO` está desligada ou o ambiente é de
-  // produção — esconder aqui é conveniência de interface, e a decisão que vale
-  // é a do servidor. Uma vez só: a flag não muda enquanto o processo vive.
+  // produção, e 403 para o perfil operador — esconder aqui é conveniência de
+  // interface, e a decisão que vale é a do servidor. Uma vez só: a flag não
+  // muda enquanto o processo vive.
+  //
+  // O operador nem pergunta: a resposta seria 403, e é a mesma tela escondida.
+  // A troca de modelo mora dentro dessa tela, então some junto.
   useEffect(() => {
+    if (!ehAdmin) {
+      setTestesLigados(false);
+      return;
+    }
     api.catalogoDeTeste().then(() => setTestesLigados(true)).catch(() => setTestesLigados(false));
-  }, []);
+  }, [ehAdmin]);
 
   const carregar = useCallback(() => {
     Promise.all([api.fila(), api.estado()])
@@ -247,11 +271,31 @@ export function App() {
             >
               {tema === "escuro" ? <Sol /> : <Lua />}
             </button>
+
+            {/* Quem está aqui, e com que perfil. Só com login ligado: sem ele
+                (desenvolvimento sem PAINEL_USUARIOS) não há nome para mostrar
+                nem sessão de onde sair. */}
+            {sessao.login_ativo && sessao.usuario && (
+              <>
+                <span className="topo-usuario">
+                  <span className="usuario-nome" title={`Conectado como ${sessao.usuario}`}>
+                    {sessao.usuario}
+                  </span>
+                  <span className={`selo-perfil selo-perfil-${sessao.perfil}`}>
+                    {ehAdmin ? "Admin" : "Operador"}
+                  </span>
+                </span>
+                <button className="botao-topo botao-sair" type="button" onClick={aoSair}>
+                  <Sair />
+                  Sair
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {enviandoTeste && <EventosDeTeste aoFechar={() => setEnviandoTeste(false)} />}
+      {enviandoTeste && ehAdmin && <EventosDeTeste aoFechar={() => setEnviandoTeste(false)} />}
 
       {/* Cada aba numa linha só, espalhadas pela largura da Visão geral. */}
       <nav className="segmentos" role="tablist" aria-label="Visões">
@@ -376,4 +420,89 @@ export function App() {
       </footer>
     </>
   );
+}
+
+/** Onde a pessoa está: conferindo a sessão, no login, ou dentro do painel. */
+type Fase =
+  | { nome: "conferindo" }
+  | { nome: "login"; aviso?: string }
+  | { nome: "painel"; sessao: SessaoDoPainel };
+
+/**
+ * A porta do painel.
+ *
+ * No boot pergunta ao servidor quem está aqui (`GET /painel/sessao`). Com
+ * sessão, o painel; sem sessão, só o login. Com o login desligado no servidor
+ * (desenvolvimento sem PAINEL_USUARIOS), a resposta é `login_ativo: false` e o
+ * painel abre direto, como abria antes do login.
+ *
+ * ⚠️ **Esconder aqui não é o que protege.** Cada rota do painel confere a
+ * sessão no servidor; esta tela só evita mostrar um painel que responderia 401
+ * em tudo.
+ */
+export function App() {
+  const { tema, alterna } = useTema();
+  const [fase, setFase] = useState<Fase>({ nome: "conferindo" });
+
+  useEffect(() => {
+    api
+      .sessaoAtual()
+      .then((sessao) => setFase({ nome: "painel", sessao }))
+      .catch((e: unknown) => {
+        // 401 é o normal de quem ainda não entrou: login sem aviso nenhum. O
+        // resto (503 de login não configurado, API fora do ar, token da borda
+        // errado) vira o aviso da tela, para a pessoa saber que não é a senha.
+        const semSessao =
+          e instanceof ErroDaApi && e.status === 401 && !e.message.includes("X-Painel-Token");
+        setFase({
+          nome: "login",
+          aviso: semSessao
+            ? undefined
+            : e instanceof ErroDaApi
+              ? e.message
+              : `Não foi possível falar com a API em ${config.apiBaseUrl || "mesma origem"}.`,
+        });
+      });
+  }, []);
+
+  // Um 401 de qualquer rota do painel, no meio do uso, traz de volta ao login
+  // sem recarregar a página. Só com login ligado: sem ele, um 401 só pode ser o
+  // token da borda, e voltar ao login não resolveria nada.
+  useEffect(
+    () =>
+      aoPerderASessao(() =>
+        setFase((atual) =>
+          atual.nome === "painel" && atual.sessao.login_ativo
+            ? { nome: "login", aviso: "Sua sessão terminou. Entre de novo." }
+            : atual,
+        ),
+      ),
+    [],
+  );
+
+  const sair = () => {
+    // Sai da tela mesmo se a API não responder: o cookie tem prazo, e ficar
+    // preso num painel que se pediu para fechar é pior.
+    api
+      .sair()
+      .catch(() => undefined)
+      .finally(() => setFase({ nome: "login" }));
+  };
+
+  if (fase.nome === "conferindo") {
+    return <p className="carregando login-conferindo">Conferindo a sessão…</p>;
+  }
+
+  if (fase.nome === "login") {
+    return (
+      <Login
+        tema={tema}
+        aoAlternarTema={alterna}
+        aviso={fase.aviso}
+        aoEntrar={(sessao) => setFase({ nome: "painel", sessao })}
+      />
+    );
+  }
+
+  return <Painel sessao={fase.sessao} tema={tema} alterna={alterna} aoSair={sair} />;
 }

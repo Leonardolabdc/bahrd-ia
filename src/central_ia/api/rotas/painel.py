@@ -32,7 +32,7 @@ from central_ia.api.esquemas_painel import (
     ResumoDaSessao,
     Turno,
 )
-from central_ia.api.seguranca import exigir_token_do_painel
+from central_ia.api.seguranca import exigir_admin, exigir_sessao, exigir_token_do_painel
 from central_ia.config import settings
 from central_ia.domain import eventos
 from central_ia.domain.eventos import POLITICA_VERSAO
@@ -42,13 +42,15 @@ from central_ia.orchestration import numeros_removidos
 from central_ia.orchestration.pipeline import Pipeline, Resultado
 from central_ia.orchestration.sessao_whatsapp import SESSOES, Sessao
 
-# A tranca vale para **todas** as rotas do painel, aplicada aqui e não em cada
-# uma: rota nova nasce protegida, sem depender de alguém lembrar. Ver o porquê
-# em `api/seguranca.py`.
+# As trancas valem para **todas** as rotas do painel, aplicadas aqui e não em
+# cada uma: rota nova nasce protegida, sem depender de alguém lembrar. Primeiro
+# o token da borda, depois a sessão de quem está usando. Ver o porquê em
+# `api/seguranca.py`. O login mora em `rotas/sessao.py`, fora deste router,
+# justamente por ser a única rota que precisa funcionar sem sessão.
 router = APIRouter(
     prefix="/painel",
     tags=["painel"],
-    dependencies=[Depends(exigir_token_do_painel)],
+    dependencies=[Depends(exigir_token_do_painel), Depends(exigir_sessao)],
 )
 
 #: Tudo é gravado em UTC; a tela mostra o fuso de quem está de plantão. A
@@ -777,6 +779,8 @@ class PedidoSimulacao(BaseModel):
 
 @router.post(
     "/simular",
+    # Só admin: roda o pipeline inteiro e gasta modelo de verdade.
+    dependencies=[Depends(exigir_admin)],
     summary="Injeta um evento e roda o pipeline completo",
     description=(
         "Publica um evento como se viesse do sistema da Bahrd e executa o "

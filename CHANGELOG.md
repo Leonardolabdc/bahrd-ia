@@ -22,6 +22,11 @@ que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
 - **Busca em todas as abas de cards**, filtrando na hora por placa, nome,
   evento ou telefone, conforme a aba.
 - README: seções **Arquitetura e stack** e **Limitações conhecidas**.
+- **Login no painel, com perfis admin e operador.** Usuários em
+  `PAINEL_USUARIOS` (hash scrypt, gerado por `scripts/criar_usuario_painel.py`),
+  sessão em cookie `HttpOnly` guardada no Redis pelo hash do token, limite de
+  tentativas, e só admin dispara evento de teste, troca o modelo ou simula.
+  Em produção sem usuário, o painel fecha. Fecha a lacuna 12.
 
 ### Alterado
 - **Cabeçalho e abas na largura da Visão geral**, estado da IA em pílula,

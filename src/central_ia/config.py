@@ -19,8 +19,17 @@ import json
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import BeforeValidator, Field, SecretStr, computed_field, model_validator
+from pydantic import (
+    BeforeValidator,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    computed_field,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from central_ia.senhas import UsuarioDoPainel, carregar_usuarios
 
 
 def _vazio_e_ausente(valor: object) -> object:
@@ -131,9 +140,32 @@ class Settings(BaseSettings):
     # quando está assim, e **precisa estar preenchido antes do primeiro evento
     # real**, que é quando o dado deixa de ser fictício.
     #
-    # Não é autenticação de usuário: é uma tranca contra acesso anônimo. Login
-    # de operador está no roteiro de segurança (`docs/07-seguranca.md`).
+    # Não é autenticação de usuário: é a credencial entre a borda (Caddy) e a
+    # API. Quem entra no painel é decidido por `painel_usuarios`, logo abaixo,
+    # e as duas travas valem juntas.
     painel_token: SegredoOpcional = None
+
+    #: Quem pode entrar no painel, e com que perfil. Sem cadastro pela tela.
+    #:
+    #: Entradas separadas por `;`, cada uma `usuario:perfil:hash`, com perfil
+    #: `admin` ou `operador`. O hash é scrypt, no formato de
+    #: `central_ia/senhas.py`; gere a entrada com
+    #: `scripts/criar_usuario_painel.py`, nunca à mão.
+    #:
+    #: ⛔ **Vazio em produção fecha o painel**: `/painel/*` responde 503 até
+    #: alguém configurar. Vazio fora de produção deixa o painel aberto como era
+    #: antes do login, com aviso no boot — é o que mantém a máquina de
+    #: desenvolvimento e a suíte de testes funcionando sem configuração.
+    #:
+    #: Segredo, e não texto comum: não contém senha, mas um hash vazado vira
+    #: ataque de dicionário offline contra quem escolheu senha fraca.
+    painel_usuarios: SegredoOpcional = None
+
+    #: Quanto dura uma sessão do painel, em horas, contadas do login. Doze
+    #: cobre um plantão; depois disso, entra de novo.
+    painel_sessao_horas: int = Field(default=12, ge=1, le=24 * 7)
+
+    _usuarios_do_painel: dict[str, UsuarioDoPainel] = PrivateAttr(default_factory=dict)
 
     #: A Central pode disparar evento de teste pelo painel?
     #:
@@ -476,6 +508,29 @@ class Settings(BaseSettings):
                 for chave, valor in valores.items()
             }
         return valores
+
+    @model_validator(mode="after")
+    def _carregar_usuarios_do_painel(self) -> Settings:
+        """Lê `PAINEL_USUARIOS` uma vez, e derruba a partida se estiver torto.
+
+        Validado aqui, no carregamento, e não no primeiro login: uma entrada
+        malformada descoberta só quando alguém tenta entrar vira "senha
+        inválida" na tela, e ninguém pensa em olhar o `.env`.
+
+        A exceção é `UsuariosDoPainelInvalidos`, que o pydantic deixa passar sem
+        embrulhar — ver o porquê em `central_ia/senhas.py`.
+        """
+        bruto = self.painel_usuarios.get_secret_value() if self.painel_usuarios else None
+        self._usuarios_do_painel = carregar_usuarios(bruto)
+        return self
+
+    def usuarios_do_painel(self) -> dict[str, UsuarioDoPainel]:
+        """Os usuários de `PAINEL_USUARIOS`, já validados. Vazio = login desligado.
+
+        Método, e não `computed_field`: campo computado entra no `model_dump`,
+        e os hashes não têm o que fazer num dump de configuração.
+        """
+        return self._usuarios_do_painel
 
     # ─────────── Derivados ───────────
 

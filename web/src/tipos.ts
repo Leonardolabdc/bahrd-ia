@@ -323,3 +323,17 @@ export interface EstadoDoModelo {
   orientacao_curta: string;
   disponiveis: ModeloDisponivel[];
 }
+
+/** `GET /painel/sessao`. `usuario` é `null` quando o login está desligado. */
+export interface SessaoDoPainel {
+  usuario: string | null;
+  perfil: "admin" | "operador";
+  login_ativo: boolean;
+}
+
+/** `GET /saude/vivo`, a sonda sem login. */
+export interface Vivo {
+  status: string;
+  versao: string;
+  ambiente: string;
+}

@@ -62,6 +62,14 @@ SAIDAS_EXTERNAS = (
     "CARTESIA_API_KEY",
 )
 
+#: Configuração da máquina que muda o que o painel responde.
+#:
+#: Não é saída para o mundo, mas tem o mesmo efeito de suíte que passa ou falha
+#: conforme quem roda: dentro do contêiner o `.env` é exportado, e com um
+#: `PAINEL_USUARIOS` preenchido ali todo teste que chama `/painel/*` sem sessão
+#: receberia 401. Os testes do login declaram os usuários deles.
+CONFIGURACAO_DA_MAQUINA = ("PAINEL_USUARIOS", "PAINEL_SESSAO_HORAS")
+
 
 @pytest.fixture(autouse=True)
 def sem_saida_para_o_mundo(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
@@ -74,7 +82,7 @@ def sem_saida_para_o_mundo(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     Um teste que precise de credencial declara a dele com `monkeypatch.setenv`,
     e aí a intenção fica escrita no próprio teste em vez de herdada da máquina.
     """
-    for variavel in SAIDAS_EXTERNAS:
+    for variavel in (*SAIDAS_EXTERNAS, *CONFIGURACAO_DA_MAQUINA):
         monkeypatch.delenv(variavel, raising=False)
 
     # `_tracer` e `_conteudo` são globais de módulo que `configurar_tracing`

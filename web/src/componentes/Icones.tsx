@@ -1,4 +1,4 @@
-/** Ícones inline — sem biblioteca externa: são cinco, e o CSP do deploy é estrito. */
+/** Ícones inline — sem biblioteca externa: são poucos, e o CSP do deploy é estrito. */
 
 export const IconeMarca = () => (
   <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
@@ -115,6 +115,49 @@ export const Grafico = () => (
       stroke="currentColor"
       strokeWidth="1.7"
       strokeLinecap="round"
+    />
+  </svg>
+);
+
+/** Mostrar a senha: o olho aberto, no campo de senha do login. */
+export const Olho = () => (
+  <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+    <path
+      d="M1.6 9S4.3 3.9 9 3.9 16.4 9 16.4 9 13.7 14.1 9 14.1 1.6 9 1.6 9Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <circle cx="9" cy="9" r="2.4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
+/** Ocultar a senha: o mesmo olho, riscado. */
+export const OlhoRiscado = () => (
+  <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+    <path
+      d="M7.2 4.1A7.6 7.6 0 0 1 9 3.9c4.7 0 7.4 5.1 7.4 5.1a13 13 0 0 1-2 2.6M11.1 13.7a7 7 0 0 1-2.1.4C4.3 14.1 1.6 9 1.6 9a13.4 13.4 0 0 1 3-3.4M7.4 7.4a2.4 2.4 0 0 0 3.2 3.2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M2.5 2.5l13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+/** Sair do painel: a seta saindo pela porta. */
+export const Sair = () => (
+  <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+    <path
+      d="M6.5 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v8.4a1.3 1.3 0 0 0 1.3 1.3h2.7M10.5 11l3-3-3-3M13.3 8H6.2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
