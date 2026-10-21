@@ -600,8 +600,8 @@ export function RotaDaEntrada({
         <path ref={medidor} className="rota-medida" d={d} />
 
         {/* O radar do terceiro pino, por baixo da estrada: três círculos e a
-            fatia que varre. Some com os pinos (`rota-some`). */}
-        <g className="rota-some">
+            fatia que varre. Sempre aceso, como os pinos. */}
+        <g>
           <g transform={`translate(${fixo(centroDoRadar.x)} ${fixo(centroDoRadar.y)})`}>
             <g className="rota-radar">
               {[1 / 3, 2 / 3, 1].map((k) => (
@@ -623,7 +623,8 @@ export function RotaDaEntrada({
         {/* O rastro: os pedaços nascem em `montarRastro`, fora do React. */}
         <g ref={rastro} className="rota-rastro" />
 
-        <g className="rota-some">
+        {/* Pinos e etiquetas: sempre acesos, só o pulso deles em loop. */}
+        <g>
           {PINOS.map((_, i) => {
             const p = marcos?.pinos[i] ?? fora;
             return (

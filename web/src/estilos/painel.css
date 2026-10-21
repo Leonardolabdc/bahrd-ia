@@ -1828,13 +1828,6 @@ kbd {
   .login-giro { animation: login-gira 700ms linear infinite; }
   @keyframes login-gira { to { transform: rotate(360deg); } }
 
-  /* 80 a 96%: pinos, radar e etiquetas somem aos poucos. A estrada fica. */
-  .rota-some { animation: entrada-rota-some var(--ciclo) ease-in-out infinite both; }
-  @keyframes entrada-rota-some {
-    0%, 80%   { opacity: 1; }
-    96%, 100% { opacity: 0; }
-  }
-
   /* O veículo anda em velocidade constante de 0 a 55%: é o `linear` que deixa
      as frações de `RotaDaEntrada.tsx` virarem momentos do ciclo, e é o
      relógio desta animação que o rastro lê. Ao encostar na divisa ele entra
@@ -1851,26 +1844,11 @@ kbd {
     56%, 100% { opacity: 0; }
   }
 
-  /* Cada pino aparece quando a ponta da linha passa por ele: a 21,2, 44,4 e
-     65,8% do caminho, ou seja, a 11,66, 24,42 e 36,19% do ciclo (fração ×
-     55%). */
-  .rota-pino-1 { animation: entrada-pino-1 var(--ciclo) ease-out infinite both; }
-  .rota-pino-2 { animation: entrada-pino-2 var(--ciclo) ease-out infinite both; }
-  .rota-pino-3 { animation: entrada-pino-3 var(--ciclo) ease-out infinite both; }
-  @keyframes entrada-pino-1 {
-    0%, 11.66%   { opacity: 0; transform: scale(0.3); }
-    13.06%, 100% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes entrada-pino-2 {
-    0%, 24.42%   { opacity: 0; transform: scale(0.3); }
-    25.82%, 100% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes entrada-pino-3 {
-    0%, 36.19%   { opacity: 0; transform: scale(0.3); }
-    37.59%, 100% { opacity: 1; transform: scale(1); }
-  }
-  /* O pulso de cada pino: 2 s, que cabem nove vezes no ciclo e nunca saem de
-     fase com ele. Os três pinos pulsam defasados, um terço de volta cada. */
+  /* Pinos, radar e etiquetas ficam sempre acesos: são os eventos no mapa, e
+     só o ponto branco e o rastro vermelho aparecem e somem no ciclo. Cada um
+     tem a própria animação em loop. O pulso de cada pino: 2 s, que cabem nove
+     vezes no ciclo e nunca saem de fase com ele. Os três pinos pulsam
+     defasados, um terço de volta cada. */
   .rota-pulso { animation: entrada-pulso 2s ease-out infinite both; }
   .rota-pino-2 .rota-pulso { animation-delay: -0.67s; }
   .rota-pino-3 .rota-pulso { animation-delay: -1.33s; }
@@ -1879,24 +1857,9 @@ kbd {
     60%       { opacity: 0.4; transform: scale(2.6); }
     85%, 100% { opacity: 0; transform: scale(3.1); }
   }
-  /* O radar chega com o terceiro pino, mais devagar que ele, e a fatia varre
-     uma volta a cada 6 s, três por ciclo. */
-  .rota-radar { animation: entrada-radar-chega var(--ciclo) ease-out infinite both; }
-  @keyframes entrada-radar-chega {
-    0%, 36.19%  { opacity: 0; }
-    41%, 100%   { opacity: 1; }
-  }
+  /* A fatia do radar varre uma volta a cada 6 s, três por ciclo. */
   .rota-radar-giro { animation: entrada-radar 6s linear infinite; }
   @keyframes entrada-radar { to { transform: rotate(360deg); } }
-
-  /* Cada etiqueta chega logo depois do pino dela: EVENTO com o primeiro, BAT
-     com o segundo, GPS e IGN com o terceiro. */
-  .rota-etiqueta-evento { animation: entrada-etiqueta-evento var(--ciclo) linear infinite both; }
-  .rota-etiqueta-bat    { animation: entrada-etiqueta-bat var(--ciclo) linear infinite both; }
-  .rota-etiqueta-gps    { animation: entrada-etiqueta-gps var(--ciclo) linear infinite both; }
-  @keyframes entrada-etiqueta-evento { 0%, 12.26% { opacity: 0; } 14.06%, 100% { opacity: 1; } }
-  @keyframes entrada-etiqueta-bat    { 0%, 25.02% { opacity: 0; } 26.82%, 100% { opacity: 1; } }
-  @keyframes entrada-etiqueta-gps    { 0%, 36.79% { opacity: 0; } 38.59%, 100% { opacity: 1; } }
 
   /* 55 a 78%: a cintilada na divisa. Os dois brilhos saem do ponto onde o
      veículo encostou e percorrem a linha inteira, um até a borda de cima e
