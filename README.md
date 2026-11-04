@@ -118,7 +118,7 @@ O painel do operador abre direto; a API responde no mesmo domínio.
 
 | | |
 |---|---|
-| **Produção** | [bahrd.duckdns.org](https://bahrd.duckdns.org) · versão `1.3.0` |
+| **Produção** | [bahrd.duckdns.org](https://bahrd.duckdns.org) · versão `1.4.0` |
 | **Desenvolvimento** | [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) · secrets próprios |
 | **Onde roda** | Oracle Cloud, São Paulo, camada gratuita permanente ([ADR-002](docs/adr/0002-plataforma-de-publicacao.md)) |
 | **TLS** | Let's Encrypt, emitido e renovado pelo Caddy |
@@ -158,7 +158,7 @@ curl https://bahrd.duckdns.org/saude/pronto   # Oracle, MySQL e Redis
 E os três [smoke tests](tests/smoke/smoke.sh), que é como se confere de fora:
 
 ```bash
-VERSAO_ESPERADA=1.3.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
+VERSAO_ESPERADA=1.4.0 ./tests/smoke/smoke.sh https://bahrd.duckdns.org
 ```
 
 ### Rollback
@@ -273,7 +273,7 @@ reescrita.
 
 | | |
 |---|---|
-| **1034 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
+| **1107 testes** | Sem tocar rede, banco nem API paga. Toda dependência externa tem dublê. |
 | **Lint** | `ruff` sobre `src`, `migrations` e `tests`. |
 | **Varredura de segredo** | `gitleaks` sobre o **histórico**, não só o último commit. |
 | **CI** | Os três acima rodam em todo push e pull request. |

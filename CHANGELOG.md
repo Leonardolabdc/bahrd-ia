@@ -7,8 +7,21 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não publicado]
 
+### A fazer
+- Gravar ocorrência e conversa no Oracle e no MySQL. Os dois estão no ar, mas
+  nada grava neles ainda, então o expurgo de 90 dias roda sobre tabelas vazias
+- Combinar o segredo HMAC do webhook com quem envia o evento: a conferência
+  já está implementada, falta a chave (lacuna 4)
+- Decidir `PANICO_AUTONOMO` — é decisão de operação, não de código (lacuna 5)
+- Conta de aplicação com privilégio restrito no MySQL de produção (hoje usa a
+  conta administrativa `bahrd`, mesmo padrão que o Oracle já segue)
+
+---
+
+## [1.4.0] — 2026-11-04
+
 Etapa 3: o painel ganha cara de produto, e o repositório fica coerente com o
-que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
+que o sistema faz hoje.
 
 ### Adicionado
 - **Visão geral em quadros.** Contadores de cada aba (cada um abre a sua),
@@ -60,15 +73,6 @@ que o sistema faz hoje. Vira a versão 1.4.0 quando subir.
   que reiniciar a API apagava a conversa em andamento (ela fica no Redis).
 - Um teste de tom comparava o texto contra o nome antigo e passava sem
   verificar nada.
-
-### A fazer
-- Gravar ocorrência e conversa no Oracle e no MySQL. Os dois estão no ar, mas
-  nada grava neles ainda, então o expurgo de 90 dias roda sobre tabelas vazias
-- Combinar o segredo HMAC do webhook com quem envia o evento: a conferência
-  já está implementada, falta a chave (lacuna 4)
-- Decidir `PANICO_AUTONOMO` — é decisão de operação, não de código (lacuna 5)
-- Conta de aplicação com privilégio restrito no MySQL de produção (hoje usa a
-  conta administrativa `bahrd`, mesmo padrão que o Oracle já segue)
 
 ---
 
@@ -290,7 +294,8 @@ Primeira versão publicada. O sistema deixa de existir só no notebook.
 - Wallet do banco montado só-leitura a partir da máquina, nunca embutido na
   imagem publicada
 
-[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.1...HEAD
+[Não publicado]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/Leonardolabdc/bahrd-ia/compare/v1.2.0...v1.2.1
