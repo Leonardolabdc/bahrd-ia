@@ -92,6 +92,9 @@ Thumbs.db
 !docs/mapa-dados-pessoais.md
 !docs/retencao-e-exclusao.md
 !docs/evidencias/
+# Prints do README. Cada um é conferido antes de entrar: sem barra do navegador
+# e só com os dados de amostra.
+!docs/capturas/
 # ⚠️ `*.log` (acima) barra tudo que termina em .log, e a liberação da pasta
 #    sozinha não vence isso — a regra mais específica precisa vir depois.
 #    Aqui o log É o entregável: é a evidência de execução do rollback que a

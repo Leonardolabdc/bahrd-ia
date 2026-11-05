@@ -10,6 +10,8 @@ problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
 sistema atende no lugar dela o que consegue confirmar sozinho — e chama a
 pessoa quando o caso exige julgamento, autoridade ou tem risco.
 
+![A IA conversando com a gestora pelo WhatsApp, acompanhada ao vivo no painel do operador](docs/capturas/05-conversa-em-tempo-real.png)
+
 > ### ⚠️ Projeto acadêmico · empresa e dados fictícios
 >
 > A **Bahrd Monitoramento** não existe. É uma empresa fictícia criada para a
@@ -110,11 +112,36 @@ O que a torna utilizável sem alguém olhando por cima:
 | **Trilha de auditoria** | Política aplicada, versão do prompt, evidência da triagem e custo ficam registrados por ocorrência. |
 | **Escalonamento explícito** | Pânico, coação e pedido de humano param a IA. Não é sugestão do modelo: é regra do domínio. |
 
+## Telas
+
+Capturas da produção, na versão `1.4.0`, com os dados de amostra.
+
+| | |
+|---|---|
+| ![Tela de entrada, com o mapa animado e o formulário de login](docs/capturas/01-login.jpg) | ![Menu do usuário conectado, com o perfil](docs/capturas/11-menu-do-usuario.png) |
+| **Entrada.** Login com dois perfis: admin vê tudo, operador não vê testes nem métricas. | **Menu do usuário.** Quem está conectado, com qual perfil, e a saída. |
+| ![Fila de atendimento humano, por prioridade](docs/capturas/02-atendimento-humano.png) | ![Triagem de um pânico: o que a IA apurou e o que já fez](docs/capturas/03-triagem-da-ia.png) |
+| **Atendimento humano.** Só o que precisa de uma pessoa, na ordem de prioridade, com busca. | **Triagem.** Pânico com 94% de chance de ser real: a IA não fala com ninguém e entrega o que apurou. |
+| ![Ocorrências que a IA está atendendo agora](docs/capturas/04-atendimento-da-ia.png) | ![Conversa da IA pelo WhatsApp, ao vivo](docs/capturas/05-conversa-em-tempo-real.png) |
+| **Atendimento da IA.** O que está em andamento, com o passo atual de cada caso. | **Conversa ao vivo.** A mesma conversa que o cliente vê no WhatsApp, com botões. |
+| ![Ocorrências encerradas pela IA, com a contenção do turno](docs/capturas/06-encerrados.png) | ![Transcrição de uma ligação encerrada pela IA](docs/capturas/07-historico-da-ligacao.png) |
+| **Encerrados.** O que a IA fechou sozinha, e a contenção do turno. | **Histórico.** Cada caso encerrado abre inteiro: resumo, mapa e transcrição. |
+| ![Aba de desativação temporária, vazia](docs/capturas/08-desativacao-temporaria.png) | ![Aba de números removidos, vazia](docs/capturas/09-numeros-removidos.png) |
+| **Desativação temporária.** Veículos em manutenção ou transporte, com o alarme suspenso. | **Números removidos.** Quem respondeu REMOVER deixa de receber os avisos daquela placa. |
+
+![Visão geral: volume por evento, motivos de escalonamento, contenção ao longo do dia e rastreadores que disparam sem motivo](docs/capturas/10-visao-geral.png)
+
+**Visão geral** (só para admin): o que está no painel, o desempenho da IA na
+sessão, o volume por evento, por que a IA passou casos adiante, a contenção ao
+longo do dia e os rastreadores que disparam sem motivo.
+
 ## URL pública
 
 ### **https://bahrd.duckdns.org**
 
-O painel do operador abre direto; a API responde no mesmo domínio.
+O painel do operador pede login, com os perfis **admin** e **operador**. As
+credenciais de teste vão na mensagem de entrega da disciplina, nunca neste
+repositório. A API responde no mesmo domínio.
 
 | | |
 |---|---|
