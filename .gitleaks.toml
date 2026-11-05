@@ -32,4 +32,15 @@ keywords = ["key", "api", "token", "secret", "password", "passwd", "auth"]
 # A exceção é pelo **valor**, de propósito, e não pelo caminho do arquivo. Se
 # alguém colar uma senha de verdade no `.env.example` amanhã, o CI continua
 # reprovando — que é exatamente o trabalho desta varredura.
-regexes = ['''CentralIA_Dev1''']
+#
+# ⚠️ **O nome da variável de usuários do painel, seguido de um nome de usuário.**
+#
+# A documentação do `scripts/criar_usuario_painel.py` mostra o formato
+# `PAINEL_USUARIOS=ana:admin:scrypt.16384...` logo depois da palavra "API:", e a
+# regra genérica lê `PAINEL_USUARIOS=ana` como se fosse o valor de uma chave.
+# Não é: é o nome da variável mais o nome de um usuário de exemplo.
+#
+# A exceção casa só com esse formato exato (variável, `=` e um nome em letras
+# minúsculas). Um hash de verdade tem pontos e outros caracteres, então não
+# cabe nesta exceção.
+regexes = ['''CentralIA_Dev1''', '''^PAINEL_USUARIOS=[a-z]{1,32}$''']
