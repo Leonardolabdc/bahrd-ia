@@ -4,6 +4,7 @@
 
 - [Etapa 1](https://youtu.be/NSaoHzc8wSc)
 - [Etapa 2](https://youtu.be/_jKgJpvK4Uk)
+- [Etapa 3 · pitch](https://youtu.be/17FkGyW1TUE) · [demo de backup](https://youtu.be/T2_yCvMEiEE)
 
 Quando um veículo monitorado dispara um alerta, alguém precisa descobrir se é
 problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
@@ -73,11 +74,24 @@ e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 | README v1.0 (LGPD, observabilidade, otimizações, troubleshooting) | As quatro seções homônimas, abaixo |
 | Vídeo de demonstração (Etapa 2) | [youtu.be/_jKgJpvK4Uk](https://youtu.be/_jKgJpvK4Uk) |
 
+## Entregáveis da Etapa 3
+
+| Pedido | Onde está |
+|---|---|
+| Aplicação no ar e estável, com credenciais de teste | [bahrd.duckdns.org](https://bahrd.duckdns.org) · login com os perfis admin e operador, com as senhas na mensagem de entrega |
+| Janela de uptime documentada | [docs/evidencias/uptime-2026-11-05.md](docs/evidencias/uptime-2026-11-05.md) — 25h, 600 verificações a cada 5 minutos nos dois ambientes, nenhuma falha · UptimeRobot com 100% nas últimas 24h ([página pública](https://stats.uptimerobot.com/T0wcfHdkAq)) · `docker ps` com 26h sem reinício |
+| README v1.0 profissional, com capturas de tela | Este arquivo · seção **Telas**, abaixo |
+| Vídeo de pitch | [youtu.be/17FkGyW1TUE](https://youtu.be/17FkGyW1TUE) |
+| Demo gravada de backup | [youtu.be/T2_yCvMEiEE](https://youtu.be/T2_yCvMEiEE) |
+| One-pager executivo | [docs/one-pager-bahrd-ia.pdf](docs/one-pager-bahrd-ia.pdf) |
+| Análise crítica | Entregue no AVA |
+
 ---
 
 ## O problema
 
-A Bahrd Monitoramento acompanha frotas de veículos. Quando um evento dispara —
+A Bahrd Monitoramento faz rastreamento e monitoramento de veículos (carros,
+motos, caminhões) e até de pessoas. Quando um evento dispara —
 bateria removida, movimento sem ignição, botão de pânico — o cliente recebe uma
 notificação por WhatsApp. A regra atual é simples e cara:
 
@@ -89,7 +103,7 @@ notificação enviada
 
 Não há filtro de complexidade. Qualquer resposta vira toque humano, mesmo
 *"tá em manutenção"*. São cerca de **43 mil eventos por mês**, dos quais
-**10 mil viram tratativa manual** — e a maior parte dessas não é conversa
+**8 mil viram tratativa manual** — e a maior parte dessas não é conversa
 difícil: é o operador lendo o retorno do cliente e digitando na placa do
 veículo.
 
@@ -349,7 +363,7 @@ Detalhado em [docs/mapa-dados-pessoais.md](docs/mapa-dados-pessoais.md),
 
 | | |
 |---|---|
-| **Base legal** | Execução de contrato — nenhum ponto de coleta usa consentimento. Ninguém clica em "aceito" antes de reportar que a bateria do caminhão foi removida |
+| **Base legal** | Execução de contrato — nenhum ponto de coleta usa consentimento. Ninguém clica em "aceito" antes de reportar que a bateria do veículo foi removida |
 | **PII antes do LLM** | Nome, placa e endereço viram apelido fixo antes de qualquer chamada ao modelo, e voltam ao valor real só depois — [`pseudonimizacao.py`](src/central_ia/agent/pseudonimizacao.py). CPF, telefone de terceiro e e-mail soltos na conversa viram marcador, nunca chegam crus |
 | **Transferência internacional** | Toda chamada de LLM é transferência — documentada por integração, base: execução de contrato |
 | **Retenção** | 90 dias para a transcrição crua (MySQL), expurgo automático diário. Resumo e desfecho (Oracle) ficam como auditoria de longo prazo |

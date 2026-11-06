@@ -95,6 +95,8 @@ Thumbs.db
 # Prints do README. Cada um é conferido antes de entrar: sem barra do navegador
 # e só com os dados de amostra.
 !docs/capturas/
+# One-pager executivo da Etapa 3, o mesmo PDF entregue no AVA.
+!docs/one-pager-bahrd-ia.pdf
 # ⚠️ `*.log` (acima) barra tudo que termina em .log, e a liberação da pasta
 #    sozinha não vence isso — a regra mais específica precisa vir depois.
 #    Aqui o log É o entregável: é a evidência de execução do rollback que a
