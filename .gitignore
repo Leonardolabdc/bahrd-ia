@@ -97,6 +97,8 @@ Thumbs.db
 !docs/capturas/
 # One-pager executivo da Etapa 3, o mesmo PDF entregue no AVA.
 !docs/one-pager-bahrd-ia.pdf
+# Análise crítica da Etapa 3: o texto entregue no AVA, com as imagens comprimidas.
+!docs/analise-critica-bahrd-ia.pdf
 # ⚠️ `*.log` (acima) barra tudo que termina em .log, e a liberação da pasta
 #    sozinha não vence isso — a regra mais específica precisa vir depois.
 #    Aqui o log É o entregável: é a evidência de execução do rollback que a

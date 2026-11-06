@@ -84,7 +84,7 @@ e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 | Vídeo de pitch | [youtu.be/17FkGyW1TUE](https://youtu.be/17FkGyW1TUE) |
 | Demo gravada de backup | [youtu.be/T2_yCvMEiEE](https://youtu.be/T2_yCvMEiEE) |
 | One-pager executivo | [docs/one-pager-bahrd-ia.pdf](docs/one-pager-bahrd-ia.pdf) |
-| Análise crítica | Entregue no AVA |
+| Análise crítica | [docs/analise-critica-bahrd-ia.pdf](docs/analise-critica-bahrd-ia.pdf) — o mesmo texto do PDF entregue no AVA, com as imagens do modelo comprimidas |
 
 ---
 
