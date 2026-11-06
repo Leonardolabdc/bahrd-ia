@@ -79,7 +79,7 @@ e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 | Pedido | Onde está |
 |---|---|
 | Aplicação no ar e estável, com credenciais de teste | [bahrd.duckdns.org](https://bahrd.duckdns.org) · login com os perfis admin e operador, com as senhas na mensagem de entrega |
-| Janela de uptime documentada | [docs/evidencias/uptime-2026-11-05.md](docs/evidencias/uptime-2026-11-05.md) — 25h, 600 verificações a cada 5 minutos nos dois ambientes, nenhuma falha · UptimeRobot com 100% nas últimas 24h ([página pública](https://stats.uptimerobot.com/T0wcfHdkAq)) · `docker ps` com 26h sem reinício |
+| Janela de uptime documentada | Seção **Janela de uptime**, abaixo, com os prints · [docs/evidencias/uptime-2026-11-05.md](docs/evidencias/uptime-2026-11-05.md) — 25h, 600 verificações a cada 5 minutos nos dois ambientes, nenhuma falha · UptimeRobot com 100% nas últimas 24h ([página pública](https://stats.uptimerobot.com/T0wcfHdkAq)) · `docker ps` com 26h sem reinício |
 | README v1.0 profissional, com capturas de tela | Este arquivo · seção **Telas**, abaixo |
 | Vídeo de pitch | [youtu.be/17FkGyW1TUE](https://youtu.be/17FkGyW1TUE) |
 | Demo gravada de backup | [youtu.be/T2_yCvMEiEE](https://youtu.be/T2_yCvMEiEE) |
@@ -163,6 +163,24 @@ repositório. A API responde no mesmo domínio.
 | **Desenvolvimento** | [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) · secrets próprios |
 | **Onde roda** | Oracle Cloud, São Paulo, camada gratuita permanente ([ADR-002](docs/adr/0002-plataforma-de-publicacao.md)) |
 | **TLS** | Let's Encrypt, emitido e renovado pelo Caddy |
+
+### Janela de uptime
+
+A aplicação ficou 25 horas no ar antes da entrega, de 05/11 01:22 a 06/11
+02:26 (UTC), sem deploy no meio. Três provas, cada uma de uma fonte:
+
+| Prova | Resultado |
+|---|---|
+| Verificação externa, a cada 5 minutos, nos dois ambientes | **600 de 600 ok**: API de pé, banco Oracle respondendo e versão `1.4.0` em todas ([log completo](docs/evidencias/uptime-2026-11-05.log)) |
+| UptimeRobot, de servidores próprios, em `/saude/pronto` | **100% nas últimas 24h**, 0 incidentes ([página pública](https://stats.uptimerobot.com/T0wcfHdkAq)) |
+| `docker ps` no servidor de produção | API, worker e web **26 horas no ar sem reiniciar**, na imagem do commit `3b25465` |
+
+![UptimeRobot: últimas 24 horas com 100% e nenhum incidente](docs/evidencias/uptimerobot-24h.png)
+
+![Servidor de produção: docker ps com os containers no ar há 26 horas](docs/evidencias/docker-ps-producao.png)
+
+Método, tempos de resposta e a leitura de cada linha:
+[docs/evidencias/uptime-2026-11-05.md](docs/evidencias/uptime-2026-11-05.md).
 
 ### Separação de ambientes
 
