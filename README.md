@@ -1,4 +1,4 @@
-# Bahrd · atendimento de eventos de frota com IA
+# Bahrd · atendimento de alertas de rastreamento com IA
 
 ## 🎥 Vídeos de apresentação
 
@@ -6,7 +6,7 @@
 - [Etapa 2](https://youtu.be/_jKgJpvK4Uk)
 - [Etapa 3 · pitch](https://youtu.be/17FkGyW1TUE) · [demo de backup](https://youtu.be/T2_yCvMEiEE)
 
-Quando um veículo monitorado dispara um alerta, alguém precisa descobrir se é
+Quando um veículo ou uma pessoa monitorada dispara um alerta, alguém precisa descobrir se é
 problema de verdade. Hoje esse alguém é uma pessoa, lendo e digitando. Este
 sistema atende no lugar dela o que consegue confirmar sozinho — e chama a
 pessoa quando o caso exige julgamento, autoridade ou tem risco.
@@ -78,7 +78,7 @@ e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 
 | Pedido | Onde está |
 |---|---|
-| Aplicação no ar e estável, com credenciais de teste | [bahrd.duckdns.org](https://bahrd.duckdns.org) · login com os perfis admin e operador, com as senhas na mensagem de entrega |
+| Aplicação no ar e estável, com credenciais de teste | [bahrd.duckdns.org](https://bahrd.duckdns.org) com o login admin · [bahrd-dev.duckdns.org](https://bahrd-dev.duckdns.org) com o login leonardo · a senha está na mensagem de entrega |
 | Janela de uptime documentada | Seção **Janela de uptime**, abaixo, com os prints · [docs/evidencias/uptime-2026-11-05.md](docs/evidencias/uptime-2026-11-05.md) — 25h, 600 verificações a cada 5 minutos nos dois ambientes, nenhuma falha · UptimeRobot com 100% nas últimas 24h ([página pública](https://stats.uptimerobot.com/T0wcfHdkAq)) · `docker ps` com 26h sem reinício |
 | README v1.0 profissional, com capturas de tela | Este arquivo · seção **Telas**, abaixo |
 | Vídeo de pitch | [youtu.be/17FkGyW1TUE](https://youtu.be/17FkGyW1TUE) |
@@ -93,19 +93,22 @@ e os números da Visão geral, não. Ver **Limitações conhecidas**, abaixo.
 A Bahrd Monitoramento faz rastreamento e monitoramento de veículos (carros,
 motos, caminhões) e até de pessoas. Quando um evento dispara —
 bateria removida, movimento sem ignição, botão de pânico — o cliente recebe uma
-notificação por WhatsApp. A regra atual é simples e cara:
+notificação por WhatsApp. Hoje uma **URA de regras fixas**, com opções
+prontas, cuida das respostas:
 
 ```
 notificação enviada
-  ├─ cliente NÃO responde  →  evento fecha, zero trabalho humano
-  └─ cliente RESPONDE      →  SEMPRE cai para um operador
+  ├─ cliente NÃO responde           →  evento fecha, zero trabalho humano
+  ├─ resposta cabe nas opções da URA →  a URA resolve
+  └─ cliente escreve do jeito dele   →  escapa da URA e cai para um operador
 ```
 
-Não há filtro de complexidade. Qualquer resposta vira toque humano, mesmo
-*"tá em manutenção"*. São cerca de **43 mil eventos por mês**, dos quais
-**8 mil viram tratativa manual** — e a maior parte dessas não é conversa
+A URA não entende texto livre: mesmo um *"tá em manutenção"* vira toque
+humano. São cerca de **43 mil eventos por mês**, dos quais **8 mil escapam da
+URA e viram tratativa manual** — e a maior parte dessas não é conversa
 difícil: é o operador lendo o retorno do cliente e digitando na placa do
-veículo.
+veículo. A URA custa cerca de **R$ 4.000 por mês** (valor informado pela
+empresa; comparação no [doc 06](docs/06-custo-mensal.md#comparação-com-a-ura-atual)).
 
 **O trabalho que sobra é digitação, não conversa.** É exatamente o que este
 sistema faz de ponta a ponta.
@@ -287,7 +290,7 @@ Detalhes de cada serviço e problemas conhecidos estão em
 |---|---|
 | **Back-end** | Python 3.12 · FastAPI · Pydantic v2 · arq |
 | **Front-end** | React 19 · TypeScript · Vite · CSS com design tokens |
-| **Modelo** | Via OpenRouter, escolhido no painel: Gemini 2.5 Flash Lite (padrão, o mais barato), Gemini 2.5 Flash ou Claude Sonnet 5. O cache de prompt medido vale só para o Claude |
+| **Modelo** | Via OpenRouter, escolhido no painel: Gemini 2.5 Flash Lite (padrão, o mais barato), Gemini 2.5 Flash ou Claude Sonnet 5. O cache de prompt medido vale só para o Claude. O pitch cita o **Claude Haiku** como o modelo escolhido para a operação: ele ainda não está no painel, e o custo dele é estimativa ([doc 06](docs/06-custo-mensal.md#comparação-com-a-ura-atual)) |
 | **WhatsApp** | Twilio (sandbox) · adaptador para Cloud API da Meta disponível |
 | **STT / TTS** | Deepgram Nova-3 · ElevenLabs Flash v2.5 |
 | **Banco de registro** | Oracle 26ai (Blockchain Table) — Autonomous Database na OCI |
@@ -468,7 +471,7 @@ O que ainda não funciona, ou funciona com ressalva:
 
 | Limitação | Por quê | Consequência |
 |---|---|---|
-| **Sem rastreador real** | Não há acesso ao sistema de rastreamento de uma frota de verdade. Os eventos entram pelo painel de testes (só em dev) ou pelo webhook com payload sintético | O selo **Amostra** aparece no cabeçalho, e parte da Visão geral (contenção de 58%, 1º contato, falsos fechamentos) é número de exemplo fixo |
+| **Sem rastreador real** | Não há acesso a rastreadores de verdade. Os eventos entram pelo painel de testes (só em dev) ou pelo webhook com payload sintético | O selo **Amostra** aparece no cabeçalho, e parte da Visão geral (contenção de 58%, 1º contato, falsos fechamentos) é número de exemplo fixo |
 | **Ocorrência e conversa não vão para o banco** | Oracle e MySQL sobem e respondem à sonda, mas nenhum código grava neles ainda | Encerrados e números da Visão geral zeram quando a API reinicia. O expurgo de 90 dias roda todo dia, mas sobre tabelas vazias |
 | **Curva de contenção** | Sem nenhum caso real no dia, a tela mantém a curva de amostra em vez de ficar vazia | Hora com caso real usa o número real; hora sem caso nunca vira 0% |
 | **Login com dois perfis, usuários definidos na configuração** | Fecha a [lacuna 12](docs/auditoria-prototipo.md). Não há cadastro pela tela nem troca de senha pela tela | Criar, remover ou trocar a senha de alguém é gerar a entrada com `scripts/criar_usuario_painel.py`, editar `PAINEL_USUARIOS` no servidor e reiniciar a API |
@@ -479,6 +482,19 @@ O que ainda não funciona, ou funciona com ressalva:
 | **Alerta por e-mail de teste** | O remetente é o `onboarding@resend.dev`, de testes, sem domínio próprio verificado | Serve para a POC: só entrega para o e-mail dono da conta do Resend |
 | **Sem alta disponibilidade** | Uma VM gratuita de 1 GB por ambiente | Se a VM de produção cair, o sistema cai junto. O rollback cobre deploy ruim, não queda de máquina |
 | **Voz por telefone** | Sem provedor de telefonia definido | O canal de ligação existe no domínio e nos testes, não no ar |
+| **Modelo padrão reprovado, modelo escolhido não medido** | O Gemini 2.5 Flash Lite, padrão do painel por ser o mais barato, tratou um possível roubo como rotina na medição. O Claude Haiku, citado no pitch como o escolhido, ainda não está no painel | O único custo de modelo medido é o do Claude Sonnet 5 (R$ 0,13 por caso, com o WhatsApp). O do Haiku (≈ R$ 0,08) é estimativa da tabela de preços |
+
+## Próximos passos
+
+Os mesmos do pitch:
+
+- **Ligar o sistema a rastreadores reais**, num cliente piloto.
+- **Gravar cada atendimento no banco de dados**, para histórico e auditoria completos.
+- **Ligar o painel a uma central de atendimento de código aberto**, onde os
+  operadores respondem os clientes, com o histórico das mensagens guardado em
+  banco Postgres.
+- **Medir quantos casos a IA fecha de verdade.** Se a meta de 50% se confirmar,
+  levar a IA aos outros 35 mil alertas.
 
 ---
 
