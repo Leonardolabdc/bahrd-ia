@@ -86,6 +86,46 @@ mês, ainda não cotada. Não muda o total, mas falta.
 
 ---
 
+## Comparação com a URA atual
+
+**Dado do cenário:** a diretoria da Bahrd informou, em novembro de 2026, que a
+URA de regras fixas da Vetor custa **cerca de R$ 4.000 por mês**. É um número de
+conversa, ainda não conferido em contrato. Ele responde à pergunta que estava
+em aberto no [plano, §14](02-plano-execucao-backend.md).
+
+Para os 8.000 casos por mês que escapam da URA:
+
+| Cenário | Por mês | Perto dos R$ 4.000 da URA? |
+|---|---|---|
+| 1 · Texto, Claude Sonnet 5 (custo do modelo **medido**) | ≈ R$ 1.200 | Bem abaixo |
+| 1 · Texto, Claude Haiku 4.5 (**estimativa**: metade do custo do modelo) | ≈ R$ 700 | Bem abaixo |
+| 2 · Texto e áudio, como na demonstração | ≈ R$ 4.100 | **Praticamente igual** |
+| 1 + 2 + 3 · Com telefonia | ≈ R$ 4.400 | 10% acima |
+
+É isso que o pitch quer dizer com "custa o mesmo preço do serviço atual": no
+formato da demonstração, com áudio, a IA custa por mês o mesmo que a URA custa
+hoje, e atende justamente os casos que a URA não entende. Só em texto, custa
+menos de um terço.
+
+**O Haiku no pitch.** O vídeo cita o Claude Haiku como o modelo escolhido, a
+cerca de R$ 0,04 por atendimento. O número vem da tabela de preços
+([Alternativa de modelo](#alternativa-de-modelo): R$ 0,047 por atendimento),
+**ainda não medido neste sistema**. O único custo de modelo medido aqui é o do
+Sonnet 5.
+
+Três ressalvas, para a comparação não dizer mais do que diz:
+
+- **A infraestrutura não está na conta.** O custo fixo de produção na OCI
+  (§14.5 do plano, R$ 4.700 a 8.500/mês) vem por fora, e a URA também tem a
+  sua.
+- **A IA não substitui a URA, cuida do que sobra dela.** A URA continua
+  atendendo os outros eventos. Para a IA atender os 41.000, a conta sobe para
+  ≈ R$ 6.100/mês em texto e ≈ R$ 21.000/mês com áudio.
+- **O valor da URA é aproximado.** Antes de virar orçamento, precisa ser
+  conferido no contrato: licença, mensalidade ou cobrança por evento.
+
+---
+
 ## O que mexe mais na conta
 
 **1 · Cache de prompt — ✅ implementado em 19/08/2026.**

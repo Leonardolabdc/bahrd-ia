@@ -1308,6 +1308,8 @@ Isso não é motivo para não fazer — é motivo para medir o valor no lugar ce
 
 > ➡️ **Pergunta que eu preciso fazer, e que muda o caso de negócio:** **quanto custa hoje a URA da Vetor** (licença, mensalidade, por evento tratado)? Esse é o verdadeiro baseline econômico. Comparar nossa IA com "tempo de operador" subestima o caso; comparar com "custo da Vetor + tempo de operador no resíduo" é a conta certa — e é a que decide se isso é uma POC de eficiência ou uma substituição de fornecedor.
 
+> ✅ **Resposta, em novembro de 2026:** a diretoria da Bahrd informou que a URA da Vetor custa **cerca de R$ 4.000 por mês**. É um número de conversa, ainda não conferido em contrato. A comparação com o custo da IA está em [06 · Custo mensal, Comparação com a URA atual](06-custo-mensal.md#comparação-com-a-ura-atual).
+
 ### 14.4 Dimensionamento — 8.000/mês cabe folgado no que já foi planejado
 
 Boa notícia: o volume real **confirma** o dimensionamento que eu já havia proposto no chute. Nada precisa crescer.
